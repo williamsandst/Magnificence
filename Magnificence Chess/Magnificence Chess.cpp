@@ -9,6 +9,7 @@ using namespace std;
 
 int main()
 {
+	cout << "Hi";
 	char x;
 	cout << "Hello World";
 	cin >> x;
