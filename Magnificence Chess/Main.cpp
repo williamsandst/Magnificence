@@ -4,15 +4,15 @@
 #include "stdafx.h"
 #include <iostream>
 #include <thread>
-#include "Board.h"
 #include <windows.h>
 #include <sstream>
 #include <chrono>
 #include <atomic>
+#include "Board.h"
+#include "GameState.h";
 
 using namespace std;
 
-class GameState;
 void DebugWrite(wchar_t* msg);
 void runEngine(GameState* gameState);
 void guiInterface();
@@ -21,22 +21,6 @@ void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
 //Sample for Debug: DebugWrite(L"Hello World!")
 
 //Sent 
-class GameState
-{
-public:
-	atomic<bool> run;
-	GameState()
-	{
-
-	}
-	~GameState()
-	{
-
-	}
-	//Principal variation
-	//Depth
-	//Score (centipawns)
-};
 
 int main()
 {
@@ -52,6 +36,11 @@ void guiInterface()
 	//Create engine thread object
 	GameState* gameState = new GameState();
 	
+	gameState->idle = true;
+	gameState->run = true;	
+	thread engineThread(runEngine, gameState);
+
+
 	string recievedCommand;
 	cout.setf(ios::unitbuf);
 
@@ -59,6 +48,7 @@ void guiInterface()
 
 	while (getline(cin, recievedCommand))
 	{
+		cout << "Run" << endl;
 		if (recievedCommand == "uci")
 		{
 			cout << "id name Magnificence" << endl;
@@ -88,13 +78,12 @@ void guiInterface()
 			cout << "bestmove " << char(105 - flag) << "7" << char(105 - flag) << "5" << endl;
 			//Output format: "bestmove h7h5"
 			flag++; //increase flag to move other pawn on next turn
+			//gameState->idle = !(gameState->idle);
 		}
 	}
-
-	/*thread engineThread(runEngine, gameState);
+	gameState->run = false;
 	engineThread.detach();
-	gameState->run = true;
-	return;*/
+	return;
 }
 
 //The chess engine will run here. Everything that needs to be passed to the GUI is stored in GameState
@@ -103,7 +92,11 @@ void runEngine(GameState* gameState)
 {
 	while (gameState->run)
 	{
-		cout << "Hello";
+		this_thread::sleep_for(chrono::milliseconds(1));
+		while (!gameState->idle)
+		{
+			cout << "Test";
+		}
 	}
 }
 
