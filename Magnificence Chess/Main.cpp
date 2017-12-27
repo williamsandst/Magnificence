@@ -10,6 +10,8 @@
 #include <atomic>
 #include "Board.h"
 #include "GameState.h";
+#include "ArrayBoard.h";
+#include "IO.h";
 
 using namespace std;
 
@@ -33,6 +35,8 @@ int main()
 //This function recieves input from a separate GUI in the form of UCI commands.
 void guiInterface()
 {
+	//Settings
+	const bool CONSOLEDEBUG = true;
 	//Create engine thread object
 	GameState* gameState = new GameState();
 	
@@ -46,9 +50,26 @@ void guiInterface()
 
 	int flag = 1;
 
+	ArrayBoard board = ArrayBoard();
+	board = IO::convertFENtoArrayBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
 	while (getline(cin, recievedCommand))
 	{
-		cout << "Run" << endl;
+		if (CONSOLEDEBUG)
+		{
+			vector<string> splitCommand = split(recievedCommand, ' ');
+			if (splitCommand[0] == "test" || splitCommand[0] == "t")
+			{
+				if (splitCommand[1] == "display" || splitCommand[1] == "disp")
+				{
+					cout << IO::displayBoard(board);
+				}
+				if (splitCommand[1] == "move")
+				{
+					board.makeMove(IO::convertAlgToMove(splitCommand[2]));
+				}
+			}
+		}
 		if (recievedCommand == "uci")
 		{
 			cout << "id name Magnificence" << endl;
