@@ -66,11 +66,11 @@
     <ClInclude Include="Move.h">
       <Filter>Header Files\Logic</Filter>
     </ClInclude>
-    <ClInclude Include="MoveLogic.h">
-      <Filter>Header Files\Logic</Filter>
-    </ClInclude>
     <ClInclude Include="ArrayBoard.h">
       <Filter>Header Files\Board</Filter>
+    </ClInclude>
+    <ClInclude Include="Test.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -98,11 +98,11 @@
     <ClCompile Include="Move.cpp">
       <Filter>Source Files\Logic</Filter>
     </ClCompile>
-    <ClCompile Include="MoveLogic.cpp">
-      <Filter>Source Files\Logic</Filter>
-    </ClCompile>
     <ClCompile Include="ArrayBoard.cpp">
       <Filter>Source Files\Board</Filter>
+    </ClCompile>
+    <ClCompile Include="Test.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

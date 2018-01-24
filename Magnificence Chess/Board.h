@@ -9,10 +9,12 @@ using namespace std;
 class Board
 {
 public:
+	bool whiteTurn;
 	Board();
 	Board(string fenString); //Fen string to give a starting position
+	Board(const Board &Board); //Copy
 	~Board();
 	void makeMove(__int16 move); //
-	void undoMove(__int16 move);
-	vector<__int16> generateMoves();
+	vector<__int16> generateWhiteLegalMoves();
+	vector<__int16> generateBlackLegalMoves();
 };

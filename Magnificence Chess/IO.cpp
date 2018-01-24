@@ -221,6 +221,7 @@ ArrayBoard IO::convertFENtoArrayBoard(string fenString)
 	//2: White (ply 3) 2 * 2 - 1
 	//2: Black (ply 4) 2 * 2 - 0
 	board.totalPly = stoi(fenParts[5]) * 2 - (fenParts[1] == "w");
+	board.whiteTurn = (fenParts[1] == "w");
 
 	//Piece values
 	/*White:
@@ -241,62 +242,6 @@ ArrayBoard IO::convertFENtoArrayBoard(string fenString)
 }
 
 //Returns a string representing the board in a cool format, used for debugging
-string IO::displayBoard(ArrayBoard board)
-{
-	string boardString = "\n";
-	for (size_t y = 0; y < 8; y++)
-	{
-		for (size_t x = 0; x < 8; x++)
-		{
-			switch (board.board[y * 8 + x])
-			{
-			case 1: //White pieces
-				boardString += 'P';
-				break;
-			case 2:
-				boardString += 'R';
-				break;
-			case 3:
-				boardString += 'N';
-				break;
-			case 4:
-				boardString += 'B';
-				break;
-			case 5:
-				boardString += 'Q';
-				break;
-			case 6:
-				boardString += 'K';
-				break;
-			case 11: //Black pieces
-				boardString += 'p';
-				break;
-			case 12:
-				boardString += 'r';
-				break;
-			case 13:
-				boardString += 'n';
-				break;
-			case 14:
-				boardString += 'b';
-				break;
-			case 15:
-				boardString += 'q';
-				break;
-			case 16:
-				boardString += 'k';
-				break;
-			case 0: //Space
-				boardString += ".";
-				break;
-			}
-		}
-		boardString += "\n";
-	}
-	boardString += "\n";
-	return boardString;
-
-}
 
 //Static class, declaration is NEVER used
 IO::IO()

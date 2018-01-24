@@ -21,7 +21,6 @@ public:
 
 	static BitBoard convertFENtoBitBoard(string fenString);
 	static ArrayBoard convertFENtoArrayBoard(string fenString);
-	static string displayBoard(ArrayBoard board);
 private:
 	IO();
 	~IO();
