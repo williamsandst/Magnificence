@@ -106,7 +106,7 @@ void guiInterface()
 					timer = clock();
 					unsigned long perftNumber = Test::recursivePerft(board, stoi(splitCommand[2]));
 					duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
-					cout << perftNumber << " [" << to_string(duration) << " s]" << endl;
+					cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber/1000000)/duration) << " MN/S]" << endl;
 				}
 				if (splitCommand[1] == "fen")
 				{
@@ -184,7 +184,7 @@ void guiInterface()
 				{
 					short square = IO::convertAlgToMove(splitCommand[2]);
 					vector<__int16> moves;
-					board.whiteBlockingMoves(moves, Move::getFrom(&square), set<short>());
+					board.whiteBlockingMoves(moves, Move::getFrom(&square), vector<short>());
 					cout << "Move count: " << moves.size() << endl;
 					for (size_t i = 0; i < moves.size(); i++)
 					{
@@ -197,7 +197,7 @@ void guiInterface()
 				{
 					short square = IO::convertAlgToMove(splitCommand[2]);
 					vector<__int16> moves;
-					board.blackBlockingMoves(moves, Move::getFrom(&square), set<short>());
+					board.blackBlockingMoves(moves, Move::getFrom(&square), vector<short>());
 					cout << "Move count: " << moves.size() << endl;
 					for (size_t i = 0; i < moves.size(); i++)
 					{

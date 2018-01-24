@@ -259,8 +259,9 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 	//Idea: use two vectors, one for attack and one for quiet moves for move ordering?
 	vector<__int16> moves; //Average branching factor; too high? Does this even do anything?
 	//Loop through every piece
-	moves.reserve(30);
-	set<short> ignorePiecesSet;
+	moves.reserve(32);
+	//set<short> ignorePiecesSet;
+	vector<short> ignorePiecesSet;
 	int index;
 	//Check for pinned pieces for king safety reasons
 	//Check whether a black sliding piece can attack the black king
@@ -427,7 +428,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 						
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -496,7 +497,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -571,7 +572,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving RIGHT
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -630,7 +631,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -694,7 +695,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -753,7 +754,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -823,7 +824,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -882,7 +883,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -956,7 +957,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1026,7 +1027,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1101,7 +1102,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving RIGHT
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1160,7 +1161,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 2 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1222,7 +1223,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1281,7 +1282,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1351,7 +1352,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1410,7 +1411,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 4 || board[pinIndex] == 5)
 						{
 							index = kingIndex;
@@ -1458,7 +1459,7 @@ vector<__int16> ArrayBoard::generateWhiteLegalMoves()
 	//Generates all the normal moves
 	for (size_t i = 0; i < 64; i++)
 	{
-		if (ignorePiecesSet.find(i) != ignorePiecesSet.end())
+		if (find(ignorePiecesSet.begin(), ignorePiecesSet.end(), i) != ignorePiecesSet.end())
 			continue;
 		switch (board[i]) //Switch to make allow for compiler optimisation
 		{
@@ -1916,8 +1917,8 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 {
 	//Idea: use two vectors, one for attack and one for quiet moves for move ordering?
 	vector<__int16> moves;
-	moves.reserve(30);
-	set<short> ignorePiecesSet;
+	moves.reserve(32);
+	vector<short> ignorePiecesSet;
 	int index;
 	//Check for pinned pieces for king safety reasons
 	//Check whether a black sliding piece can attack the black king
@@ -2065,7 +2066,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2134,7 +2135,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2209,7 +2210,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving RIGHT
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2268,7 +2269,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2332,7 +2333,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2398,7 +2399,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2461,7 +2462,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2527,7 +2528,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2594,7 +2595,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2663,7 +2664,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2738,7 +2739,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving RIGHT
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2797,7 +2798,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 12 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2859,7 +2860,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2925,7 +2926,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -2988,7 +2989,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving DOWN
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -3054,7 +3055,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 
 						//100 % certain we found a pinned piece
 						//Generate moves for either rook or queen moving UP
-						ignorePiecesSet.insert(pinIndex);
+						ignorePiecesSet.push_back(pinIndex);
 						if (board[pinIndex] == 14 || board[pinIndex] == 15)
 						{
 							index = kingIndex;
@@ -3102,7 +3103,7 @@ vector<__int16> ArrayBoard::generateBlackLegalMoves()
 	//Generate main moves!
 	for (size_t i = 0; i < 64; i++)
 	{
-		if (ignorePiecesSet.find(i) != ignorePiecesSet.end())
+		if (find(ignorePiecesSet.begin(), ignorePiecesSet.end(), i) != ignorePiecesSet.end())
 			continue;
 		switch (board[i]) //Switch to allow for compiler optimisation
 		{
@@ -3557,7 +3558,6 @@ bool ArrayBoard::squareAttackedByBlack(int piecePos)
 	//Look if square is attacked by black. If it is, return true. Else, false
 	//Method: Start with pawn, bishop, king. Use static square check
 	//Continue with sliding pieces. Check for alignment, then for direct access.
-
 	//Pawns
 	int pieceRow = piecePos / 8;
 	if (piecePos - 9 > -1 && board[piecePos - 9] == 11 && diagonalArray[piecePos] == diagonalArray[piecePos - 9])
@@ -3986,7 +3986,6 @@ bool ArrayBoard::squareAttackedByWhite(int piecePos)
 	//Look if square is attacked by white. If it is, return true. Else, false
 	//Method: Start with pawn, bishop, king. Use static square check
 	//Continue with sliding pieces. Check for alignment, then for direct access.
-
 	//Pawns
 	int pieceRow = piecePos / 8;
 	if (piecePos + 9 < 64 && board[piecePos + 9] == 1 && diagonalArray[piecePos] == diagonalArray[piecePos + 9])
@@ -4411,7 +4410,7 @@ bool ArrayBoard::squareAttackedByWhite(int piecePos)
 }
  
 //Generate king evasion moves. Only king moves can be generated with 2 attacking pieces
-vector<__int16> ArrayBoard::generateWhiteEvasionMoves(vector<__int16> &moves, int attackingPos, int piecePos, set<short> &pinnedPiecesSet)
+vector<__int16> ArrayBoard::generateWhiteEvasionMoves(vector<__int16> &moves, int attackingPos, int piecePos, vector<short> &pinnedPiecesSet)
 {
 	moves.clear();
 	//Only care about sliding pieces for extensive check
@@ -4668,7 +4667,7 @@ vector<__int16> ArrayBoard::generateWhiteEvasionMoves(vector<__int16> &moves, in
 	//Check for king moves
 }
 
-vector<__int16> ArrayBoard::generateBlackEvasionMoves(vector<__int16> &moves, int attackingPos, int piecePos, set<short> &pinnedPiecesSet)
+vector<__int16> ArrayBoard::generateBlackEvasionMoves(vector<__int16> &moves, int attackingPos, int piecePos, vector<short> &pinnedPiecesSet)
 {
 	moves.clear();
 	int index = attackingPos;
@@ -4917,18 +4916,18 @@ vector<__int16> ArrayBoard::generateBlackEvasionMoves(vector<__int16> &moves, in
 }
 
 //Attacksquare, but adds the moves instead of returning true. Also includes pawn moves
-void ArrayBoard::whiteBlockingMoves(vector<__int16> &moves, int piecePos, set<short> &pinnedPiecesSet)
+void ArrayBoard::whiteBlockingMoves(vector<__int16> &moves, int piecePos, vector<short> &pinnedPiecesSet)
 {
 	int pieceRow = piecePos / 8;
 	bool squareEmpty = board[piecePos] == 0 ? true : false;
 	//Pawns
 	if (squareEmpty)
 	{
-		if (pieceRow + 2 == 6 && board[piecePos + 16] == 1 && board[piecePos + 8] == 0 && !(pinnedPiecesSet.find(piecePos + 16) != pinnedPiecesSet.end()))
+		if (pieceRow + 2 == 6 && board[piecePos + 16] == 1 && board[piecePos + 8] == 0 && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 16) != pinnedPiecesSet.end()))
 		{
 			moves.push_back(Move::getInt16FromPos(piecePos + 16, piecePos));
 		}
-		else if (piecePos + 8 < 64 && board[piecePos + 8] == 1 && !(pinnedPiecesSet.find(piecePos + 8) != pinnedPiecesSet.end()))
+		else if (piecePos + 8 < 64 && board[piecePos + 8] == 1 && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 8) != pinnedPiecesSet.end()))
 		{
 			if (piecePos < 8) //Promotion straight
 			{
@@ -4996,7 +4995,7 @@ void ArrayBoard::whiteBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 			}
 		}
 
-		if (piecePos + 9 < 64 && board[piecePos + 9] == 1 && !squareEmpty && diagonalArray[piecePos] == diagonalArray[piecePos + 9] && !(pinnedPiecesSet.find(piecePos + 9) != pinnedPiecesSet.end()))
+		if (piecePos + 9 < 64 && board[piecePos + 9] == 1 && !squareEmpty && diagonalArray[piecePos] == diagonalArray[piecePos + 9] && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 9) != pinnedPiecesSet.end()))
 		{
 			if (piecePos < 8) //Promotion straight
 			{
@@ -5009,7 +5008,7 @@ void ArrayBoard::whiteBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 			else
 				moves.push_back(Move::getInt16FromPos(piecePos + 9, piecePos));
 		}
-		if (board[piecePos + 7] == 1 && !squareEmpty && antiDiagonalArray[piecePos] == antiDiagonalArray[piecePos + 7] && !(pinnedPiecesSet.find(piecePos + 7) != pinnedPiecesSet.end()))
+		if (board[piecePos + 7] == 1 && !squareEmpty && antiDiagonalArray[piecePos] == antiDiagonalArray[piecePos + 7] && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 7) != pinnedPiecesSet.end()))
 		{
 			if (piecePos < 8) //Promotion straight
 			{
@@ -5024,42 +5023,42 @@ void ArrayBoard::whiteBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 		}
 	}
 	//Knights
-	if (piecePos + 17 < 64 && (board[piecePos + 17] == 3 && !(pinnedPiecesSet.find(piecePos + 17) != pinnedPiecesSet.end())) //17
+	if (piecePos + 17 < 64 && (board[piecePos + 17] == 3 && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 17) != pinnedPiecesSet.end())) //17
 		&& ((piecePos + 17) / 8 == pieceRow + 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 17, piecePos));
 	}
-	if (piecePos > 16 && (board[piecePos - 17] == 3) && !(pinnedPiecesSet.find(piecePos - 17) != pinnedPiecesSet.end()) //-17
+	if (piecePos > 16 && (board[piecePos - 17] == 3) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 17) != pinnedPiecesSet.end()) //-17
 		&& ((piecePos - 17) / 8 == pieceRow - 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 17, piecePos));
 	}
-	if (piecePos + 15 < 64 && (board[piecePos + 15] == 3) && !(pinnedPiecesSet.find(piecePos + 15) != pinnedPiecesSet.end()) //15
+	if (piecePos + 15 < 64 && (board[piecePos + 15] == 3) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 15) != pinnedPiecesSet.end()) //15
 		&& ((piecePos + 15) / 8 == pieceRow + 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 15, piecePos));
 	}
-	if (piecePos > 14 && (board[piecePos - 15] == 3) && !(pinnedPiecesSet.find(piecePos - 15) != pinnedPiecesSet.end()) //-15
+	if (piecePos > 14 && (board[piecePos - 15] == 3) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 15) != pinnedPiecesSet.end()) //-15
 		&& ((piecePos - 15) / 8 == pieceRow - 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 15, piecePos));
 	}
-	if (piecePos + 10 < 64 && (board[piecePos + 10] == 3) && !(pinnedPiecesSet.find(piecePos + 10) != pinnedPiecesSet.end()) //10
+	if (piecePos + 10 < 64 && (board[piecePos + 10] == 3) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 10) != pinnedPiecesSet.end()) //10
 		&& ((piecePos + 10) / 8 == pieceRow + 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 10, piecePos));
 	}
-	if (piecePos > 9 && (board[piecePos - 10] == 3) && !(pinnedPiecesSet.find(piecePos - 10) != pinnedPiecesSet.end()) //-10
+	if (piecePos > 9 && (board[piecePos - 10] == 3) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 10) != pinnedPiecesSet.end()) //-10
 		&& ((piecePos - 10) / 8 == pieceRow - 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 10, piecePos));
 	}
-	if (piecePos + 6 < 64 && (board[piecePos + 6] == 3) && !(pinnedPiecesSet.find(piecePos + 6) != pinnedPiecesSet.end()) //6
+	if (piecePos + 6 < 64 && (board[piecePos + 6] == 3) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 6) != pinnedPiecesSet.end()) //6
 		&& ((piecePos + 6) / 8 == pieceRow + 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 6, piecePos));
 	}
-	if (piecePos > 5 && (board[piecePos - 6] == 3) && !(pinnedPiecesSet.find(piecePos - 6) != pinnedPiecesSet.end()) //-6
+	if (piecePos > 5 && (board[piecePos - 6] == 3) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 6) != pinnedPiecesSet.end()) //-6
 		&& ((piecePos - 6) / 8 == pieceRow - 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 6, piecePos));
@@ -5068,7 +5067,7 @@ void ArrayBoard::whiteBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 	int index;
 	for (size_t i = 0; i < 64; i++) //Find white sliding pieces
 	{
-		if (pinnedPiecesSet.find(i) != pinnedPiecesSet.end())
+		if (find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), i) != pinnedPiecesSet.end())
 			continue;
 		//Check whether they align with the white king
 		switch (board[i])
@@ -5409,18 +5408,18 @@ void ArrayBoard::whiteBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 }
 
 //Attacksquare, but adds the moves instead of returning true
-void ArrayBoard::blackBlockingMoves(vector<__int16> &moves, int piecePos, set<short> &pinnedPiecesSet)
+void ArrayBoard::blackBlockingMoves(vector<__int16> &moves, int piecePos, vector<short> &pinnedPiecesSet)
 {
 	int pieceRow = piecePos / 8;
 	bool squareEmpty = board[piecePos] == 0;
 	//Pawns
 	if (squareEmpty)
 	{
-		if (pieceRow - 2 == 1 && board[piecePos - 16] == 11 && board[piecePos - 8] == 0 && !(pinnedPiecesSet.find(piecePos - 16) != pinnedPiecesSet.end()))
+		if (pieceRow - 2 == 1 && board[piecePos - 16] == 11 && board[piecePos - 8] == 0 && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 16) != pinnedPiecesSet.end()))
 		{
 			moves.push_back(Move::getInt16FromPos(piecePos - 16, piecePos));
 		}
-		else if (piecePos - 8 > -1 && board[piecePos - 8] == 11 && !(pinnedPiecesSet.find(piecePos - 8) != pinnedPiecesSet.end()))
+		else if (piecePos - 8 > -1 && board[piecePos - 8] == 11 && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 8) != pinnedPiecesSet.end()))
 		{
 			if (piecePos > 55) //Promotion straight
 			{
@@ -5487,7 +5486,7 @@ void ArrayBoard::blackBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 			}
 		}
 
-		if (piecePos - 9 >= 0 && !squareEmpty && board[piecePos - 9] == 11 && diagonalArray[piecePos] == diagonalArray[piecePos - 9] && !(pinnedPiecesSet.find(piecePos - 9) != pinnedPiecesSet.end()))
+		if (piecePos - 9 >= 0 && !squareEmpty && board[piecePos - 9] == 11 && diagonalArray[piecePos] == diagonalArray[piecePos - 9] && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 9) != pinnedPiecesSet.end()))
 		{
 			if (piecePos > 55) //Promotion straight
 			{
@@ -5500,7 +5499,7 @@ void ArrayBoard::blackBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 			else
 				moves.push_back(Move::getInt16FromPos(piecePos - 9, piecePos));
 		}
-		if (board[piecePos - 7] == 11 && !squareEmpty && antiDiagonalArray[piecePos] == antiDiagonalArray[piecePos - 7] && !(pinnedPiecesSet.find(piecePos - 7) != pinnedPiecesSet.end()))
+		if (board[piecePos - 7] == 11 && !squareEmpty && antiDiagonalArray[piecePos] == antiDiagonalArray[piecePos - 7] && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 7) != pinnedPiecesSet.end()))
 		{
 			if (piecePos > 55) //Promotion straight
 			{
@@ -5515,42 +5514,42 @@ void ArrayBoard::blackBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 		}
 	}
 	//Knights
-	if (piecePos + 17 < 64 && (board[piecePos + 17] == 13) && !(pinnedPiecesSet.find(piecePos + 17) != pinnedPiecesSet.end()) //17
+	if (piecePos + 17 < 64 && (board[piecePos + 17] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 17) != pinnedPiecesSet.end()) //17
 		&& ((piecePos + 17) / 8 == pieceRow + 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 17, piecePos));
 	}
-	if (piecePos > 16 && (board[piecePos - 17] == 13) && !(pinnedPiecesSet.find(piecePos - 17) != pinnedPiecesSet.end()) //-17
+	if (piecePos > 16 && (board[piecePos - 17] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 17) != pinnedPiecesSet.end()) //-17
 		&& ((piecePos - 17) / 8 == pieceRow - 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 17, piecePos));
 	}
-	if (piecePos + 15 < 64 && (board[piecePos + 15] == 13) && !(pinnedPiecesSet.find(piecePos + 15) != pinnedPiecesSet.end())//15
+	if (piecePos + 15 < 64 && (board[piecePos + 15] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 15) != pinnedPiecesSet.end())//15
 		&& ((piecePos + 15) / 8 == pieceRow + 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 15, piecePos));
 	}
-	if (piecePos > 14 && (board[piecePos - 15] == 13) && !(pinnedPiecesSet.find(piecePos - 15) != pinnedPiecesSet.end())//-15
+	if (piecePos > 14 && (board[piecePos - 15] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 15) != pinnedPiecesSet.end())//-15
 		&& ((piecePos - 15) / 8 == pieceRow - 2))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 15, piecePos));
 	}
-	if (piecePos + 10 < 64 && (board[piecePos + 10] == 13) && !(pinnedPiecesSet.find(piecePos + 10) != pinnedPiecesSet.end())//10
+	if (piecePos + 10 < 64 && (board[piecePos + 10] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 10) != pinnedPiecesSet.end())//10
 		&& ((piecePos + 10) / 8 == pieceRow + 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 10, piecePos));
 	}
-	if (piecePos > 9 && (board[piecePos - 10] == 13) && !(pinnedPiecesSet.find(piecePos - 10) != pinnedPiecesSet.end())//-10
+	if (piecePos > 9 && (board[piecePos - 10] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 10) != pinnedPiecesSet.end())//-10
 		&& ((piecePos - 10) / 8 == pieceRow - 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 10, piecePos));
 	}
-	if (piecePos + 6 < 64 && (board[piecePos + 6] == 13) && !(pinnedPiecesSet.find(piecePos + 6) != pinnedPiecesSet.end())//6
+	if (piecePos + 6 < 64 && (board[piecePos + 6] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos + 6) != pinnedPiecesSet.end())//6
 		&& ((piecePos + 6) / 8 == pieceRow + 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos + 6, piecePos));
 	}
-	if (piecePos > 5 && (board[piecePos - 6] == 13) && !(pinnedPiecesSet.find(piecePos - 6) != pinnedPiecesSet.end())//-6
+	if (piecePos > 5 && (board[piecePos - 6] == 13) && !(find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), piecePos - 6) != pinnedPiecesSet.end())//-6
 		&& ((piecePos - 6) / 8 == pieceRow - 1))
 	{
 		moves.push_back(Move::getInt16FromPos(piecePos - 6, piecePos));
@@ -5559,7 +5558,7 @@ void ArrayBoard::blackBlockingMoves(vector<__int16> &moves, int piecePos, set<sh
 	int index;
 	for (size_t i = 0; i < 64; i++) //Find black sliding pieces
 	{
-		if (pinnedPiecesSet.find(i) != pinnedPiecesSet.end())
+		if (find(pinnedPiecesSet.begin(), pinnedPiecesSet.end(), i) != pinnedPiecesSet.end())
 			continue;
 		//Check whether they align with the white king
 		switch (board[i])

@@ -1,6 +1,7 @@
 #pragma once
 #include "Board.h"
 #include <set>
+#include <vector>
 
 using namespace std;
 
@@ -27,12 +28,12 @@ public:
 	bool squareAttackedByBlack(int piecePos);
 	bool squareAttackedByWhite(int piecePos);
 
-	vector<__int16> generateWhiteEvasionMoves(vector<__int16> &moves, int attackingPos, int kingPos, set<short> &pinnedPiecesSet);
+	vector<__int16> generateWhiteEvasionMoves(vector<__int16> &moves, int attackingPos, int kingPos, vector<short> &pinnedPiecesSet);
 	
-	vector<__int16> generateBlackEvasionMoves(vector<__int16> &moves, int attackingPos, int kingPos, set<short> &pinnedPiecesSet);
+	vector<__int16> generateBlackEvasionMoves(vector<__int16> &moves, int attackingPos, int kingPos, vector<short> &pinnedPiecesSet);
 
-	void whiteBlockingMoves(vector<__int16> &moves, int index, set<short> &pinnedPiecesSet);
-	void blackBlockingMoves(vector<__int16> &moves, int index, set<short> &pinnedPiecesSet);
+	void whiteBlockingMoves(vector<__int16> &moves, int index, vector<short> &pinnedPiecesSet);
+	void blackBlockingMoves(vector<__int16> &moves, int index, vector<short> &pinnedPiecesSet);
 
 	//Enpassant
 	ArrayBoard();
