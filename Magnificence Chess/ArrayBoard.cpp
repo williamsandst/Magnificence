@@ -3559,13 +3559,13 @@ bool ArrayBoard::squareAttackedByBlack(int piecePos)
 	//Method: Start with pawn, bishop, king. Use static square check
 	//Continue with sliding pieces. Check for alignment, then for direct access.
 	//Pawns
-	int pieceRow = piecePos / 8;
 	if (piecePos - 9 > -1 && board[piecePos - 9] == 11 && diagonalArray[piecePos] == diagonalArray[piecePos - 9])
 		return true;
 	else if (piecePos - 7 > -1 && board[piecePos - 7] == 11 && antiDiagonalArray[piecePos] == antiDiagonalArray[piecePos - 7])
 		return true;
 	//Knights
-	else if (piecePos + 17 < 64 && (board[piecePos + 17] == 13) //17
+	int pieceRow = piecePos / 8;
+	if (piecePos + 17 < 64 && (board[piecePos + 17] == 13) //17
 		&& ((piecePos + 17) / 8 == pieceRow + 2))
 	{
 		return true;
@@ -3987,13 +3987,13 @@ bool ArrayBoard::squareAttackedByWhite(int piecePos)
 	//Method: Start with pawn, bishop, king. Use static square check
 	//Continue with sliding pieces. Check for alignment, then for direct access.
 	//Pawns
-	int pieceRow = piecePos / 8;
 	if (piecePos + 9 < 64 && board[piecePos + 9] == 1 && diagonalArray[piecePos] == diagonalArray[piecePos + 9])
 		return true;
 	else if (piecePos + 7 < 64 && board[piecePos + 7] == 1 && antiDiagonalArray[piecePos] == antiDiagonalArray[piecePos + 7])
 		return true;
 	//Knights
-	else if (piecePos + 17 < 64 && (board[piecePos + 17] == 3) //17
+	int pieceRow = piecePos / 8;
+	if (piecePos + 17 < 64 && (board[piecePos + 17] == 3) //17
 		&& ((piecePos + 17) / 8 == pieceRow + 2))
 	{
 		return true;

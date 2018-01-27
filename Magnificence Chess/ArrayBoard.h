@@ -5,7 +5,7 @@
 
 using namespace std;
 
-class ArrayBoard : public Board
+class ArrayBoard
 {
 public:
 	__int8 board[64] = { };

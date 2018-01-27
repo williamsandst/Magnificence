@@ -16,6 +16,7 @@
 #include "Move.h"
 #include "Test.h";
 #include <ctime>
+#include "Engine.h";
 
 using namespace std;
 
@@ -47,7 +48,7 @@ int main()
 void guiInterface()
 {
 	//Settings
-	const bool CONSOLEDEBUG = true;
+	bool CONSOLEDEBUG = true;
 	//Create engine thread object
 	GameState* gameState = new GameState();
 	
@@ -67,60 +68,66 @@ void guiInterface()
 	ArrayBoard board = ArrayBoard();
 	//Standard board;
 	board = IO::convertFENtoArrayBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	//board = IO::convertFENtoArrayBoard("8/8/8/3Kr3/8/3N4/3r4/8 w - - 0 1");
-	//board = IO::convertFENtoArrayBoard("8/8/8/3Kr3/3P4/8/3r4/8 w - - 0 1");
-	//board = IO::convertFENtoArrayBoard("k6K/8/8/8/1p1p1p1p/8/PPPPPPPP/8 w - - 0 1");
-	//board = IO::convertFENtoArrayBoard("8/2ppp3/8/3K4/8/2ppp3/8/8 w - - 0 1");
-	//Wrong at ply 2! Above FEN String, probably king related
-	//board = IO::convertFENtoArrayBoard("K7/2Q1Q1Q1/8/2Q1k1Q1/8/2Q1Q1Q1/8/b7 w - - 0 1");
-	//board = IO::convertFENtoArrayBoard("k2q4/8/8/3R4/q1RKR2r/3R4/8/3r4 w - - 0 1");
-	//Kiwipete perft test
-	//board = IO::convertFENtoArrayBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-	//Third perft test
-	//board = IO::convertFENtoArrayBoard("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1");
-	//Fourth perft test
-	//board = IO::convertFENtoArrayBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
-	
-	//board = IO::convertFENtoArrayBoard("8/6R1/8/8/6B1/8/1Q6/6P1 w - - 0 1");
 	while (getline(cin, recievedCommand))
 	{
 		vector<string> splitCommand = split(recievedCommand, ' ');
 		if (CONSOLEDEBUG) //Debug commands, not used for interface!
 		{
-			if (splitCommand[0] == "test" || splitCommand[0] == "t")
+			if (splitCommand[0] == "perft" && splitCommand.size() == 2)
 			{
-				if (splitCommand[1] == "perftdivide" || splitCommand[1] == "perftdiv" || splitCommand[1] == "pdiv")
-				{
-					vector<string> dividedMoves = Test::perftDivide(board, stoi(splitCommand[2]));
-					long totalCount = 0;
-					for (size_t i = 0; i < dividedMoves.size(); i++)
-					{
-						cout << dividedMoves[i] << endl;
-						totalCount += stoi(split(dividedMoves[i], ' ')[1]);
-					}
-					cout << "Total count: " << totalCount << endl;
-
-				}
-				if (splitCommand[1] == "perft")
-				{
-					timer = clock();
-					unsigned long perftNumber = Test::recursivePerft(board, stoi(splitCommand[2]));
-					duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
-					cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber/1000000)/duration) << " MN/S]" << endl;
-				}
-				if (splitCommand[1] == "fen")
-				{
+				timer = clock();
+				unsigned long perftNumber = Test::recursivePerft(board, stoi(splitCommand[1]));
+				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
+				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000) / duration) << " MN/S]" << endl;
+			}
+			else if (splitCommand[0] == "fen")
 					cout << IO::convertBoardToFEN(board) << endl;
-				}
-				if (splitCommand[1] == "display" || splitCommand[1] == "disp")
+			else if (splitCommand[0] == "display" || splitCommand[0] == "disp")
+				cout << Test::displayBoard(board);
+			else if (splitCommand[0] == "divide")
+			{
+				vector<string> dividedMoves = Test::perftDivide(board, stoi(splitCommand[1]));
+				long totalCount = 0;
+				for (size_t i = 0; i < dividedMoves.size(); i++)
 				{
-					cout << Test::displayBoard(board);
+					cout << dividedMoves[i] << endl;
+					totalCount += stoi(split(dividedMoves[i], ' ')[1]);
 				}
-				if (splitCommand[1] == "move")
+				cout << "Total count: " << totalCount << endl;
+
+			}
+			else if (splitCommand[0] == "move" && splitCommand.size() == 2)
+			{
+				board.makeMove(IO::convertAlgToMove(splitCommand[1]));
+				board.whiteTurn = !board.whiteTurn;
+			}
+			else if (splitCommand[0] == "moves" || splitCommand[0] == "lmov" && splitCommand.size() == 2)
+			{
+				if (splitCommand[1] == "white" || splitCommand[1] == "w")
 				{
-					board.makeMove(IO::convertAlgToMove(splitCommand[2]));
-					board.whiteTurn = !board.whiteTurn;
+					vector<__int16> moves = board.generateWhiteLegalMoves();
+					cout << "Move count: " << moves.size() << endl;
+					for (size_t i = 0; i < moves.size(); i++)
+					{
+						cout << IO::convertMoveToAlg(moves[i]) << " [" <<
+							Test::pieceToString(board.board[Move::getFrom(&moves[i])]) << " to " <<
+							Test::pieceToString(board.board[Move::getTo(&moves[i])]) << "]" << endl;
+					}
 				}
+				else if (splitCommand[1] == "black" || splitCommand[1] == "b")
+				{
+					vector<__int16> moves = board.generateBlackLegalMoves();
+					cout << "Move count: " << moves.size() << endl;
+					for (size_t i = 0; i < moves.size(); i++)
+					{
+						cout << IO::convertMoveToAlg(moves[i]) << " [" <<
+							Test::pieceToString(board.board[Move::getFrom(&moves[i])]) << " to " <<
+							Test::pieceToString(board.board[Move::getTo(&moves[i])]) << "]" << endl;
+					}
+				}
+			}
+			else if (splitCommand[0] == "test" || splitCommand[0] == "t")
+			{
 				if (splitCommand[1] == "movetime")
 				{
 					timer = clock();
@@ -132,34 +139,6 @@ void guiInterface()
 					duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 					cout << splitCommand[2] << " moves generated in " << duration << endl;
 					//board.makeMove(IO::convertAlgToMove(splitCommand[2]));
-				}
-				if (splitCommand[1] == "legalmoves" || splitCommand[1] == "lmov")
-				{
-					if (splitCommand.size() > 2)
-					{
-						if (splitCommand[2] == "white" || splitCommand[2] == "w")
-						{
-							vector<__int16> moves = board.generateWhiteLegalMoves();
-							cout << "Move count: " << moves.size() << endl;
-							for (size_t i = 0; i < moves.size(); i++)
-							{
-								cout << IO::convertMoveToAlg(moves[i]) << " [" <<
-									Test::pieceToString(board.board[Move::getFrom(&moves[i])]) << " to " <<
-									Test::pieceToString(board.board[Move::getTo(&moves[i])]) << "]" << endl;
-							}
-						}
-						else if (splitCommand[2] == "black" || splitCommand[2] == "b")
-						{
-							vector<__int16> moves = board.generateBlackLegalMoves();
-							cout << "Move count: " << moves.size() << endl;
-							for (size_t i = 0; i < moves.size(); i++)
-							{
-								cout << IO::convertMoveToAlg(moves[i]) << " [" <<
-									Test::pieceToString(board.board[Move::getFrom(&moves[i])]) << " to " <<
-									Test::pieceToString(board.board[Move::getTo(&moves[i])]) << "]" << endl;
-							}
-						}
-					}
 				}
 				if (splitCommand[1] == "whiteattack")
 				{
@@ -210,8 +189,9 @@ void guiInterface()
 		}
 		if (recievedCommand == "uci")
 		{
+			CONSOLEDEBUG = false;
 			cout << "id name Magnificence" << endl;
-			cout << "id author HarWil" << endl;
+			cout << "id author William" << endl;
 			cout << "uciok" << endl;
 		}
 		else if (recievedCommand == "quit")
@@ -223,10 +203,31 @@ void guiInterface()
 		{
 
 		}
-
-		if (recievedCommand.substr(0, 23) == "position startpos moves ") 
+		else if (splitCommand[0] == "position" && splitCommand[1] == "startpos") 
 		{
-
+			board = IO::convertFENtoArrayBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+			if (splitCommand.size() > 2 && splitCommand[2] == "moves")
+			{
+				for (size_t i = 3; i < splitCommand.size(); i++)
+				{
+					board.makeMove(IO::convertAlgToMove(splitCommand[i]));
+				}
+			}
+		}
+		else if (splitCommand[0] == "position")
+		{
+			string fen = splitCommand[1] + " " + splitCommand[2] + " " + splitCommand[3]
+				+ " " + splitCommand[4] + " " + splitCommand[5] + " " + splitCommand[6];
+			board = IO::convertFENtoArrayBoard(fen);
+			if (splitCommand[7] == "moves")
+			{
+				for (size_t i = 8; i < splitCommand.size(); i++)
+				{
+					board.totalPly++;
+					board.whiteTurn = !board.whiteTurn;
+					board.makeMove(IO::convertAlgToMove(splitCommand[i]));
+				}
+			}
 		}
 		else if (splitCommand[0] == "setboard")
 		{
@@ -236,12 +237,21 @@ void guiInterface()
 		{
 
 		}
-		else if (recievedCommand.substr(0, 3) == "go ") {
+		else if (splitCommand[0] == "go") {
 			// Received command in this format: "go wtime 300000 btime 300000 winc 0 binc 0"
-			cout << "bestmove " << char(105 - flag) << "7" << char(105 - flag) << "5" << endl;
 			//Output format: "bestmove h7h5"
-			flag++; //increase flag to move other pawn on next turn
-			//gameState->idle = !(gameState->idle);
+			if (splitCommand.size() > 1 && (isdigit(splitCommand[1][0]) != 0))
+				gameState->maxDepth = stoi(splitCommand[1]);
+			gameState->board = board;
+			gameState->idle = !(gameState->idle);
+		}
+		else if (recievedCommand == "isready")
+		{
+			cout << "readyok" << endl;
+		}
+		else if (recievedCommand == "stop")
+		{
+			//Stop the engine
 		}
 	}
 	gameState->run = false;
@@ -253,12 +263,15 @@ void guiInterface()
 //More variables can be added to gamestate if necessary.
 void runEngine(GameState* gameState)
 {
+	Engine engine = Engine();
 	while (gameState->run)
 	{
 		this_thread::sleep_for(chrono::milliseconds(1));
 		while (!gameState->idle)
 		{
-			cout << "Test";
+			gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
+			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
+			gameState->idle = true;
 		}
 	}
 }

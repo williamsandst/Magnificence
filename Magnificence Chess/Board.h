@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include "ArrayBoard.h"
 
 using namespace std;
 
