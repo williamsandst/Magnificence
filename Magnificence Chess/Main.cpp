@@ -21,14 +21,116 @@ void guiInterface();
 
 void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
 //Sample for Debug: DebugWrite(L"Hello World!")
-
+int cnt = 0;
 //Sent 
+
+void seePos(BitBoard *bb)
+{
+	for (int i = 7; i >= 0; i--)
+	{
+		cout << "\n";
+		for (int i2 = 7; i2 > -1; i2--)
+		{
+			u32 index = i2 + i * 8;
+			if ((!(bb->Pieces[bb->mailBox[index]] & (bb->one << index))) && bb->mailBox[index] != 14)
+			{
+				cout << "t";
+			}
+			else
+			{
+				char out;
+				switch (bb->mailBox[index])
+				{
+				case 14:
+					out = ' ';
+					break;
+				case 5:
+					out = 'P';
+					break;
+				case 12:
+					out = 'p';
+					break;
+				case 4:
+					out = 'N';
+					break;
+				case 11:
+					out = 'n';
+					break;
+				case 3:
+					out = 'R';
+					break;
+				case 10:
+					out = 'r';
+					break;
+				case 2:
+					out = 'B';
+					break;
+				case 9:
+					out = 'b';
+					break;
+				case 1:
+					out = 'Q';
+					break;
+				case 8:
+					out = 'q';
+					break;
+				case 0:
+					out = 'K';
+					break;
+				case 7:
+					out = 'k';
+					break;
+				default:
+					out = 'w';
+					break;
+				}
+				cout << out;
+			}
+		}
+	}
+	cout << "\n________" << endl;
+}
+
+void tester(int depth, BitBoard *bb, bool color, int startDepth)
+{
+	if (depth > 0)
+	{
+		if (depth == startDepth - 1)
+		{
+			cnt++;
+		}
+		depth--;
+		vector<u32> moves;
+		if (color)
+		{
+			moves = bb->WhiteLegalMoves();
+		}
+		else
+		{
+			moves = bb->BlackLegalMoves();
+		}
+		for each (u32 move in moves)
+		{
+			bb->MakeMove(move);
+			tester(depth, bb, !color, startDepth);
+			bb->UnMakeMove(move);
+		}
+	}
+}
 
 int main()
 {
-	DebugWrite(L"Program started");
-	guiInterface();
-	DebugWrite(L"Program terminated");
+	BitBoard *bb = new BitBoard("4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - -");
+	seePos(bb);
+	cout << "\nWhite legal Moves " << bb->WhiteLegalMoves().size() << "\nBlack legal Moves " << bb->BlackLegalMoves().size() << endl;
+	tester(7, bb, true, 7);
+	cout << cnt;
+	seePos(bb);
+	string returned;
+	cin >> returned;
+	//DebugWrite(L"Program started");
+	//guiInterface();
+	//DebugWrite(L"Program terminated");
     return 0;
 }
 
