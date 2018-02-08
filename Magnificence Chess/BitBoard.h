@@ -3,6 +3,8 @@
 #include "Board.h"
 #include <cstdlib>
 #include <intrin.h>
+#include <iostream>
+#include <string>
 
 typedef unsigned long long int u64;
 typedef unsigned long int u32;
@@ -23,6 +25,8 @@ public:
 	};
 	BitBoard();
 	~BitBoard();
+	inline void RemovePiece(u8 pos);
+	inline void AddPiece(u8 pos, u8 piece);
 	BitBoard(string fen);
 	void SetState(string fen);
 	const u64 one = 1, universal = 0xffffffffffffffff;
@@ -46,68 +50,15 @@ public:
 	void SetUp();
 	vector<u32> WhiteLegalMoves();
 	vector<u32> BlackLegalMoves();
-	void MakeMove(u32 move);
+	int MakeMove(u32 move);
 	void UnMakeMove(u32 move);
-	u64 MagicRook(u64 piece, u64 occupancy)
+	inline u64 MagicRook(u64 piece, u64 occupancy);
+	inline u64 MagicBishop(u64 piece, u64 occupancy);
+	inline void extractMoves(u64 moves, u32 start, vector<u32> *out);
+	inline void extractPawnMoves(u64 moves, u32 start, vector<u32> *out);
+	u8 pc(u64 valeu)
 	{
-		u32 Index = 0;
-		_BitScanForward64(&Index, piece);
-		return MRook[Index].table[_pext_u64(occupancy & MRook[Index].mask, MRook[Index].mask)];
-	}
-	u64 MagicBishop(u64 piece, u64 occupancy)
-	{
-		u32 index;
-		_BitScanForward64(&index, piece);
-		return MBishop[index].table[_pext_u64(occupancy, MBishop[index].mask)];
-	}
-	inline void extractMoves(u64 moves, u32 start, vector<u32> *out)
-	{
-		u32 move, index;
-		while (moves)
-		{
-			_BitScanForward64(&index, moves);
-			move = start | (index << 6);
-			if (mailBox[index] < 14)
-			{
-				move |= (mailBox[index] << 28) | 0b00001000000000000000000000000000;
-			}
-			else
-			{
-				move |= ((u32)14) << 28;
-			}
-			out->push_back(move);
-			moves &= moves - 1;
-		}
-	}
-	inline void extractPawnMoves(u64 moves, u32 start, vector<u32> *out)
-	{
-		u32 move, index;
-		while (moves)
-		{
-			_BitScanForward64(&index, moves);
-			move = start | (index << 6) | (one << 27);
-			if (mailBox[index] < 14)
-			{
-				move |= (mailBox[index] << 28);
-			}
-			else
-			{
-				move |= ((u32)14) << 28;
-			}
-			if (index < 8 || index > 55)
-			{
-				move |= one << 26;
-				for (u32 i = 1; i < 5; i++)
-				{
-					out->push_back(move | (i << 22));
-				}
-			}
-			else
-			{
-				out->push_back(move);
-			}
-			moves &= moves - 1;
-		}
+		return (u8)(__popcnt64(valeu));
 	}
 private:
 	void allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64> *out)
