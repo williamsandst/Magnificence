@@ -24,6 +24,8 @@ string Test::displayBoard(ArrayBoard board)
 
 }
 
+
+
 long Test::recursivePerft(ArrayBoard board, int depth)
 {
 	long nodes = 0;
@@ -36,11 +38,10 @@ long Test::recursivePerft(ArrayBoard board, int depth)
 	if (depth == 1) return moves.size();
 	board.totalPly++;
 	board.whiteTurn = !board.whiteTurn;
-	//Comment this out to skip bulk counting, can be considered cheating?
 	for (int i = 0; i < moves.size(); i++)
 	{
 		ArrayBoard boardCopy = ArrayBoard(board);
-		boardCopy.makeMove(moves[i]);
+		boardCopy.makeMoveFixed(moves[i]);
 		nodes += recursivePerft(boardCopy, depth - 1);
 	}
 

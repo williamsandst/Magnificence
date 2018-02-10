@@ -66,8 +66,10 @@ void guiInterface()
 	double duration;
 	
 	ArrayBoard board = ArrayBoard();
+	TranspositionTable tTable = TranspositionTable();
 	//Standard board;
 	board = IO::convertFENtoArrayBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	//board = IO::convertFENtoArrayBoard("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
 	while (getline(cin, recievedCommand))
 	{
 		vector<string> splitCommand = split(recievedCommand, ' ');
@@ -98,8 +100,9 @@ void guiInterface()
 			}
 			else if (splitCommand[0] == "move" && splitCommand.size() == 2)
 			{
-				board.makeMove(IO::convertAlgToMove(splitCommand[1]));
 				board.whiteTurn = !board.whiteTurn;
+				board.makeMoveFixed(IO::convertAlgToMove(splitCommand[1]));
+				cout << "Zobrist key: " << board.zobristKey << endl;;
 			}
 			else if (splitCommand[0] == "moves" || splitCommand[0] == "lmov" && splitCommand.size() == 2)
 			{
@@ -184,6 +187,11 @@ void guiInterface()
 							Test::pieceToString(board.board[Move::getFrom(&moves[i])]) << " to " <<
 							Test::pieceToString(board.board[Move::getTo(&moves[i])]) << "]" << endl;
 					}
+				}
+				if (splitCommand[1] == "zobrist")
+				{
+					board.zobristKey = tTable.getZobristKey(&board);
+					cout << "Zobrist key: " << to_string(board.zobristKey) << endl;
 				}
 			}
 		}

@@ -5,6 +5,7 @@
 #include "Move.h"
 #include <iostream>
 #include <set>
+#include "TranspositionTable.h"
 
 //Data values for board array
 //White:
@@ -45,6 +46,245 @@ const short antiDiagonalArray[64] =
 };
 
 
+void ArrayBoard::makeMoveFixed(__int16 move)
+{
+	//En passant
+	if (enPassantSquare > -1)
+	{
+		if (enPassantSquare == Move::getTo(&move))
+		{
+			if (board[Move::getFrom(&move)] == 1) //White pawn
+			{
+				//If white pawn is performing en passant, delete pawn behind the square
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getTo(&move) + 8] = 0;
+				board[Move::getFrom(&move)] = 0;
+				enPassantSquare = -1;
+				return;
+			}
+			else if (board[Move::getFrom(&move)] == 11) //Black pawn
+			{
+				//If black pawn is performing en passant, delete pawn in front the square
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getTo(&move) - 8] = 0;
+				board[Move::getFrom(&move)] = 0;
+				enPassantSquare = -1;
+				return;
+			}
+		}
+		enPassantSquare = -1;
+	}
+
+	//Castling and king moves
+	if (castlingWhiteKingSide || castlingWhiteQueenSide)
+	{
+		if (castlingBlackKingSide || castlingBlackQueenSide)
+		{
+			if (board[Move::getTo(&move)] == 2)
+			{
+				if (Move::getTo(&move) == 63)
+					castlingWhiteKingSide = false;
+				else if (Move::getTo(&move) == 56)
+					castlingWhiteQueenSide = false;
+			}
+			else if (board[Move::getTo(&move)] == 12)
+			{
+				if (Move::getTo(&move) == 7)
+					castlingBlackKingSide = false;
+				else if (Move::getTo(&move) == 0)
+					castlingBlackQueenSide = false;
+			}
+		}
+		//King, castle or stop castling if applicable
+		if (board[Move::getFrom(&move)] == 6) //Trying to move king
+		{
+			if (Move::getFrom(&move) == 60) //Is the king in starting postion?
+			{
+				if (Move::getTo(&move) == 62) //King side
+				{
+					//Perform castling
+					board[60] = 0;
+					board[61] = 2;
+					board[62] = 6;
+					board[63] = 0;
+					castlingWhiteKingSide = false;
+					castlingWhiteQueenSide = false;
+					return;
+				} //Trying to king-side castle
+				else if (Move::getTo(&move) == 58) //Queen side
+				{
+					//Perform castling
+					board[60] = 0;
+					board[59] = 2;
+					board[58] = 6;
+					board[56] = 0;
+					castlingWhiteKingSide = false;
+					castlingWhiteQueenSide = false;
+					return;
+				} //Queenside castling
+			}
+			//If white king is moving, castling can no longer be performed
+			castlingWhiteKingSide = false;
+			castlingWhiteQueenSide = false;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			return;
+		}
+		//Rook moving, stop castling if applicable
+		if (board[Move::getFrom(&move)] == 2) //White rook
+		{
+			if (Move::getFrom(&move) == 63) //White kingside rook is moving, disable kingside castling
+			{
+				castlingWhiteKingSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+			if (Move::getFrom(&move) == 56) //White queenside rook is moving, disable queenside castling
+			{
+				castlingWhiteQueenSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+		}
+
+		if (board[Move::getTo(&move)] == 2)
+		{
+			if (Move::getTo(&move) == 63) //White kingside rook is moving, disable kingside castling
+			{
+				castlingWhiteKingSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+			if (Move::getTo(&move) == 56) //White kingside rook is moving, disable kingside castling
+			{
+				castlingWhiteQueenSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+		}
+	}
+	if (castlingBlackKingSide || castlingBlackQueenSide)
+	{
+		//King, castle or stop castling if applicable
+		if (board[Move::getFrom(&move)] == 16) //Check if the black king is moving
+		{
+			if (Move::getFrom(&move) == 4) //Is black king in starting postion? Black castling check
+			{
+				if (Move::getTo(&move) == 6) //King side
+				{
+					//Perform castling
+					board[4] = 0;
+					board[5] = 12;
+					board[6] = 16;
+					board[7] = 0;
+					castlingBlackKingSide = false;
+					castlingBlackQueenSide = false;
+					return;
+				}
+				else if (Move::getTo(&move) == 2) //Queen side
+				{
+					//Perform castling
+					board[4] = 0;
+					board[3] = 12;
+					board[2] = 16;
+					board[0] = 0;
+					castlingBlackKingSide = false;
+					castlingBlackQueenSide = false;
+					return;
+				}
+			}
+			//If black king is moving, castling can no longer be performed
+			castlingBlackKingSide = false;
+			castlingBlackQueenSide = false;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			return;
+		}
+		//Rook moving, stop castling if applicable
+		if (board[Move::getFrom(&move)] == 12) //Black rook
+		{
+			if (Move::getFrom(&move) == 7) //Black kingside rook is moving, disable kingside castling
+			{
+				castlingBlackKingSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+			if (Move::getFrom(&move) == 0) //Black queenside rook is moving, disable queenside castling
+			{
+				castlingBlackQueenSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+		}
+		//If rook that can castle is being taken, castling must be cancelled
+		if (board[Move::getTo(&move)] == 12)
+		{
+			if (Move::getTo(&move) == 7) //White kingside rook is moving, disable kingside castling
+			{
+				castlingBlackKingSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+			if (Move::getTo(&move) == 0) //White kingside rook is moving, disable kingside castling
+			{
+				castlingBlackQueenSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				return;
+			}
+		}
+	}
+
+	//Specific piece rules
+	//Moving rooks stops castling
+
+	//Pawn (promotion and en passant square)
+	if (board[Move::getFrom(&move)] == 1) //White pawn
+	{
+		if (Move::getTo(&move) + 16 == Move::getFrom(&move)) //Double move, add en passant square
+		{
+			enPassantSquare = Move::getTo(&move) + 8;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			return;
+		}
+		else if (Move::getTo(&move) < 8) //Last line, promotion
+		{
+			board[Move::getFrom(&move)] = 0;
+			board[Move::getTo(&move)] = Move::getPromotion(move) + 2; //Currently automaticly a queen, fix later
+			return;
+		}
+	}
+	else if (board[Move::getFrom(&move)] == 11) //Black pawn
+	{
+		if (Move::getTo(&move) == Move::getFrom(&move) + 16) //Double move, add en passant square
+		{
+			enPassantSquare = Move::getFrom(&move) + 8;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			return;
+		}
+		if (Move::getTo(&move) > 55) //First line, promotion
+		{
+			board[Move::getFrom(&move)] = 0;
+			board[Move::getTo(&move)] = Move::getPromotion(move) + 12;
+			return;
+		}
+	}
+
+
+	board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+	board[Move::getFrom(&move)] = 0;
+	return;
+}
+
 void ArrayBoard::makeMove(__int16 move)
 {
 	//En passant
@@ -77,7 +317,7 @@ void ArrayBoard::makeMove(__int16 move)
 	//Castling and king moves
 	if (castlingWhiteKingSide || castlingWhiteQueenSide)
 	{
-		if (castlingBlackKingSide || castlingBlackKingSide)
+		if (castlingBlackKingSide || castlingBlackQueenSide)
 		{
 			if (board[Move::getTo(&move)] == 2)
 			{
@@ -244,6 +484,250 @@ void ArrayBoard::makeMove(__int16 move)
 	}
 	
 
+	board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+	board[Move::getFrom(&move)] = 0;
+	return;
+}
+
+void ArrayBoard::makeMove(__int16 move, TranspositionTable * transpositionTable)
+{
+	//En passant
+	if (enPassantSquare > -1)
+	{
+		if (enPassantSquare == Move::getTo(&move))
+		{
+			if (board[Move::getFrom(&move)] == 1) //White pawn
+			{
+				//If white pawn is performing en passant, delete pawn behind the square
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getTo(&move) + 8] = 0;
+				board[Move::getFrom(&move)] = 0;
+				enPassantSquare = -1;
+				zobristKey = transpositionTable->getZobristKey(this);
+				return;
+			}
+			else if (board[Move::getFrom(&move)] == 11) //Black pawn
+			{
+				//If black pawn is performing en passant, delete pawn in front the square
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getTo(&move) - 8] = 0;
+				board[Move::getFrom(&move)] = 0;
+				enPassantSquare = -1;
+				zobristKey = transpositionTable->getZobristKey(this);
+				return;
+			}
+		}
+		enPassantSquare = -1;
+		whiteTurn = !whiteTurn;
+		zobristKey = transpositionTable->getZobristKey(this);
+		whiteTurn = !whiteTurn;
+	}
+
+	//Castling and king moves
+	if (castlingWhiteKingSide || castlingWhiteQueenSide)
+	{
+		if (castlingBlackKingSide || castlingBlackKingSide)
+		{
+			if (board[Move::getTo(&move)] == 2)
+			{
+				if (Move::getTo(&move) == 63)
+				{
+					castlingWhiteKingSide = false;
+					whiteTurn = !whiteTurn;
+					zobristKey = transpositionTable->getZobristKey(this);
+					whiteTurn = !whiteTurn;
+				}
+				else if (Move::getTo(&move) == 56)
+				{
+					castlingWhiteQueenSide = false;
+					whiteTurn = !whiteTurn;
+					zobristKey = transpositionTable->getZobristKey(this);
+					whiteTurn = !whiteTurn;
+				}
+			}
+			else if (board[Move::getTo(&move)] == 12)
+			{
+				if (Move::getTo(&move) == 7)
+				{
+					castlingBlackKingSide = false;
+					whiteTurn = !whiteTurn;
+					zobristKey = transpositionTable->getZobristKey(this);
+					whiteTurn = !whiteTurn;
+				}
+				else if (Move::getTo(&move) == 0)
+				{
+					castlingBlackQueenSide = false;
+					whiteTurn = !whiteTurn;
+					zobristKey = transpositionTable->getZobristKey(this);
+					whiteTurn = !whiteTurn;
+				}
+			}
+		}
+		//King, castle or stop castling if applicable
+		if (board[Move::getFrom(&move)] == 6) //Trying to move king
+		{
+			if (Move::getFrom(&move) == 60) //Is the king in starting postion?
+			{
+				if (Move::getTo(&move) == 62) //King side
+				{
+					//Perform castling
+					board[60] = 0;
+					board[61] = 2;
+					board[62] = 6;
+					board[63] = 0;
+					castlingWhiteKingSide = false;
+					castlingWhiteQueenSide = false;
+					zobristKey = transpositionTable->getZobristKeySwitchSide(this);
+					return;
+				} //Trying to king-side castle
+				else if (Move::getTo(&move) == 58) //Queen side
+				{
+					//Perform castling
+					board[60] = 0;
+					board[59] = 2;
+					board[58] = 6;
+					board[56] = 0;
+					castlingWhiteKingSide = false;
+					castlingWhiteQueenSide = false;
+					zobristKey = transpositionTable->getZobristKeySwitchSide(this);
+					return;
+				} //Queenside castling
+			}
+			//If white king is moving, castling can no longer be performed
+			castlingWhiteKingSide = false;
+			castlingWhiteQueenSide = false;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			zobristKey = transpositionTable->getZobristKey(this);
+			return;
+		}
+		//Rook moving, stop castling if applicable
+		if (board[Move::getFrom(&move)] == 2) //White rook
+		{
+			if (Move::getFrom(&move) == 63) //White kingside rook is moving, disable kingside castling
+			{
+				castlingWhiteKingSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				zobristKey = transpositionTable->getZobristKey(this);
+				return;
+			}
+			if (Move::getFrom(&move) == 56) //White queenside rook is moving, disable queenside castling
+			{
+				castlingWhiteQueenSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				zobristKey = transpositionTable->getZobristKey(this);
+				return;
+			}
+		}
+	}
+	if (castlingBlackKingSide || castlingBlackQueenSide)
+	{
+		//King, castle or stop castling if applicable
+		if (board[Move::getFrom(&move)] == 16) //Check if the black king is moving
+		{
+			if (Move::getFrom(&move) == 4) //Is black king in starting postion? Black castling check
+			{
+				if (Move::getTo(&move) == 6) //King side
+				{
+					//Perform castling
+					board[4] = 0;
+					board[5] = 12;
+					board[6] = 16;
+					board[7] = 0;
+					castlingBlackKingSide = false;
+					castlingBlackQueenSide = false;
+					zobristKey = transpositionTable->getZobristKey(this);
+					return;
+				}
+				else if (Move::getTo(&move) == 2) //Queen side
+				{
+					//Perform castling
+					board[4] = 0;
+					board[3] = 12;
+					board[2] = 16;
+					board[0] = 0;
+					castlingBlackKingSide = false;
+					castlingBlackQueenSide = false;
+					zobristKey = transpositionTable->getZobristKey(this);
+					return;
+				}
+			}
+			//If black king is moving, castling can no longer be performed
+			castlingBlackKingSide = false;
+			castlingBlackQueenSide = false;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			zobristKey = transpositionTable->getZobristKey(this);
+			return;
+		}
+		//Rook moving, stop castling if applicable
+		if (board[Move::getFrom(&move)] == 12) //Black rook
+		{
+			if (Move::getFrom(&move) == 7) //Black kingside rook is moving, disable kingside castling
+			{
+				castlingBlackKingSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				zobristKey = transpositionTable->getZobristKey(this);
+				return;
+			}
+			if (Move::getFrom(&move) == 0) //Black queenside rook is moving, disable queenside castling
+			{
+				castlingBlackQueenSide = false;
+				board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+				board[Move::getFrom(&move)] = 0;
+				zobristKey = transpositionTable->getZobristKey(this);
+				return;
+			}
+		}
+		//If rook that can castle is being taken, castling must be cancelled
+	}
+
+	//Specific piece rules
+	//Moving rooks stops castling
+
+	//Pawn (promotion and en passant square)
+	if (board[Move::getFrom(&move)] == 1) //White pawn
+	{
+		if (Move::getTo(&move) + 16 == Move::getFrom(&move)) //Double move, add en passant square
+		{
+			enPassantSquare = Move::getTo(&move) + 8;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			zobristKey = transpositionTable->getZobristKey(this);
+			return;
+		}
+		else if (Move::getTo(&move) < 8) //Last line, promotion
+		{
+			board[Move::getFrom(&move)] = 0;
+			board[Move::getTo(&move)] = Move::getPromotion(move) + 2; //Currently automaticly a queen, fix later
+			zobristKey = transpositionTable->getZobristKey(this);
+			return;
+		}
+	}
+	else if (board[Move::getFrom(&move)] == 11) //Black pawn
+	{
+		if (Move::getTo(&move) == Move::getFrom(&move) + 16) //Double move, add en passant square
+		{
+			enPassantSquare = Move::getFrom(&move) + 8;
+			board[Move::getTo(&move)] = board[Move::getFrom(&move)];
+			board[Move::getFrom(&move)] = 0;
+			zobristKey = transpositionTable->getZobristKey(this);
+			return;
+		}
+		if (Move::getTo(&move) > 55) //First line, promotion
+		{
+			board[Move::getFrom(&move)] = 0;
+			board[Move::getTo(&move)] = Move::getPromotion(move) + 12;
+			zobristKey = transpositionTable->getZobristKey(this);
+			return;
+		}
+	}
+
+	zobristKey = transpositionTable->updateZobristKey(zobristKey, Move::getFrom(&move), board[Move::getFrom(&move)],
+		Move::getTo(&move), board[Move::getTo(&move)]);
 	board[Move::getTo(&move)] = board[Move::getFrom(&move)];
 	board[Move::getFrom(&move)] = 0;
 	return;
@@ -5917,6 +6401,7 @@ ArrayBoard::ArrayBoard(const ArrayBoard &copy) //Deep copy
 	enPassantSquare = copy.enPassantSquare;
 	totalPly = copy.totalPly;
 	whiteTurn = copy.whiteTurn;
+	zobristKey = copy.zobristKey;
 }
 
 ArrayBoard::ArrayBoard(string fenString)

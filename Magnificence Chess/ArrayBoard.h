@@ -2,6 +2,8 @@
 #include "Board.h"
 #include <set>
 #include <vector>
+class TranspositionTable;
+#include "TranspositionTable.h";
 
 using namespace std;
 
@@ -17,11 +19,19 @@ public:
 	unsigned __int8 totalPly = 1;
 	unsigned __int8 drawCounter = 0;
 	__int8 enPassantSquare = -1;
+	unsigned long long zobristKey;
 	ArrayBoard(string fenString);
-	void makeMoveBlack(__int16 move);
+
+	void makeMoveFixed(__int16 move);
+
 	void makeMoveWhite(__int16 move);
+
 	void makeMove(__int16 move);
+
+	void makeMove(__int16 move, TranspositionTable * transTable);
+
 	void undoMove(__int16 move);
+
 	vector<__int16> generateWhiteLegalMoves();
 	vector<__int16> generateBlackLegalMoves();
 

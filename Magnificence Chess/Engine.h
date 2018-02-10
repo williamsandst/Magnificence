@@ -13,11 +13,15 @@ public:
 
 	int alphaBeta(ArrayBoard board, int alpha, int beta, short depth, short ply, short maxDepth, __int16 triangularPVTable[], short pvIndex);
 
+	int alphaBetaTT(ArrayBoard board, int alpha, int beta, short depth, short ply, short maxDepth, __int16 triangularPVTable[], short pvIndex, TranspositionTable * transpositionTable);
+
 	vector<__int16> startSearch(ArrayBoard board, int timeLeft, int maxDepth);
 
 	Engine();
 	~Engine();
 private:
+	TranspositionTable transpositionTable = TranspositionTable();
+
 	void movcpy(__int16* pTarget, const __int16* pSource, int n);
 	//Transposition table
 	//Values
