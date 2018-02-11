@@ -11,11 +11,13 @@
 string Test::displayBoard(BitBoard board)
 {
 	string boardString = "\n";
+	int c = 63;
 	for (size_t y = 0; y < 8; y++)
 	{
 		for (size_t x = 0; x < 8; x++)
 		{
-			boardString += pieceToChar(board.mailBox[(7-y) * 8 + x]);
+			boardString += pieceToChar(board.mailBox[c]);
+			c--;
 		}
 		boardString += "\n";
 	}

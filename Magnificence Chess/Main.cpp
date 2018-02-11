@@ -89,7 +89,7 @@ void guiInterface()
 			{
 				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
 				timer = clock();
-				unsigned long perftNumber = Test::perft(stoi(splitCommand[1]), &board, color, start);
+				u64 perftNumber = Test::perft(stoi(splitCommand[1]), &board, color, start);
 				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
 				delete[] start;
