@@ -799,12 +799,6 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		legalTargets = 0, ownPieces = Pieces[6], king = Pieces[0],
 		nOccupancy = ~occupancy;
 	int checks = 0;
-	if (king == 0)
-	{
-		*MoveInsert = 1;
-		MoveInsert++;
-		return MoveInsert;
-	}
 	//Find checks and pinned pieces and king moves
 	{
 		//pawns
@@ -1187,12 +1181,6 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		legalTargets = 0, ownPieces = Pieces[13], king = Pieces[7],
 		nOccupancy = ~occupancy;
 	int checks = 0;
-	if (king == 0)
-	{
-		*MoveInsert = 1;
-		MoveInsert++;
-		return MoveInsert;
-	}
 	//Find checks and pinned pieces
 	{
 		//pawns

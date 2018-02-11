@@ -2,8 +2,6 @@
 #include <string>
 #include "Board.h"
 #include "BitBoard.h"
-#include "ArrayBoard.h"
-#include <string>
 
 using namespace std;
 
@@ -13,15 +11,14 @@ using namespace std;
 class IO
 {
 public:
-	static string convertMoveToAlg(__int16 move);
-	static __int16 convertAlgToMove(string alg);
+	static string convertMoveToAlg(u32 move);
+	static u32 convertAlgToMove(string alg);
 
-	static string convertBoardToFEN(BitBoard board);
-	static string convertBoardToFEN(ArrayBoard board);
+	static string convertBoardToFEN(BitBoard board, bool color);
+	//Returns mailbox as pointer
+	static int * convertFENtoBoard(string fenString);
 
-	static BitBoard convertFENtoBitBoard(string fenString);
-	static ArrayBoard convertFENtoArrayBoard(string fenString);
-	static string displayBoard(ArrayBoard board);
+	static string displayBoard(BitBoard board);
 private:
 	IO();
 	~IO();

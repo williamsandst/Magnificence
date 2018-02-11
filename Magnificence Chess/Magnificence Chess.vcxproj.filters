@@ -37,6 +37,12 @@
     <Filter Include="Header Files\Logic">
       <UniqueIdentifier>{362db2cb-71a1-45af-9eb9-0b7b4c1c5dc1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Testing">
+      <UniqueIdentifier>{59015002-7832-4408-b01b-d1725efc7901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Testing">
+      <UniqueIdentifier>{f2984164-7ca5-4040-bb09-9585052c4118}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -69,8 +75,8 @@
     <ClInclude Include="MoveLogic.h">
       <Filter>Header Files\Logic</Filter>
     </ClInclude>
-    <ClInclude Include="ArrayBoard.h">
-      <Filter>Header Files\Board</Filter>
+    <ClInclude Include="Test.h">
+      <Filter>Header Files\Testing</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -101,8 +107,8 @@
     <ClCompile Include="MoveLogic.cpp">
       <Filter>Source Files\Logic</Filter>
     </ClCompile>
-    <ClCompile Include="ArrayBoard.cpp">
-      <Filter>Source Files\Board</Filter>
+    <ClCompile Include="Test.cpp">
+      <Filter>Source Files\Testing</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
