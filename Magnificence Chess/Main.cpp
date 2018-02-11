@@ -17,7 +17,7 @@
 #include "Test.h";
 
 string commandList =
-"\n Command list for Magnificence Chess Engine Development Build \n"
+"\nCommand list for Magnificence Chess Engine Development Build \n"
 "disp			Display the board\n"
 "move	<MOVE>		Perform a move\n"
 "perft	<DEPTH>		Calculate the perft score for current position\n"
@@ -74,7 +74,10 @@ void guiInterface()
 	cout << "Magic tables complete." << endl << endl;
 	
 	cout << "For help, type 'help'." << endl << endl;
+
+	cout << "mgnf: ";
 	bool color = true;
+
 	while (getline(cin, recievedCommand))
 	{
 		vector<string> splitCommand = split(recievedCommand, ' ');
@@ -89,8 +92,8 @@ void guiInterface()
 				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
 			}
-			//else if (splitCommand[0] == "fen")
-				//cout << IO::convertBoardToFEN(board) << endl;
+			else if (splitCommand[0] == "fen")
+				cout << IO::convertBoardToFEN(board, color) << endl;
 			else if (splitCommand[0] == "display" || splitCommand[0] == "disp")
 				cout << Test::displayBoard(board);
 			else if (splitCommand[0] == "divide" && splitCommand.size() == 2)
@@ -130,7 +133,7 @@ void guiInterface()
 					}
 				}
 			}
-			else if (splitCommand[0] == "test" || splitCommand[0] == "t" && splitCommand.size() == 2)
+			else if (splitCommand[0] == "test" || splitCommand[0] == "t" && splitCommand.size() > 2)
 			{
 				if (splitCommand[1] == "movetime" && splitCommand.size() == 3)
 				{
@@ -141,9 +144,14 @@ void guiInterface()
 						board.WhiteLegalMoves();
 					}
 					duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
-					cout << splitCommand[2] << " moves generated in " << duration << endl;
+					cout << splitCommand[2] << " moves generated in " << duration << " s" << endl;
 				}
 			}
+			else
+			{
+				cout << "Unknown command. Type 'help' for a list of commands." << endl;
+			}
+			cout << "mgnf: ";
 		}
 		if (recievedCommand == "uci")
 		{

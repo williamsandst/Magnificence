@@ -20,8 +20,8 @@ string IO::convertMoveToAlg(u32 move)
 
 u32 IO::convertAlgToMove(string alg)
 {
-	int a = 63-((8 - (alg[1] - '0')) * 8 + (alg[0] - 'a'));
-	int b = (63-((8 - (alg[3] - '0')) * 8 + (alg[2] - 'a'))) << 6;
+	int a = (alg[1] - '0' - 1) * 8 + (alg[0] - 'a');
+	int b = ((alg[3] - '0' - 1) * 8 + (alg[2] - 'a')) << 6;
 	return (a | b);
 }
 
@@ -32,11 +32,11 @@ string IO::convertBoardToFEN(BitBoard board, bool color)
 	string fenString;
 	int emptyCounter = 0;
 	//Positions
-	for (int y = 0; y < 8; y++)
+	for (int y = 7; y > -1; y--)
 	{
 		for (int x = 0; x < 8; x++)
 		{
-			if (emptyCounter != 0 && board.mailBox[y * 8 + x] != 0)
+			if (emptyCounter != 0 && board.mailBox[y * 8 + x] != 14)
 			{
 				fenString += to_string(emptyCounter);
 				emptyCounter = 0;
@@ -89,7 +89,7 @@ string IO::convertBoardToFEN(BitBoard board, bool color)
 			fenString += to_string(emptyCounter);
 			emptyCounter = 0;
 		}
-		if (y != 7)
+		if (y != 1)
 			fenString += '/';
 	}
 	fenString += " ";
