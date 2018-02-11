@@ -22,8 +22,13 @@ void guiInterface();
 
 void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
 //Sample for Debug: DebugWrite(L"Hello World!")
-int cnt = 0;
+u64 cnt = 0;
 //Sent 
+
+struct Move
+{
+	u32 Moves[218];
+};
 
 void seePos(BitBoard *bb)
 {
@@ -113,13 +118,25 @@ void seePos(BitBoard *bb)
 			}
 		}
 	}
-	cout << "\n________";
+	cout <<"\n" << to_string(bb->EP) << "   "  << to_string(bb->rockad) << "   " << to_string(bb->silent)<<"\n________";
 }
 
 bool hasBeenCorrupted(BitBoard *bb)
 {
-	if (bb->pc(bb->Pieces[0]) != 1 || bb->pc(bb->Pieces[7]) != 1)
+	if (bb->pc(bb->Pieces[0]) != 1)
 	{
+		seePos(bb);
+		return true;
+	}
+	if (bb->pc(bb->Pieces[7]) != 1)
+	{
+		seePos(bb);
+		return true;
+	}
+	if (((bb->pc(bb->Pieces[1])) > 1) || (bb->pc(bb->Pieces[8]) > 1))
+	{
+		cout << to_string(bb->pc(bb->Pieces[1])) << "   " << to_string(bb->pc(bb->Pieces[8])) << "   " << to_string((bb->pc(bb->Pieces[1] > 1)) || (bb->pc(bb->Pieces[8] > 1))) << "\n";
+		seePos(bb);
 		return true;
 	}
 	for (int i = 7; i >= 0; i--)
@@ -160,98 +177,41 @@ bool hasBeenCorrupted(BitBoard *bb)
 	return false;
 }
 
-bool tester(int depth, BitBoard *bb, bool color, int startDepth)
+u64 perft(int depth, BitBoard *bb, bool color, Move *object)
 {
-	if (hasBeenCorrupted(bb))
-	{
-		return true;
-	}
-	if (depth > 0)
-	{
-		cnt++;
-		//cout << to_string(cnt) << endl;
-		depth--;
-		vector<u32> moves;
-		if (color)
-		{
-			moves = bb->WhiteLegalMoves();
-		}
-		else
-		{
-			moves = bb->BlackLegalMoves();
-		}
-		for each (u32 move in moves)
-		{
-			bool value = false;
-			if (move == ~((u32)0))
-			{
-				continue;
-			}
-			if (!bb->MakeMove(move))
-			{
-				seePos(bb);
-				cout << to_string(depth) << "    " << to_string(color);
-				cout << endl;
-				return true;
-			};
-			if (hasBeenCorrupted(bb))
-			{
-				value = true;
-			}
-			value = value || tester(depth, bb, !color, startDepth);
-			bb->UnMakeMove(move);
-			if (hasBeenCorrupted(bb))
-			{
-				value = true;
-			}
-			if (value)
-			{
-				cout << "\n\n";
-				cout << endl << (move & 0b111111) << "  to  " << ((move >> 6) & 63) << "   piece moved: " << to_string(bb->mailBox[(move & 0b111111)]) << "  piece taken: " << to_string(bb->mailBox[((move >> 6) & 63)]) << "   Turn: " << to_string(color) << "  EP: " << ((move >> 20) & 1) << "   ply: " << to_string(depth) << " EP state: " << to_string(bb->EP);
-				seePos(bb);
-				bb->MakeMove(move);
-				cout << endl << (move & 0b111111) << "  to  " << ((move >> 6) & 63) << "   piece moved: " << to_string(bb->mailBox[((move >> 6) & 63)]) << "  piece taken: " << to_string(bb->mailBox[((move >> 0) & 63)]) << "   Turn: " << to_string(color) << "  EP: " << ((move >> 20) & 1) << "   ply: " << to_string(depth) << " EP state: " << to_string(bb->EP);
-				seePos(bb);
-				bb->UnMakeMove(move);
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-u64 perft(int depth, BitBoard *bb, bool color)
-{
-	vector<u32> moves;
+	u32 *Start = object->Moves, *End;
 	if (color)
 	{
-		moves = bb->WhiteLegalMoves();
+		End = bb->WhiteLegalMoves(Start);
 	}
 	else
 	{
-		moves = bb->BlackLegalMoves();
+		End = bb->BlackLegalMoves(Start);
 	}
-	if (depth < 1)
+	if (depth < 2)
 	{
-		return 1;
-		if (moves.size() == 1)
+		if (End - Start == 1)
 		{
-			if (moves[0] == 0 || moves[0] == (~((u32)0)))
+			if (*Start == 0 || *Start == 1)
 			{
 				return 0;
 			}
 		}
-		return moves.size();
+		return (u64)(End - Start);
 	}
-	else
 	{
 		u64 res = 0;
-		for each (u32 move in moves)
+		depth--;
+		object++;
+		color = !color;
+		while (Start != End)
 		{
-			if (move != 0 && move != (~((u32)0)))
+			u32 move = *Start;
+			Start++;
+			if (move != 0 && move != 1)
 			{
 				bb->MakeMove(move);
-				res += perft(depth - 1, bb, !color);
+				res += perft(depth , bb, color, object);
 				bb->UnMakeMove(move);
 			}
 		}
@@ -277,45 +237,51 @@ string toAlg(u32 move)
 	return alg;
 }
 
-void Divide(u64 res, int depth, BitBoard *bb, bool color)
+u64 Divide(u64 res, int depth, BitBoard *bb, bool color, Move *object)
 {
-	vector<u32> moves;
+	u32 *start = object->Moves, *end;
+	u64 ret = 0;
 	if (color)
 	{
-		moves = bb->WhiteLegalMoves();
+		end = bb->WhiteLegalMoves(start);
 	}
 	else
 	{
-		moves = bb->BlackLegalMoves();
+		end = bb->BlackLegalMoves(start);
 	}
-	sort(moves.begin(), moves.end(), compareMoveValue);
-	for each (u32 move in moves)
+	depth--;
+	color = !color;
+	object++;
+	while (start != end)
 	{
-		if (move != 0 && move != (~((u32)0)))
+		u32 move = *start;
+		if (move != 0 && move != 1)
 		{
 			bb->MakeMove(move);
-			res = perft(depth - 1, bb, !color);
-			cout << toAlg(move) << "    " << to_string(res) << "\n";
+			res = perft(depth, bb, color, object);
+			ret += res;
+			cout << to_string(move) << "   " << toAlg(move) << "    " << to_string(res) << "\n";
 			bb->UnMakeMove(move);
 		}
+		start++;
 	}
+	return ret;
 }
 
 int main()
 {
-	BitBoard *bb = new BitBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	seePos(bb);
-	bool color = 0;
+	BitBoard *bb = new BitBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+	//seePos(bb);
+	bool color = 1;
 	int perftDepth = 6;
-	u64 cnt = perft(1, bb, color);
-	cout << "\n" << to_string(cnt) << "\n";
+	Move *MoveObjectArray = new Move[perftDepth + 1];
 	chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now(), end;
-	cnt = perft(perftDepth, bb, color);
+	cnt = perft(perftDepth, bb, color, MoveObjectArray);
+	//cnt = Divide(0,perftDepth, bb, color, MoveObjectArray);//Divide(0, perftDepth, bb, color);
 	end = chrono::high_resolution_clock::now();
 	chrono::duration<double> taken = chrono::duration_cast<chrono::duration<double>>(end - start);
-	cout << "Perft " << to_string(perftDepth) <<  " took " << to_string(taken.count()) << " seconds at " << to_string(cnt / (taken.count() * 1000)) << " kpos/s";
+	cout << endl << "Perft " << to_string(perftDepth) <<  " took " << to_string(taken.count()) << " seconds at " << to_string(cnt / (taken.count() * 1000)) << " kpos/s";
 	cout << "\n" << to_string(cnt) << "\n";
-	//Divide(0, 1, bb, true);
 	seePos(bb);
 	string returned;
 	cin >> returned;

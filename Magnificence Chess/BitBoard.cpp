@@ -55,6 +55,129 @@ inline void BitBoard::AddPiece(u8 pos, u8 piece)
 	}
 }
 
+inline u64 BitBoard::MagicRook(u64 piece, u64 occupancy)
+{
+	u32 Index;
+	_BitScanForward64(&Index, piece);
+	return MRook[Index].table[_pext_u64(occupancy, MRook[Index].mask)];
+}
+
+inline u64 BitBoard::MagicBishop(u64 piece, u64 occupancy)
+{
+	u32 index;
+	_BitScanForward64(&index, piece);
+	return MBishop[index].table[_pext_u64(occupancy, MBishop[index].mask)];
+}
+
+inline u32* BitBoard::extractWhiteMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
+{
+	u32 move, BaseMove = baseMove | start, index;
+	while (moves)
+	{
+		_BitScanForward64(&index, moves);
+		move = BaseMove | (index << 6) | (((mailBox[index]) - 7) << 29);
+		*movesOut = move;
+		movesOut++;
+		moves &= moves - 1;
+	}
+	return movesOut;
+}
+
+inline u32* BitBoard::extractBlackMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
+{
+	u32 move, BaseMove = baseMove | start , index;
+	while (moves)
+	{
+		_BitScanForward64(&index, moves);
+		if (mailBox[index] < 14)
+		{
+			move = BaseMove| (index << 6) | (((mailBox[index])) << 29);
+		}
+		else
+		{
+			move = BaseMove | (index << 6) | ((u32)0b111 << 29);
+		}
+		*movesOut = move;
+		movesOut++;
+		moves &= moves - 1;
+	}
+	return movesOut;
+}
+
+inline u32* BitBoard::extractBlackPawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
+{
+	u32 move, BaseMove = baseMove | start, index;
+	while (moves)
+	{
+		_BitScanForward64(&index, moves);
+		move = BaseMove | (index << 6);
+		if (mailBox[index] < 14)
+		{
+			move |= (mailBox[index] << 29);
+		}
+		else
+		{
+			move |= ((u32)7) << 29;
+		}
+		if (index < 8 || index > 55)
+		{
+			for (u32 i = 1; i < 5; i++)
+			{
+				*movesOut = (move | (i << 26));
+				movesOut++;
+			}
+		}
+		else
+		{
+			*movesOut = move;
+			movesOut++;
+		}
+		moves &= moves - 1;
+	}
+	return movesOut;
+}
+
+inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
+{
+	u32 move, BaseMove = baseMove | start, index;
+	while (moves)
+	{
+		_BitScanForward64(&index, moves);
+		move = BaseMove | (index << 6) | ((mailBox[index] - 7) << 29);
+		if (index < 8 || index > 55)
+		{
+			for (u32 i = 1; i < 5; i++)
+			{
+				*movesOut = move | (i << 26);
+				movesOut++;
+			}
+		}
+		else
+		{
+			*movesOut = move;
+			movesOut++;
+		}
+		moves &= moves - 1;
+	}
+	return movesOut;
+}
+
+void BitBoard::allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64>* out)
+{
+	if (index == maxindex)
+	{
+		out->push_back(mask);
+		mask = mask ^ (((u64)1) << positions[index]);
+		out->push_back(mask);
+	}
+	else
+	{
+		allVariations(mask, positions, index + 1, maxindex, out);
+		mask = mask ^ (((u64)1) << positions[index]);
+		allVariations(mask, positions, index + 1, maxindex, out);
+	}
+}
+
 BitBoard::BitBoard(string fen)
 {
 	SetUp();
@@ -331,24 +454,6 @@ void BitBoard::SetState(string fen)
 
 void BitBoard::SetUp()
 {
-	MRook = new Magic[64];
-	MBishop = new Magic[64];
-	rows = new u64[8];
-	nRows = new u64[8];
-	nColumns = new u64[8];
-	columns = new u64[8];
-	//KingSet = new u64[64];
-	KnightSet = new u64[64];
-	Pieces = new u64[15];
-	mailBox = new u8[64];
-	UL = new u64[64];
-	UR = new u64[64];
-	DL = new u64[64];
-	DR = new u64[64];
-	U = new u64[64];
-	D = new u64[64];
-	R = new u64[64];
-	L = new u64[64];
 	//creating rows and columns tables
 	for (int i = 0; i < 8; i++)
 	{
@@ -366,6 +471,10 @@ void BitBoard::SetUp()
 	//Generate King and knight sets + magics + vectors
 	for (int i = 0; i < 64; i++)
 	{
+		URDL[i] = 0;
+		ULDR[i] = 0;
+		LR[i] = 0;
+		UD[i] = 0;
 		//Generate King and knight sets
 		{
 			u64 start = one << i;
@@ -602,60 +711,52 @@ void BitBoard::SetUp()
 		//Generate vectors
 		{
 			u64 pos = one << i;
-			U[i] = 0;
 			while (pos)
 			{
 				pos = pos << 8;
-				U[i] |= pos;
+				UD[i] |= pos;
 			}
 			pos = one << i;
-			D[i] = 0;
 			while (pos)
 			{
 				pos = pos >> 8;
-				D[i] |= pos;
+				UD[i] |= pos;
 			}
 			pos = one << i;
-			L[i] = 0;
 			while (pos)
 			{
 				pos = (pos << 1) & (~columns[0]);
-				L[i] |= pos;
+				LR[i] |= pos;
 			}
 			pos = one << i;
-			R[i] = 0;
 			while (pos)
 			{
 				pos = (pos >> 1) & nColumns[7];
-				R[i] |= pos;
+				LR[i] |= pos;
 			}
 			pos = one << i;
-			DR[i] = 0;
 			while (pos)
 			{
 				pos = (pos >> 9) & nColumns[7];
-				DR[i] |= pos;
+				ULDR[i] |= pos;
 			}
 			pos = one << i;
-			UR[i] = 0;
 			while (pos)
 			{
 				pos = (pos << 7) & nColumns[7];
-				UR[i] |= pos;
+				URDL[i] |= pos;
 			}
 			pos = one << i;
-			UL[i] = 0;
 			while (pos)
 			{
 				pos = (pos << 9) & (~columns[0]);
-				UL[i] |= pos;
+				ULDR[i] |= pos;
 			}
 			pos = one << i;
-			DL[i] = 0;
 			while (pos)
 			{
 				pos = (pos >> 7) & (~columns[0]);
-				DL[i] |= pos;
+				URDL[i] |= pos;
 			}
 		}
 	}
@@ -664,6 +765,7 @@ void BitBoard::SetUp()
 //Ein Pasant state 8
 //move encoding					TTTTNUBBBBRE00000000ttttttffffff
 // extracting special moves	  0b00001000000000000000000000000000
+//								TTTUUUERRRRsssSSSSSSttttttFFFFFF
 //							  0b00000100000000000000000000000000
 //							  0b00000000001000000000000000000000
 //Piece taken [4] = T ( << 28), non silent [1] = N (<< 27), upgrade [1] = U (<<26)
@@ -672,20 +774,37 @@ void BitBoard::SetUp()
 //0 = patt;
 //universal = matt
 
-vector<u32> BitBoard::WhiteLegalMoves()
+//in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
+//1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
+//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
+// TTTUUUERRRRsssSSSSSSttttttFFFFFF
+u32* BitBoard::WhiteLegalMoves(u32 *Start)
 {
-	vector<u32> result;
-	result.reserve(40);
+	u32 *MoveInsert = Start;
+	u32 baseMove;
+	{
+		u32 index;
+		if (EP)
+		{
+			_BitScanForward(&index, EP);
+		}
+		else
+		{
+			index = 8;
+		}
+		baseMove = index << 18 | rockad << 22 | silent << 12;
+	}
 	u32 kingIndex;
 	u64 occupancy = Pieces[6] | Pieces[13], PinnedPieces = 0,
 		legalTargets = 0, ownPieces = Pieces[6], king = Pieces[0],
 		nOccupancy = ~occupancy;
+	int checks = 0;
 	if (king == 0)
 	{
-		result.push_back(~((u32)0));
-		return result;
+		*MoveInsert = 1;
+		MoveInsert++;
+		return MoveInsert;
 	}
-	int checks = 0;
 	//Find checks and pinned pieces and king moves
 	{
 		//pawns
@@ -723,73 +842,26 @@ vector<u32> BitBoard::WhiteLegalMoves()
 		_BitScanForward64(&kingIndex, king);
 		u64 kingAttacks = MagicRook(king, occupancy);
 		u64 NKOccupancy = occupancy ^ king;
-		u64 memory;
-		memory = EPiece & (U[kingIndex]);
-		EPiece = EPiece ^ memory;
-		while (memory)
+		u64 memory = EPiece & kingAttacks;
+		EPiece &= ~(kingAttacks);
+		if (memory)
 		{
-			u64 ret = MagicRook(memory, NKOccupancy);
+			u64 ret = MagicRook(memory, NKOccupancy), normal = MagicRook(memory, occupancy);
 			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & U[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & U[kingIndex];
-			}
-			memory &= memory - 1;
+			legalTargets |= (kingAttacks & normal) | memory;
+			checks++;
 		}
-		memory = EPiece & (D[kingIndex]);
-		EPiece = EPiece ^ memory;
-		while (memory)
+		if (kingIndex > 64)
 		{
-			u64 ret = MagicRook(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & D[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & D[kingIndex];
-			}
-			memory &= memory - 1;
+			cout << king;
 		}
-		memory = EPiece & (L[kingIndex]);
-		EPiece = EPiece ^ memory;
+		memory = EPiece & (UD[kingIndex] | LR[kingIndex]);
+		EPiece &= ~(UD[kingIndex] | LR[kingIndex]);
 		while (memory)
 		{
-			u64 ret = MagicRook(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & L[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & L[kingIndex];
-			}
-			memory &= memory - 1;
-		}
-		memory = EPiece & (R[kingIndex]);
-		EPiece = EPiece ^ memory;
-		while (memory)
-		{
-			u64 ret = MagicRook(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & R[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & R[kingIndex];
-			}
+			u64 normal = MagicRook(memory, NKOccupancy);
+			ThreatenedSquaresO |= normal;
+			PinnedPieces |= normal & kingAttacks;
 			memory &= memory - 1;
 		}
 		while (EPiece)
@@ -800,72 +872,22 @@ vector<u32> BitBoard::WhiteLegalMoves()
 		//bishops + queens
 		EPiece = Pieces[8] | Pieces[9];
 		kingAttacks = MagicBishop(king, occupancy);
-		memory = EPiece & UL[kingIndex];
-		EPiece = EPiece ^ memory;
-		while (memory)
+		memory = EPiece & kingAttacks;
+		EPiece &= ~(kingAttacks);
+		if (memory)
 		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
+			u64 ret = MagicBishop(memory, NKOccupancy), normal = MagicBishop(memory, occupancy);
 			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & UL[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & UL[kingIndex];
-			}
-			memory &= memory - 1;
+			legalTargets |= (kingAttacks & normal) | memory;
+			checks++;
 		}
-		memory = EPiece & UR[kingIndex];
-		EPiece = EPiece ^ memory;
+		memory = EPiece & (ULDR[kingIndex] | URDL[kingIndex]);
+		EPiece &= ~(ULDR[kingIndex] | URDL[kingIndex]);
 		while (memory)
 		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & UR[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & UR[kingIndex];
-			}
-			memory &= memory - 1;
-		}
-		memory = EPiece & DR[kingIndex];
-		EPiece = EPiece ^ memory;
-		while (memory)
-		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & DR[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & DR[kingIndex];
-			}
-			memory &= memory - 1;
-		}
-		memory = EPiece & DL[kingIndex];
-		EPiece = EPiece ^ memory;
-		while (memory)
-		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & DL[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & DL[kingIndex];
-			}
+			u64 normal = MagicBishop(memory, NKOccupancy);
+			ThreatenedSquaresO |= normal;
+			PinnedPieces |= normal & kingAttacks;
 			memory &= memory - 1;
 		}
 		while (EPiece)
@@ -874,27 +896,30 @@ vector<u32> BitBoard::WhiteLegalMoves()
 			EPiece &= EPiece - 1;
 		}
 		u64 kingMoves = KingSet[kingIndex] & (~ThreatenedSquaresO) & (~ownPieces);
-		extractMoves(kingMoves, kingIndex, &result);
+		MoveInsert = extractWhiteMoves(kingMoves, baseMove, kingIndex, MoveInsert);
 		if (checks > 1)
 		{
-			if (result.size() < 1)
+			if (MoveInsert == Start)
 			{
-				result.push_back(~((u32)0));
+				*MoveInsert = 1;
+				MoveInsert++;
 			}
-			return result;
+			return MoveInsert;
 		}
 		else if (checks == 0)
 		{
 			legalTargets = universal ^ ownPieces;
 			if ((rockad & 8) && !((14) & ThreatenedSquaresO) && !(6 & occupancy))
 			{
-				u32 move = 3 | (1 << 6) | one << 21 | (((u64)EP) << 12) | ((u32)14) << 28;
-				result.push_back(move);
+				u32 move = 3 | (1 << 6) | baseMove | ((u32)7) << 29;
+				*MoveInsert = move;
+				MoveInsert++;
 			}
 			if ((rockad & 4) && !((56) & ThreatenedSquaresO) && !(112 & occupancy))
 			{
-				u32 move = 3 | (5 << 6) | one << 21 | (((u64)EP) << 12) | ((u32)14) << 28;
-				result.push_back(move);
+				u32 move = 3 | (5 << 6) | baseMove | ((u32)7) << 29;
+				*MoveInsert = move;
+				MoveInsert++;
 			}
 		}
 	}; 
@@ -907,15 +932,15 @@ vector<u32> BitBoard::WhiteLegalMoves()
 			u64 res;
 			_BitScanForward64(&index, pawns);
 			pawns &= pawns - 1;
-			if ((UL[index] | DR[index]) & king)
+			if (ULDR[index] & king)
 			{
 				res = (((one << (index + 9)) & nColumns[0]) & EPieces);
 			}
-			else if ((UR[index] | DL[index]) & king)
+			else if (URDL[index] & king)
 			{
 				res = (((one << (index + 7)) & nColumns[7]) & EPieces);
 			}
-			else if ((U[index] | D[index]) & king)
+			else if (UD[index] & king)
 			{
 				res = (((one << (index + 8))) & nOccupancy);
 				if (res & rows[2])
@@ -928,7 +953,7 @@ vector<u32> BitBoard::WhiteLegalMoves()
 				res = 0;
 			}
 			res &= legalTargets;
-			extractPawnMoves(res, index, &result);
+			MoveInsert = extractWhitePawnMoves(res, baseMove, index, MoveInsert);
 		}
 		pawns = ((Pieces[5] & ~(PinnedPieces)) << 9) & nColumns[0] & EPieces & legalTargets;
 		while (pawns)
@@ -937,14 +962,16 @@ vector<u32> BitBoard::WhiteLegalMoves()
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
-				result.push_back(index << 6 | (index - 9) | (u32)one << 27 | (u32)mailBox[index] << 28);
+				*MoveInsert = baseMove | index << 6 | (index - 9) | (((u32)mailBox[index] - 7) << 29);
+				MoveInsert++;
 			}
 			else
 			{
-				u32 move = index << 6 | (index - 9) | one << 27 | mailBox[index] << 28 | one << 26;
+				u32 move = baseMove | index << 6 | (index - 9) | ((u32)(mailBox[index] - 7)) << 29;
 				for (int i = 1; i < 5; i++)
 				{
-					result.push_back(move | (i << 22));
+					*MoveInsert = move | (i << 26);
+					MoveInsert++;
 				}
 			}
 		}
@@ -955,14 +982,16 @@ vector<u32> BitBoard::WhiteLegalMoves()
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
-				result.push_back(index << 6 | (index - 7) | one << 27 | mailBox[index] << 28);
+				*MoveInsert = baseMove | index << 6 | (index - 7) | (u32)(mailBox[index] - 7) << 29;
+				MoveInsert++;
 			}
 			else
 			{
-				u32 move = index << 6 | (index - 7) | one << 27 | mailBox[index] << 28 | one << 26;
+				u32 move = baseMove | index << 6 | (index - 7) | (mailBox[index] - 7) << 29;
 				for (int i = 1; i < 5; i++)
 				{
-					result.push_back(move | (i << 22));
+					*MoveInsert = move | (i << 26);
+					MoveInsert++;
 				}
 			}
 		}
@@ -975,14 +1004,16 @@ vector<u32> BitBoard::WhiteLegalMoves()
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
-				result.push_back((index << 6) | (index - 8) | one << 27 | mailBox[index] << 28);
+				*MoveInsert = baseMove | (index << 6) | (index - 8) | 7 << 29;
+				MoveInsert++;
 			}
 			else
 			{
-				u32 move = index << 6 | (index - 8) | one << 27 | mailBox[index] << 28 | one << 26;
+				u32 move = baseMove | index << 6 | (index - 8) | 7 << 29;
 				for (int i = 1; i < 5; i++)
 				{
-					result.push_back(move | (i << 22));
+					*MoveInsert = move | (i << 26);
+					MoveInsert++;
 				}
 			}
 		}
@@ -991,7 +1022,8 @@ vector<u32> BitBoard::WhiteLegalMoves()
 		{
 			_BitScanForward64(&index, pawns);
 			pawns &= pawns - 1;
-			result.push_back(index << 6 | (index - 16) | one << 27 | mailBox[index] << 28);
+			*MoveInsert = baseMove | index << 6 | (index - 16) | 7 << 29;
+			MoveInsert++;
 		}
 		{
 			u64 ep = ((u64)EP) << 32;
@@ -1013,7 +1045,8 @@ vector<u32> BitBoard::WhiteLegalMoves()
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[8] | Pieces[10])) || 
 					(MagicBishop(king, mockOccupancy) & (Pieces[8] | Pieces[9]))))
 				{
-					result.push_back((index - 9) | (index << 6) | (one << 27) | (one << 20));
+					*MoveInsert = baseMove | (index - 9) | (index << 6) | 7 << 29;
+					MoveInsert++;
 				}
 			}
 			ep >>= 8;
@@ -1035,7 +1068,8 @@ vector<u32> BitBoard::WhiteLegalMoves()
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[8] | Pieces[10])) ||
 					(MagicBishop(king, mockOccupancy) & (Pieces[8] | Pieces[9]))))
 				{
-					result.push_back((index - 7) | (index << 6) | (one << 27) | (one << 20));
+					*MoveInsert = baseMove | (index - 7) | (index << 6) | 7 << 29;
+					MoveInsert++;
 				}
 			}
 		}
@@ -1048,20 +1082,21 @@ vector<u32> BitBoard::WhiteLegalMoves()
 		{
 			u64 res;
 			_BitScanForward64(&index, qb);
-			if ((UL[index] | DR[index]) & king)
+			if ((ULDR[index]) & king)
 			{
-				res = MagicBishop(qb, occupancy) & (UL[index] | DR[index]) & legalTargets;
+				res = MagicBishop(qb, occupancy) & (ULDR[index]) & legalTargets;
+				MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 			}
-			else if ((UR[index] | DL[index]) & king)
+			else if ((URDL[index]) & king)
 			{
-				res = MagicBishop(qb, occupancy) & (UR[index] | DL[index]) & legalTargets;
+				res = MagicBishop(qb, occupancy) & (URDL[index]) & legalTargets;
+				MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 			}
 			else
 			{
 				res = 0;
 			}
 			qb &= qb - 1;
-			extractMoves(res, index, &result);
 		}
 		qb = (Pieces[1] | Pieces[2]) & (~(PinnedPieces));
 		while (qb)
@@ -1069,7 +1104,7 @@ vector<u32> BitBoard::WhiteLegalMoves()
 			u64 res = MagicBishop(qb, occupancy) & legalTargets;
 			_BitScanForward64(&index, qb);
 			qb &= qb - 1;
-			extractMoves(res, index, &result);
+			MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 		}
 	};
 	//Queen + Rook Move
@@ -1080,20 +1115,21 @@ vector<u32> BitBoard::WhiteLegalMoves()
 		{
 			u64 res;
 			_BitScanForward64(&index, qr);
-			if ((U[index] | D[index]) & king)
+			if ((UD[index]) & king)
 			{
-				res = MagicRook(qr, occupancy) & (U[index] | D[index]) & legalTargets;
+				res = MagicRook(qr, occupancy) & (UD[index]) & legalTargets;
+				MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 			}
-			else if ((R[index] | L[index]) & king)
+			else if ((LR[index]) & king)
 			{
-				res = MagicRook(qr, occupancy) & (R[index] | L[index]) & legalTargets;
+				res = MagicRook(qr, occupancy) & (LR[index]) & legalTargets;
+				MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 			}
 			else
 			{
 				res = 0;
 			}
 			qr &= qr - 1;
-			extractMoves(res, index, &result);
 		}
 		qr = (Pieces[1] | Pieces[3]) & (~(PinnedPieces));
 		while (qr)
@@ -1101,7 +1137,7 @@ vector<u32> BitBoard::WhiteLegalMoves()
 			u64 res = MagicRook(qr, occupancy) & legalTargets;
 			_BitScanForward64(&index, qr);
 			qr &= qr - 1;
-			extractMoves(res, index, &result);
+			MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 		}
 	};
 	//Knight moves
@@ -1112,27 +1148,40 @@ vector<u32> BitBoard::WhiteLegalMoves()
 		{
 			_BitScanForward64(&index, knights);
 			knights &= (knights - 1);
-			extractMoves(KnightSet[index] & legalTargets, index, &result);
+			MoveInsert = extractWhiteMoves(KnightSet[index] & legalTargets, baseMove, index, MoveInsert);
 		}
 	}
-	if (result.size() == 0)
+	if (MoveInsert == Start)
 	{
 		if (checks == 0)
 		{
-			result.push_back(0);
+			*MoveInsert = 0;
 		}
 		else
 		{
-			result.push_back(~((u32)(0)));
+			*MoveInsert = 1;
 		}
+		MoveInsert++;
 	}
-	return result;
+	return MoveInsert;
 }
 
-vector<u32> BitBoard::BlackLegalMoves()
+u32* BitBoard::BlackLegalMoves(u32 *Start)
 {
-	vector<u32> result;
-	result.reserve(40);
+	u32 *MoveInsert = Start;
+	u32 baseMove;
+	{
+		u32 index;
+		if (EP)
+		{
+			_BitScanForward(&index, EP);
+		}
+		else
+		{
+			index = 8;
+		}
+		baseMove = index << 18 | rockad << 22 | silent << 12;
+	}
 	u32 kingIndex;
 	u64 occupancy = Pieces[6] | Pieces[13], PinnedPieces = 0,
 		legalTargets = 0, ownPieces = Pieces[13], king = Pieces[7],
@@ -1140,8 +1189,9 @@ vector<u32> BitBoard::BlackLegalMoves()
 	int checks = 0;
 	if (king == 0)
 	{
-		result.push_back((u32)universal);
-		return result;
+		*MoveInsert = 1;
+		MoveInsert++;
+		return MoveInsert;
 	}
 	//Find checks and pinned pieces
 	{
@@ -1180,72 +1230,26 @@ vector<u32> BitBoard::BlackLegalMoves()
 		_BitScanForward64(&kingIndex, king);
 		u64 kingAttacks = MagicRook(king, occupancy);
 		u64 NKOccupancy = occupancy ^ king;
-		u64 memory = EPiece & (U[kingIndex]);
-		EPiece = EPiece ^ memory;
-		while (memory)
+		u64 memory = EPiece & kingAttacks;
+		EPiece &= ~(kingAttacks);
+		if (memory)
 		{
-			u64 ret = MagicRook(memory, NKOccupancy);
+			u64 ret = MagicRook(memory, NKOccupancy), normal = MagicRook(memory, occupancy);
 			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & U[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & U[kingIndex];
-			}
-			memory &= memory - 1;
+			legalTargets |= (kingAttacks & normal) | memory;
+			checks++;
 		}
-		memory = EPiece & (D[kingIndex]);
-		EPiece = EPiece ^ memory;
-		while (memory)
+		if (kingIndex > 63)
 		{
-			u64 ret = MagicRook(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & D[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & D[kingIndex];
-			}
-			memory &= memory - 1;
+			cout << king;
 		}
-		memory = EPiece & (L[kingIndex]);
-		EPiece = EPiece ^ memory;
+		memory = EPiece & (UD[kingIndex] | LR[kingIndex]);
+		EPiece &= ~(UD[kingIndex] | LR[kingIndex]);
 		while (memory)
 		{
-			u64 ret = MagicRook(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & L[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & L[kingIndex];
-			}
-			memory &= memory - 1;
-		}
-		memory = EPiece & (R[kingIndex]);
-		EPiece = EPiece ^ memory;
-		while (memory)
-		{
-			u64 ret = MagicRook(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & R[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & R[kingIndex];
-			}
+			u64 normal = MagicRook(memory, NKOccupancy);
+			ThreatenedSquaresO |= normal;
+			PinnedPieces |= normal & kingAttacks;
 			memory &= memory - 1;
 		}
 		while (EPiece)
@@ -1256,72 +1260,22 @@ vector<u32> BitBoard::BlackLegalMoves()
 		//Queen + bishops
 		EPiece = Pieces[1] | Pieces[2];
 		kingAttacks = MagicBishop(king, occupancy);
-		memory = EPiece & UL[kingIndex];
-		EPiece = EPiece ^ memory;
-		while (memory)
+		memory = EPiece & kingAttacks;
+		EPiece &= ~(kingAttacks);
+		if (memory)
 		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
+			u64 ret = MagicBishop(memory, NKOccupancy), normal = MagicBishop(memory, occupancy);
 			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & UL[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & UL[kingIndex];
-			}
-			memory &= memory - 1;
+			legalTargets |= (kingAttacks & normal) | memory;
+			checks++;
 		}
-		memory = EPiece & UR[kingIndex];
-		EPiece = EPiece ^ memory;
+		memory = EPiece & (ULDR[kingIndex] | URDL[kingIndex]);
+		EPiece &= ~(ULDR[kingIndex] | URDL[kingIndex]);
 		while (memory)
 		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & UR[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & UR[kingIndex];
-			}
-			memory &= memory - 1;
-		}
-		memory = EPiece & DR[kingIndex];
-		EPiece = EPiece ^ memory;
-		while (memory)
-		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & DR[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & DR[kingIndex];
-			}
-			memory &= memory - 1;
-		}
-		memory = EPiece & DL[kingIndex];
-		EPiece = EPiece ^ memory;
-		while (memory)
-		{
-			u64 ret = MagicBishop(memory, NKOccupancy);
-			ThreatenedSquaresO |= ret;
-			if (ret & king)
-			{
-				legalTargets |= kingAttacks & DL[kingIndex];
-				checks++;
-			}
-			else
-			{
-				PinnedPieces |= ret & kingAttacks & DL[kingIndex];
-			}
+			u64 normal = MagicBishop(memory, NKOccupancy);
+			ThreatenedSquaresO |= normal;
+			PinnedPieces |= normal & kingAttacks;
 			memory &= memory - 1;
 		}
 		while (EPiece)
@@ -1330,27 +1284,30 @@ vector<u32> BitBoard::BlackLegalMoves()
 			EPiece &= EPiece - 1;
 		}
 		u64 kingMoves = KingSet[kingIndex] & (~ThreatenedSquaresO) & (~ownPieces);
-		extractMoves(kingMoves, kingIndex, &result);
+		MoveInsert = extractBlackMoves(kingMoves, baseMove, kingIndex, MoveInsert);
 		if (checks > 1)
 		{
-			if (result.size() < 1)
+			if (MoveInsert == Start)
 			{
-				result.push_back(~((u32)0));
+				*MoveInsert = 1;
+				MoveInsert++;
 			}
-			return result;
+			return MoveInsert;
 		}
 		else if (checks == 0)
 		{
 			legalTargets = universal ^ ownPieces;
 			if ((rockad & 2) && !((((u64)14) << 56) & ThreatenedSquaresO) && !((((u64)6) << 56) & occupancy))
 			{
-				u32 move = 59 | (57 << 6) | one << 21 | (((u64)EP) << 12) | ((u32)14) << 28;
-				result.push_back(move);
+				u32 move = 59 | (57 << 6) | ((u32)7) << 29 | baseMove;
+				*MoveInsert = move;
+				MoveInsert++;
 			}
 			if ((rockad & 1) && !((((u64)56) << 56) & ThreatenedSquaresO) && !((((u64)112) << 56) & occupancy))
 			{
-				u32 move = 59 | (61 << 6) | one << 21 | (((u64)EP) << 12) | ((u32)14) << 28;
-				result.push_back(move);
+				u32 move = 59 | (61 << 6) | ((u32)7) << 29 | baseMove;
+				*MoveInsert = move;
+				MoveInsert++;
 			}
 		}
 	};
@@ -1362,15 +1319,15 @@ vector<u32> BitBoard::BlackLegalMoves()
 		{
 			u64 res;
 			_BitScanForward64(&index, pawns);
-			if ((UL[index] | DR[index]) & king)
+			if ((ULDR[index]) & king)
 			{
 				res = (((one << (index - 9)) & nColumns[7]) & EPieces);
 			}
-			else if ((UR[index] | DL[index]) & king)
+			else if ((URDL[index]) & king)
 			{
 				res = (((one << (index - 7)) & nColumns[0]) & EPieces);
 			}
-			else if ((U[index] | D[index]) & king)
+			else if ((UD[index]) & king)
 			{
 				res = (((one << (index - 8))) & nOccupancy);
 				if (res & rows[5])
@@ -1384,7 +1341,7 @@ vector<u32> BitBoard::BlackLegalMoves()
 			}
 			res &= legalTargets;
 			pawns &= pawns - 1;
-			extractPawnMoves(res, index, &result);
+			MoveInsert = extractBlackPawnMoves(res,baseMove, index, MoveInsert);
 		}
 		pawns = ((Pieces[12] & ~(PinnedPieces)) >> 9) & nColumns[7] & EPieces & legalTargets;
 		while (pawns)
@@ -1393,14 +1350,16 @@ vector<u32> BitBoard::BlackLegalMoves()
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
-				result.push_back(index << 6 | (index + 9) | one << 27 | mailBox[index] << 28);
+				*MoveInsert = baseMove | index << 6 | (index + 9) | mailBox[index] << 29;
+				MoveInsert++;
 			}
 			else
 			{
-				u32 move = index << 6 | (index + 9) | one << 27 | mailBox[index] << 28 | one << 26;
+				u32 move = baseMove | index << 6 | (index + 9) | mailBox[index] << 29;
 				for (int i = 1; i < 5; i++)
 				{
-					result.push_back(move | (i << 22));
+					*MoveInsert = move | (i << 26);
+					MoveInsert++;
 				}
 			}
 		}
@@ -1411,14 +1370,16 @@ vector<u32> BitBoard::BlackLegalMoves()
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
-				result.push_back(index << 6 | (index + 7) | one << 27 | mailBox[index] << 28);
+				*MoveInsert = baseMove | index << 6 | (index + 7) | mailBox[index] << 29;
+				MoveInsert++;
 			}
 			else
 			{
-				u32 move = index << 6 | (index + 7) | one << 27 | mailBox[index] << 28 | one << 26;
+				u32 move = baseMove | index << 6 | (index + 7) | mailBox[index] << 29;
 				for (int i = 1; i < 5; i++)
 				{
-					result.push_back(move | (i << 22));
+					*MoveInsert = move | (i << 26);
+					MoveInsert++;
 				}
 			}
 		}
@@ -1431,14 +1392,16 @@ vector<u32> BitBoard::BlackLegalMoves()
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
-				result.push_back(index << 6 | (index + 8) | one << 27 | mailBox[index] << 28);
+				*MoveInsert = baseMove | index << 6 | (index + 8) | 7 << 29;
+				MoveInsert++;
 			}
 			else
 			{
-				u32 move = index << 6 | (index + 8) | one << 27 | mailBox[index] << 28 | one << 26;
+				u32 move = baseMove | index << 6 | (index + 8) | 7 << 29;
 				for (int i = 1; i < 5; i++)
 				{
-					result.push_back(move | (i << 22));
+					*MoveInsert = move | (i << 26);
+					MoveInsert++;
 				}
 			}
 		}
@@ -1447,10 +1410,8 @@ vector<u32> BitBoard::BlackLegalMoves()
 		{
 			_BitScanForward64(&index, pawns);
 			pawns &= pawns - 1;
-			if (index > 7)
-			{
-				result.push_back(index << 6 | (index + 16) | one << 27 | mailBox[index] << 28);
-			}
+			*MoveInsert = baseMove | index << 6 | (index + 16) | 7 << 29;
+			MoveInsert++;
 		}
 		{
 			u64 ep = ((u64)EP) << 24;
@@ -1472,7 +1433,8 @@ vector<u32> BitBoard::BlackLegalMoves()
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
 					(MagicBishop(king, mockOccupancy) & (Pieces[1] | Pieces[2]))))
 				{
-					result.push_back((index + 9) | (index << 6) | (one << 27) | (one << 20));
+					*MoveInsert = baseMove | (index + 9) | (index << 6);
+					MoveInsert++;
 				}
 			}
 			ep <<= 8;
@@ -1494,7 +1456,8 @@ vector<u32> BitBoard::BlackLegalMoves()
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
 					(MagicBishop(king, mockOccupancy) & (Pieces[1] | Pieces[2]))))
 				{
-					result.push_back((index + 7) | (index << 6) | (one << 27) | (one << 20));
+					*MoveInsert = baseMove | (index + 7) | (index << 6);
+					MoveInsert++;
 				}
 			}
 		}
@@ -1507,20 +1470,20 @@ vector<u32> BitBoard::BlackLegalMoves()
 		{
 			u64 res;
 			_BitScanForward64(&index, qb);
-			if ((UL[index] | DR[index]) & king)
+			if ((ULDR[index]) & king)
 			{
-				res = MagicBishop(qb, occupancy) & (UL[index] | DR[index]) & legalTargets;
+				res = MagicBishop(qb, occupancy) & ULDR[index] & legalTargets;
 			}
-			else if ((UR[index] | DL[index]) & king)
+			else if ((URDL[index]) & king)
 			{
-				res = MagicBishop(qb, occupancy) & (UR[index] | DL[index]) & legalTargets;
+				res = MagicBishop(qb, occupancy) & (URDL[index]) & legalTargets;
 			}
 			else
 			{
 				res = 0;
 			}
 			qb &= qb - 1;
-			extractMoves(res, index, &result);
+			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
 		qb = (Pieces[8] | Pieces[9]) & (~(PinnedPieces));
 		while (qb)
@@ -1528,7 +1491,7 @@ vector<u32> BitBoard::BlackLegalMoves()
 			u64 res = MagicBishop(qb, occupancy) & legalTargets;
 			_BitScanForward64(&index, qb);
 			qb &= qb - 1;
-			extractMoves(res, index, &result);
+			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
 	}
 	//Queen + Rook Move
@@ -1539,20 +1502,20 @@ vector<u32> BitBoard::BlackLegalMoves()
 		{
 			u64 res;
 			_BitScanForward64(&index, qr);
-			if ((U[index] | D[index]) & king)
+			if ((UD[index]) & king)
 			{
-				res = MagicRook(qr, occupancy) & (U[index] | D[index]) & legalTargets;
+				res = MagicRook(qr, occupancy) & (UD[index]) & legalTargets;
 			}
-			else if ((R[index] | L[index]) & king)
+			else if ((LR[index]) & king)
 			{
-				res = MagicRook(qr, occupancy) & (R[index] | L[index]) & legalTargets;
+				res = MagicRook(qr, occupancy) & LR[index] & legalTargets;
 			}
 			else
 			{
 				res = 0;
 			}
 			qr &= qr - 1;
-			extractMoves(res, index, &result);
+			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
 		qr = (Pieces[8] | Pieces[10]) & (~(PinnedPieces));
 		while (qr)
@@ -1560,7 +1523,7 @@ vector<u32> BitBoard::BlackLegalMoves()
 			u64 res = MagicRook(qr, occupancy) & legalTargets;
 			_BitScanForward64(&index, qr);
 			qr &= qr - 1;
-			extractMoves(res, index, &result);
+			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
 	};
 	//Knight moves
@@ -1571,106 +1534,99 @@ vector<u32> BitBoard::BlackLegalMoves()
 		{
 			_BitScanForward64(&index, knights);
 			knights &= (knights - 1);
-			extractMoves(KnightSet[index] & legalTargets, index, &result);
+			MoveInsert = extractBlackMoves(KnightSet[index] & legalTargets, baseMove, index, MoveInsert);
 		}
 	}
-	if (result.size() == 0)
+	if (MoveInsert == Start)
 	{
 		if (checks == 0)
 		{
-			result.push_back(0);
+			*MoveInsert = 0;
+			MoveInsert++;
 		}
 		else
 		{
-			result.push_back(~((u32)0));
+			*MoveInsert = 1;
+			MoveInsert++;
 		}
 	}
-	return result;
+	return MoveInsert;
 }
 
 int BitBoard::MakeMove(u32 move)
 {
+	u8 oldEP = EP;
+	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
+	u8 moved = mailBox[from];
+	if (moved == 5 || moved == 12 || mailBox[to] != 14)
 	{
-		SilentMemory.push_back(silent);
-		RockadMemory.push_back(rockad);
-		EPMemory.push_back(EP);
-		EP = 0;
-		if (move & 0b00001000000000000000000000000000)
+		silent = 0;
+	}
+	else
+	{
+		silent++;
+	}
+	RemovePiece(from);
+	EP = 0;
+	if (from == 0 || to == 0)
+	{
+		rockad &= (0b0111);
+	}
+	if (from == 7 || to == 7)
+	{
+		rockad &= (0b1011);
+	}
+	if (from == 63 || to == 63)
+	{
+		rockad &= (0b1110);
+	}
+	if (from == 56 || to == 56)
+	{
+		rockad &= (0b1101);
+	}
+	AddPiece(to, moved);
+	u64 pos;
+	switch (moved)
+	{
+	case 5://white pawn
+		pos = one << to;
+		if (move & (0b111 << 26))//upgrade
 		{
-			silent = 0;
+			u8 promoteTo = (move >> 26) & 0b111;
+			AddPiece(to, promoteTo);
 		}
-		else
+		else if ((pos >> 40) & oldEP)//EP
 		{
-			silent++;
+			RemovePiece(to - 8);
 		}
-		u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
-		u8 moved = mailBox[from];
-		RemovePiece(from);
-		AddPiece(to, moved);
-		if (from == 0 || to == 0)
+		else if (to - from > 9)
 		{
-			rockad &= (0b0111);
+			EP = (u8)one << (from & 0b111);
 		}
-		if (from == 7 || to == 7)
+		break;
+	case 12://black pawn
+		pos = one << to;
+		if (move & (0b111 << 26))
 		{
-			rockad &= (0b1011);
+			u8 upgradeTo = ((move >> 26) & 0b111) + 7;
+			AddPiece(to, upgradeTo);
 		}
-		if (from == 63 || to == 63)
+		else if ((pos >> 16) & oldEP)
 		{
-			rockad &= (0b1110);
+			RemovePiece(to + 8);
 		}
-		if (from == 56 || to == 56)
+		if (from - to > 9)
 		{
-			rockad &= (0b1101);
+			EP = (u8)one << (from & 0b111);
 		}
-		switch (moved)
+		break;
+	case 0://white king
+		rockad &= 0b11;
+		if (from - to == 2 || to - from == 2)
 		{
-		case 5://white pawn
-			if (move & (one << 26))//upgrade
-			{
-				u8 promoteTo = (move >> 22) & 0b1111;
-				AddPiece(to, promoteTo);
-			}
-			else if (move & (one << 20))//EP
-			{
-				RemovePiece(to - 8);
-			}
-			else if (to - from > 9)
-			{
-				EP = (u8)one << (from & 0b111);
-			}
-			break;
-		case 12://black pawn
-			if (move & (one << 26))
-			{
-				u8 upgradeTo = ((move >> 22) & 0b1111) + 7;
-				AddPiece(to, upgradeTo);
-			}
-			else if (move & (one << 20))
-			{
-				RemovePiece(to + 8);
-			}
-			if (from - to > 9)
-			{
-				EP = (u8)one << (from & 0b111);
-			}
-			break;
-		case 0://white king
-			rockad &= 0b11;
-			break;
-		case 7://black king
-			rockad &= 0b1100;
-			break;
-		default:
-			break;
-		}
-		if (move & 0b00000000001000000000000000000000)
-		{
-			u64 mask, NMask;
 			switch (to)
 			{
 			case 1:	//white kingside
-				mask = 0b100, NMask = (~(0b001));
 				RemovePiece(0);
 				AddPiece(2, 3);
 				break;
@@ -1678,9 +1634,18 @@ int BitBoard::MakeMove(u32 move)
 				RemovePiece(7);
 				AddPiece(4, 3);
 				break;
+			default:
+				break;
+			}
+		}
+		break;
+	case 7://black king
+		rockad &= 0b1100;
+		if (from - to == 2 || to - from == 2)
+		{
+			switch (to)
+			{
 			case 57://Black king sides
-				mask = one << 58
-					, NMask = (~(one << 56));
 				RemovePiece(56);
 				AddPiece(58, 10);
 				break;
@@ -1692,25 +1657,36 @@ int BitBoard::MakeMove(u32 move)
 				break;
 			}
 		}
+		break;
+	default:
+		break;
 	}
 	return 1;
 }
 
+//in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
+//1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
+//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, EP [1] = E << 25, Bit rockad [4] = R << 21, EP state [3] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
+// TTTUUUERRRRsssSSSSSSttttttFFFFFF
+
 void BitBoard::UnMakeMove(u32 move)
 {
-	silent = SilentMemory.back();
-	EP = EPMemory.back();
-	rockad = RockadMemory.back();
-	SilentMemory.pop_back();
-	EPMemory.pop_back();
-	RockadMemory.pop_back();
+	silent = 0b111111 & (move >> 12);
+	EP = (u8)one << (0b1111 & (move >> 18));
+	rockad = (u8)0b1111 & (move >> 22);
 	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
 	u8 moved = mailBox[to];
-	u8 taken = move >> 28;
+	u8 taken = move >> 29;
+	if (moved < 6 || taken == 7)
+	{
+		taken += 7;
+	}
+	u64 pos;
 	switch (moved)
 	{
 	case 5://white pawn
-		if (move & (one << 20))	//EP
+		pos = one << to;
+		if ((pos >> 40) & EP)	//EP
 		{
 			AddPiece(from, 5);
 			RemovePiece(to);
@@ -1723,7 +1699,8 @@ void BitBoard::UnMakeMove(u32 move)
 		}
 		break;
 	case 12://black pawn
-		if (move & (one << 20))
+		pos = one << to;
+		if ((pos >> 16) & EP)
 		{
 			AddPiece(from, 12);
 			RemovePiece(to);
@@ -1737,7 +1714,7 @@ void BitBoard::UnMakeMove(u32 move)
 		break;
 	default:
 		//std
-		if (move & (one << 26))
+		if (move & (0b111 << 26))
 		{
 			u8 pawn;
 			if (moved < 6)
@@ -1757,7 +1734,7 @@ void BitBoard::UnMakeMove(u32 move)
 			AddPiece(to, taken);
 		}
 		//rockad
-		if (move & 0b00000000001000000000000000000000)
+		if (((to - from == 2) ||(from - to == 2)) && (moved == 0 ||moved == 7))
 		{
 			switch (to)
 			{
@@ -1782,72 +1759,5 @@ void BitBoard::UnMakeMove(u32 move)
 			}
 		}
 		break;
-	}
-}
-
-inline u64 BitBoard::MagicRook(u64 piece, u64 occupancy)
-{
-	u32 Index;
-	_BitScanForward64(&Index, piece);
-	return MRook[Index].table[_pext_u64(occupancy, MRook[Index].mask)];
-}
-
-inline u64 BitBoard::MagicBishop(u64 piece, u64 occupancy)
-{
-	u32 index;
-	_BitScanForward64(&index, piece);
-	return MBishop[index].table[_pext_u64(occupancy, MBishop[index].mask)];
-}
-
-inline void BitBoard::extractMoves(u64 moves, u32 start, vector<u32>* out)
-{
-	{
-		u32 move, index;
-		while (moves)
-		{
-			_BitScanForward64(&index, moves);
-			move = start | (index << 6);
-			if (mailBox[index] < 14)
-			{
-				move |= (mailBox[index] << 28) | (one << 27);
-			}
-			else
-			{
-				move |= ((u32)14) << 28;
-			}
-			out->push_back(move);
-			moves &= moves - 1;
-		}
-	}
-}
-
-inline void BitBoard::extractPawnMoves(u64 moves, u32 start, vector<u32>* out)
-{
-	u32 move, index;
-	while (moves)
-	{
-		_BitScanForward64(&index, moves);
-		move = start | (index << 6) | (u32)(one << 27);
-		if (mailBox[index] < 14)
-		{
-			move |= (mailBox[index] << 28);
-		}
-		else
-		{
-			move |= ((u32)14) << 28;
-		}
-		if (index < 8 || index > 55)
-		{
-			move |= one << 26;
-			for (u32 i = 1; i < 5; i++)
-			{
-				out->push_back(move | (i << 22));
-			}
-		}
-		else
-		{
-			out->push_back(move);
-		}
-		moves &= moves - 1;
 	}
 }
