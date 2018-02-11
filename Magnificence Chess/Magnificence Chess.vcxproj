@@ -145,7 +145,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ArrayBoard.h" />
     <ClInclude Include="BitBoard.h" />
     <ClInclude Include="Board.h" />
     <ClInclude Include="Engine.h" />
@@ -155,9 +154,9 @@
     <ClInclude Include="MoveLogic.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Test.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ArrayBoard.cpp" />
     <ClCompile Include="BitBoard.cpp" />
     <ClCompile Include="Board.cpp" />
     <ClCompile Include="Engine.cpp" />
@@ -172,6 +171,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
