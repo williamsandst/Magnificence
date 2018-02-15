@@ -20,8 +20,8 @@ string IO::convertMoveToAlg(u32 move)
 
 u32 IO::convertAlgToMove(string alg)
 {
-	int a = (alg[1] - '0' - 1) * 8 + (alg[0] - 'a');
-	int b = ((alg[3] - '0' - 1) * 8 + (alg[2] - 'a')) << 6;
+	int a = (alg[1] - '0' - 1) * 8 + (7-(alg[0] - 'a'));
+	int b = ((alg[3] - '0' - 1) * 8 + (7-(alg[2] - 'a'))) << 6;
 	return (a | b);
 }
 

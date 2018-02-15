@@ -13,7 +13,8 @@ public:
 	atomic<bool> completedSearch;
 	BitBoard * board;
 	vector<u32> principalVariation;
-	int maxDepth = 2;
+	bool color;
+	int maxDepth = 5;
 	GameState();
 	~GameState();
 };

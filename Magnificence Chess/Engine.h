@@ -10,9 +10,9 @@ public:
 
 	int negaMax(BitBoard board, int depth, int ply, bool color, int maxDepth, u32 triangularPVTable[], short pvIndex, u32 * moveStart); //Main recursive search
 
-	int negaMax2(BitBoard * board, int depth, bool color, u32 * moveStart)
+	int negaMax2(BitBoard * board, int depth, bool color, u32 * moveStart);
 
-	int alphaBeta(BitBoard board, int alpha, int beta, short depth, short ply, short maxDepth, u32 triangularPVTable[], short pvIndex);
+	//int alphaBeta(BitBoard board, int alpha, int beta, short depth, short ply, short maxDepth, u32 triangularPVTable[], short pvIndex);
 
 
 	vector<u32> startSearch(BitBoard * board, bool color, int timeLeft, int maxDepth);
