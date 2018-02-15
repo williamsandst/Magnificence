@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <sstream>
 #include <chrono>
+#include "ABAI.h"
 #include <atomic>
 #include <ctime>
 #include "Board.h"
@@ -71,13 +72,12 @@ void guiInterface()
 
 	cout << "Generating magic tables..." << endl;
 	BitBoard board = BitBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	gameState->board = &board;
 	cout << "Magic tables complete." << endl << endl;
-	
 	cout << "For help, type 'help'." << endl << endl;
 
 	cout << "mgnf: ";
 	bool color = true;
-
 	while (getline(cin, recievedCommand))
 	{
 		vector<string> splitCommand = split(recievedCommand, ' ');
@@ -215,6 +215,7 @@ void guiInterface()
 		else if (splitCommand[0] == "go") {
 			// Received command in this format: "go wtime 300000 btime 300000 winc 0 binc 0"
 			//Output format: "bestmove h7h5"
+			gameState->color = color;
 			if (splitCommand.size() > 1 && (isdigit(splitCommand[1][0]) != 0))
 				gameState->maxDepth = stoi(splitCommand[1]);
 			//gameState->board = board;
@@ -239,11 +240,13 @@ void guiInterface()
 void runEngine(GameState* gameState)
 {
 	//Engine engine = Engine();
+	ABAI *AI = new ABAI();
 	while (gameState->run)
 	{
 		this_thread::sleep_for(chrono::milliseconds(1));
 		while (!gameState->idle)
 		{
+			gameState->principalVariation = AI->bestMove(gameState->board, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
 			//gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			gameState->idle = true;

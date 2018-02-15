@@ -78,7 +78,10 @@
     <ClInclude Include="Test.h">
       <Filter>Header Files\Testing</Filter>
     </ClInclude>
-    <ClInclude Include="MonteCarloAI.h">
+    <ClInclude Include="MCAI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ABAI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -113,7 +116,10 @@
     <ClCompile Include="Test.cpp">
       <Filter>Source Files\Testing</Filter>
     </ClCompile>
-    <ClCompile Include="MonteCarloAI.cpp">
+    <ClCompile Include="MCAI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ABAI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1654,8 +1654,8 @@ int BitBoard::MakeMove(u32 move)
 
 //in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
-//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, EP [1] = E << 25, Bit rockad [4] = R << 21, EP state [3] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
-// TTTUUUERRRRsssSSSSSSttttttFFFFFF
+//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
+// TTTUUURRRRssssSSSSSSttttttFFFFFF
 
 void BitBoard::UnMakeMove(u32 move)
 {
