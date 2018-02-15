@@ -15,6 +15,7 @@
 #include "IO.h";
 #include "Move.h"
 #include "Test.h";
+#include "Engine.h";
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
@@ -157,11 +158,6 @@ void guiInterface()
 					cout << splitCommand[2] << " moves generated in " << duration << " s" << endl;
 				}
 			}
-			else
-			{
-				cout << "Unknown command. Type 'help' for a list of commands." << endl;
-			}
-			cout << "mgnf: ";
 		}
 		if (recievedCommand == "uci")
 		{
@@ -217,7 +213,8 @@ void guiInterface()
 			//Output format: "bestmove h7h5"
 			if (splitCommand.size() > 1 && (isdigit(splitCommand[1][0]) != 0))
 				gameState->maxDepth = stoi(splitCommand[1]);
-			//gameState->board = board;
+			BitBoard * boardPtr = &board;
+			gameState->board = boardPtr;
 			gameState->idle = !(gameState->idle);
 		}
 		else if (recievedCommand == "isready")
@@ -228,6 +225,12 @@ void guiInterface()
 		{
 			//Stop the engine
 		}
+		else if (CONSOLEDEBUG)
+		{
+			cout << "Unknown command. Type 'help' for a list of commands." << endl;
+			cout << "mgnf: ";
+		}
+
 	}
 	gameState->run = false;
 	engineThread.detach();
@@ -238,13 +241,13 @@ void guiInterface()
 //More variables can be added to gamestate if necessary.
 void runEngine(GameState* gameState)
 {
-	//Engine engine = Engine();
+	Engine engine = Engine();
 	while (gameState->run)
 	{
 		this_thread::sleep_for(chrono::milliseconds(1));
 		while (!gameState->idle)
 		{
-			//gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
+			gameState->principalVariation = engine.startSearch(gameState->board, true , 0 , gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			gameState->idle = true;
 		}

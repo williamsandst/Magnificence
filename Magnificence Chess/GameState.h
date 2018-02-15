@@ -11,9 +11,9 @@ public:
 	atomic<bool> run;
 	atomic<bool> idle;
 	atomic<bool> completedSearch;
-	//BitBoard board;
-	vector<__int16> principalVariation;
-	int maxDepth = 5;
+	BitBoard * board;
+	vector<u32> principalVariation;
+	int maxDepth = 2;
 	GameState();
 	~GameState();
 };
