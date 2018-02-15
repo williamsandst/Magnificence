@@ -28,6 +28,8 @@ string Test::displayBoard(BitBoard board)
 
 u64 Test::perft(int depth, BitBoard *bb, bool color, u32 *start)
 {
+	//if (depth == 0)
+		//return 1;
 	u32 *end;
 	if (color)
 		end = bb->WhiteLegalMoves(start);
@@ -35,6 +37,7 @@ u64 Test::perft(int depth, BitBoard *bb, bool color, u32 *start)
 		end = bb->BlackLegalMoves(start);
 	if (depth == 1)
 	{
+		//return 1;
 		if (end - start == 1)
 		{
 			if (*start == 0 || *start == 1)

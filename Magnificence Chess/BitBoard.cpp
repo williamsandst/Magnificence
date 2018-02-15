@@ -1546,6 +1546,7 @@ int BitBoard::MakeMove(u32 move)
 	u8 oldEP = EP;
 	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
 	u8 moved = mailBox[from];
+	u8 taken = mailBox[to];
 	if (moved == 5 || moved == 12 || mailBox[to] != 14)
 	{
 		silent = 0;
