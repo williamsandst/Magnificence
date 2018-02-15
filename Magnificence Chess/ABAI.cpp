@@ -57,6 +57,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, Move
 				bb->MakeMove(move);
 				int returned = -negamax(-beta, -alpha, depth, maxDepth, color, moveStor->nextObject, triangularPV, pvNextIndex);
 				bb->UnMakeMove(move);
+				if (returned >= beta)
+				{
+					return beta;
+				}
 				if (returned > alpha)
 				{
 					triangularPV[pvIndex] = move;
