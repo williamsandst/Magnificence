@@ -11,7 +11,6 @@ BitBoard::BitBoard()
 	SetUp();
 }
 
-
 BitBoard::~BitBoard()
 {
 }
@@ -21,6 +20,8 @@ inline void BitBoard::RemovePiece(u8 pos)
 	u8 removed = mailBox[pos];
 	mailBox[pos] = 14;
 	Pieces[removed] &= (~(one << pos));
+	zoobristKey ^= ElementArray[removed * 64 + pos];
+	zoobristKey ^= ElementArray[14 * 64 + pos];
 	if (removed < 6)
 	{
 		Pieces[6] &= (~(one << pos));
@@ -36,6 +37,8 @@ inline void BitBoard::AddPiece(u8 pos, u8 piece)
 	u8 removed = mailBox[pos];
 	mailBox[pos] = piece;
 	Pieces[removed] &= (~(one << pos));
+	zoobristKey ^= ElementArray[piece * 64 + pos];
+	zoobristKey ^= ElementArray[removed * 64 + pos];
 	if (removed < 6)
 	{
 		Pieces[6] &= (~(one << pos));
@@ -304,19 +307,8 @@ void BitBoard::SetState(string fen)
 	};
 	i++;
 	//turn
-	while (i < fen.size() && fen[i] != ' ')
-	{
-		i++;
-	}
-	i++;
-	for (int i = 0; i < 64; i++)
-	{
-		u8 value = mailBox[i];
-		if (i > 47)
-		{
-			u8 jfasdf = mailBox[i];
-		}
-	}
+	color = (fen[i] == 'w');
+	i+= 2;
 	//rockad rights
 	rockad = 0;
 	while (i < fen.size() && fen[i] != ' ')
@@ -450,7 +442,36 @@ void BitBoard::SetState(string fen)
 	{
 		Pieces[13] |= Pieces[i];
 	}
+	CalculateZoobrist();
 }
+
+void BitBoard::CalculateZoobrist()
+{
+	zoobristKey = 0;
+	for (size_t i = 0; i < 64; i++)
+	{
+		zoobristKey ^= ElementArray[i + 64 * mailBox[i]];
+	}
+	u32 index;
+	if (EP)
+	{
+		_BitScanForward64(&index, EP);
+		zoobristKey ^= ElementArray[64 * 6 + index];
+	}
+	u8 rockadStor = rockad;
+	while (rockadStor)
+	{
+		_BitScanForward64(&index, rockadStor);
+		zoobristKey ^= ElementArray[64 * 6 + index + 8];
+		rockadStor &= rockadStor - 1;
+	}
+	if (color)
+	{
+		zoobristKey ^= ElementArray[64 * 6 + 12];
+	}
+}
+
+
 
 void BitBoard::SetUp()
 {
@@ -760,19 +781,21 @@ void BitBoard::SetUp()
 			}
 		}
 	}
+	mt19937_64 rng(3475028622465894905);
+	for (int i = 0; i < 960; i++)
+	{
+		ElementArray[i] = rng();
+	}
 }
-//Piece taken 4, ein pasant 1, rockad 1, upgrade 1, upgrade to 4, to 6, from 6
-//Ein Pasant state 8
-//move encoding					TTTTNUBBBBRE00000000ttttttffffff
-// extracting special moves	  0b00001000000000000000000000000000
-//								TTTUUUERRRRsssSSSSSSttttttFFFFFF
-//							  0b00000100000000000000000000000000
-//							  0b00000000001000000000000000000000
-//Piece taken [4] = T ( << 28), non silent [1] = N (<< 27), upgrade [1] = U (<<26)
-//Upgrade to [4] = B ( << 22), Rockad [1] = R ( << 21), einpassant [1] = E ( << 20);
-//to [6] = t (<< 6), from[6] = f (<< 0);
-//0 = patt;
-//universal = matt
+
+/*
+Zoobrist definition
+Pieces in pos + 64 * piecenumber. There is no piece with piecenumber 6 or 13 leaving these for EP squares and such.
+Positions 64 * 6 + 0 to 64 * 6 + 7 are used for EP square h through a, 
+64 * 6 + 8 is for black queen rockad, 64 * 6 + 9 is for black king side rockad
+64 * 6 + 10 is for white queen side rockad and 64 * 6 + 11 is for white king side rockad
+64 * 6 + 12 is on for white and off for black
+*/
 
 //in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
@@ -1543,10 +1566,11 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 
 int BitBoard::MakeMove(u32 move)
 {
+	zoobristKey ^= ElementArray[64 * 6 + 12];
+	color = !color;
 	u8 oldEP = EP;
 	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
 	u8 moved = mailBox[from];
-	u8 taken = mailBox[to];
 	if (moved == 5 || moved == 12 || mailBox[to] != 14)
 	{
 		silent = 0;
@@ -1555,26 +1579,37 @@ int BitBoard::MakeMove(u32 move)
 	{
 		silent++;
 	}
+	if (oldEP)
+	{
+		u32 index;
+		_BitScanForward(&index, oldEP);
+		zoobristKey ^= ElementArray[64 * 6 + index];
+	}
 	RemovePiece(from);
 	EP = 0;
-	if (from == 0 || to == 0)
+	if (rockad & 0b1000 && (from == 0 || to == 0))
 	{
 		rockad &= (0b0111);
+		zoobristKey ^= ElementArray[64 * 6 + 3 + 8];
 	}
-	if (from == 7 || to == 7)
+	if (rockad & 0b0100 && (from == 7 || to == 7))
 	{
 		rockad &= (0b1011);
+		zoobristKey ^= ElementArray[64 * 6 + 2 + 8];
 	}
-	if (from == 63 || to == 63)
+	if (rockad & 0b0001 && (from == 63 || to == 63))
 	{
 		rockad &= (0b1110);
+		zoobristKey ^= ElementArray[64 * 6 + 0 + 8];
 	}
-	if (from == 56 || to == 56)
+	if (rockad & 0b0010 && (from == 56 || to == 56))
 	{
 		rockad &= (0b1101);
+		zoobristKey ^= ElementArray[64 * 6 + 1 + 8];
 	}
 	AddPiece(to, moved);
 	u64 pos;
+	u8 mem;
 	switch (moved)
 	{
 	case 5://white pawn
@@ -1588,9 +1623,10 @@ int BitBoard::MakeMove(u32 move)
 		{
 			RemovePiece(to - 8);
 		}
-		else if (to - from > 9)
+		else if (to - from > 9 && (mailBox[to - 1] == 12 || mailBox[to + 1] == 12))
 		{
 			EP = (u8)one << (from & 0b111);
+			zoobristKey ^= ElementArray[64 * 6 + (from & 0b111)];
 		}
 		break;
 	case 12://black pawn
@@ -1604,12 +1640,21 @@ int BitBoard::MakeMove(u32 move)
 		{
 			RemovePiece(to + 8);
 		}
-		if (from - to > 9)
+		if (from - to > 9 && (mailBox[to + 1] == 5 || mailBox[to - 1] == 5))
 		{
 			EP = (u8)one << (from & 0b111);
+			zoobristKey ^= ElementArray[64 * 6 + (from & 0b111)];
 		}
 		break;
 	case 0://white king
+		mem = rockad & 0b1100;
+		while (mem)
+		{
+			u32 index;
+			_BitScanForward(&index, mem);
+			zoobristKey ^= ElementArray[64 * 6 + 8 + index];
+			mem &= mem - 1;
+		}
 		rockad &= 0b11;
 		if (from - to == 2 || to - from == 2)
 		{
@@ -1629,6 +1674,14 @@ int BitBoard::MakeMove(u32 move)
 		}
 		break;
 	case 7://black king
+		mem = rockad & 0b0011;
+		while (mem)
+		{
+			u32 index;
+			_BitScanForward(&index, mem);
+			zoobristKey ^= ElementArray[64 * 6 + 8 + index];
+			mem &= mem - 1;
+		}
 		rockad &= 0b1100;
 		if (from - to == 2 || to - from == 2)
 		{
@@ -1660,9 +1713,30 @@ int BitBoard::MakeMove(u32 move)
 
 void BitBoard::UnMakeMove(u32 move)
 {
+	zoobristKey ^= ElementArray[64 * 6 + 12];
+	color = !color;
 	silent = 0b111111 & (move >> 12);
+	u32 index;
+	if (EP)
+	{
+		_BitScanForward(&index, EP);
+		zoobristKey ^= ElementArray[64 * 6 + index];
+	}
 	EP = (u8)one << (0b1111 & (move >> 18));
+	if (EP)
+	{
+		_BitScanForward(&index, EP);
+		zoobristKey ^= ElementArray[64 * 6 + index];
+	}
+	u8 oldRockad = rockad;
 	rockad = (u8)0b1111 & (move >> 22);
+	oldRockad = rockad ^ oldRockad;
+	while (oldRockad)
+	{
+		_BitScanForward(&index, oldRockad);
+		zoobristKey ^= ElementArray[64 * 6 + 8 + index];
+		oldRockad &= oldRockad - 1;
+	}
 	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
 	u8 moved = mailBox[to];
 	u8 taken = move >> 29;

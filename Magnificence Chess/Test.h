@@ -2,6 +2,12 @@
 #include <string>
 #include "BitBoard.h"
 
+struct HashEntryPerft
+{
+	u64 key, Result;
+	u8 depth;
+};
+
 class Test
 	//Static class for testing functions
 {
@@ -12,6 +18,7 @@ public:
 	static string displayBoard(BitBoard board);
 
 	//Perft
+	static u64 perft(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize);
 	static u64 perft(int depth, BitBoard *bb, bool color, u32 *start);
 	static string perftDivide(int depth, BitBoard *bb, bool color, u32 *start);
 

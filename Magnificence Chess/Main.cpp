@@ -88,12 +88,16 @@ void guiInterface()
 				cout << commandList;
 			else if (splitCommand[0] == "perft" && splitCommand.size() == 2)
 			{
+				//tablesize should be power of 2 - 1;
 				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
+				u32 tableSize = 16777215;//8388607;
+				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
 				timer = clock();
-				u64 perftNumber = Test::perft(stoi(splitCommand[1]), &board, color, start);
+				u64 perftNumber = Test::perft(stoi(splitCommand[1]), stoi(splitCommand[1]), &board, color, start, Hash, tableSize);
 				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
 				delete[] start;
+				delete[] Hash;
 			}
 			else if (splitCommand[0] == "fen")
 				cout << IO::convertBoardToFEN(board, color) << endl;

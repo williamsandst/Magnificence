@@ -57,10 +57,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, Move
 				bb->MakeMove(move);
 				int returned = -negamax(-beta, -alpha, depth, maxDepth, color, moveStor->nextObject, triangularPV, pvNextIndex);
 				bb->UnMakeMove(move);
-				if (returned >= beta)
-				{
-					return beta;
-				}
+				//if (returned >= beta)
+				//{
+				//	return beta;
+				//}
 				if (returned > alpha)
 				{
 					triangularPV[pvIndex] = move;
@@ -82,6 +82,7 @@ int ABAI::eval()
 
 vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDepth)
 {
+	clock_t start = clock();
 	u32 *triangularPV = new u32[(maxDepth * (maxDepth + 1)) / 2];
 	this->bb = IBB;
 	nodes = 0;
@@ -94,7 +95,8 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	vector<u32> PV;
 	u32 movePlaceHolder = 0;
 	int score = negamax(-1000000, 1000000, maxDepth, maxDepth, color, FirstMoveObject, triangularPV, 0);
-	cout << score << "   " << nodes << endl;
+	clock_t end = clock();
+	cout << score << "   " << nodes << "   " << to_string(nodes / (((end - start) / double CLOCKS_PER_SEC) * 1000)) << " kpos/sec\n";
 	for (size_t i = 0; i < maxDepth; i++)
 	{
 		PV.push_back(triangularPV[i]);
