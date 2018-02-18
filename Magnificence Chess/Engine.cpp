@@ -154,7 +154,6 @@ vector<u32> Engine::startSearch(BitBoard * board, bool color, int timeLeft, int 
 	//Debug output
 	double duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 	cout << "Score " << score << " took " << to_string(duration) << " s at depth " << maxDepth << endl;
-
 	cout << "Total transpositions performed: " << to_string(transpositions) << endl;
 	for (size_t i = 0; i < maxDepth; i++)
 	{
