@@ -5,6 +5,7 @@
 #include <intrin.h>
 #include <iostream>
 #include <string>
+#include <random>
 
 typedef unsigned long long int u64;
 typedef unsigned long int u32;
@@ -29,10 +30,11 @@ public:
 	inline void AddPiece(u8 pos, u8 piece);
 	BitBoard(string fen);
 	void SetState(string fen);
+	void CalculateZoobrist();
 	const u64 one = 1, universal = 0xffffffffffffffff;
 	Magic MRook[64];
 	Magic MBishop[64];
-	u64 rows[8], nRows[8];
+	u64 rows[8], nRows[8], zoobristKey, ElementArray[960];
 	u64 columns[8], nColumns[8];
 	u64 KnightSet[64], KingSet[64];
 	u64 URDL[64], ULDR[64], LR[64], UD[64];
@@ -45,6 +47,7 @@ public:
 					//white: king 0, queen 1, bishop 2, rook  3, knight  4, pawn 5
 					//Black: king 7, queen 8, bishop 9, rook 10, knight 11, pawn 12
 					//empty = 14;
+	bool color;
 	u8 silent;
 	void SetUp();
 	u32* WhiteLegalMoves(u32 *start);

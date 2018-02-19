@@ -57,10 +57,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, Move
 				bb->MakeMove(move);
 				int returned = -negamax(-beta, -alpha, depth, maxDepth, color, moveStor->nextObject, triangularPV, pvNextIndex);
 				bb->UnMakeMove(move);
-				if (returned >= beta)
-				{
-					return beta;
-				}
+				//if (returned >= beta)
+				//{
+				//	return beta;
+				//}
 				if (returned > alpha)
 				{
 					triangularPV[pvIndex] = move;
@@ -77,11 +77,12 @@ int ABAI::eval()
 {
 	nodes++;
 	return bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
-		- bb->pc(bb->Pieces[12]) * Pawn - bb->pc(bb->Pieces[11]) * Knight - bb->pc(bb->Pieces[10]) * Rook + bb->pc(bb->Pieces[9]) * Bishop - bb->pc(bb->Pieces[8]) * Queen;
+		- bb->pc(bb->Pieces[12]) * Pawn - bb->pc(bb->Pieces[11]) * Knight - bb->pc(bb->Pieces[10]) * Rook - bb->pc(bb->Pieces[9]) * Bishop - bb->pc(bb->Pieces[8]) * Queen;
 }
 
 vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDepth)
 {
+	clock_t start = clock();
 	u32 *triangularPV = new u32[(maxDepth * (maxDepth + 1)) / 2];
 	this->bb = IBB;
 	nodes = 0;
@@ -96,9 +97,8 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	clock_t timer = clock();
 	int score = negamax(-4096, 4096, maxDepth, maxDepth, color, FirstMoveObject, triangularPV, 0);
 	double duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
-	cout << "Score " << score << " took " << to_string(duration) << " s at depth " << maxDepth << endl;
+	cout << endl << "Score " << score << " took " << to_string(duration) << " s at depth " << maxDepth << endl;
 	cout << "Node-count:" << nodes << " ["<< to_string((nodes / 1000000.0F) / duration) << " MN/S]" << endl;
-
 	for (size_t i = 0; i < maxDepth; i++)
 	{
 		PV.push_back(triangularPV[i]);
