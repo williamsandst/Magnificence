@@ -6,11 +6,11 @@
 
 
 //Converting between inherent move object and long algebraic form used by interpeter
-string IO::convertMoveToAlg(__int16 move)
+string IO::convertMoveToAlg(u32 move)
 {
 	string alg;
-	__int16 output1 = (move >> 4) & 63;
-	__int16 output2 = (move >> 10) & 63;
+	__int16 output2 = 63 - (move & 63);
+	__int16 output1 = 63 - ((move >> 6) & 63);
 	alg += output2 % 8 + 'a';
 	alg += 8 - output2 / 8 + '0';
 	alg += output1 % 8 + 'a';
@@ -18,67 +18,68 @@ string IO::convertMoveToAlg(__int16 move)
 	return alg;
 }
 
-__int16 IO::convertAlgToMove(string alg)
+u32 IO::convertAlgToMove(string alg)
 {
-	int a = (((8 - (alg[1] - '0')) * 8 + (alg[0] - 'a')) << 10);
-	int b = (((8 - (alg[3] - '0')) * 8 + (alg[2] - 'a')) << 4);
+	int a = (alg[1] - '0' - 1) * 8 + (7-(alg[0] - 'a'));
+	int b = ((alg[3] - '0' - 1) * 8 + (7-(alg[2] - 'a'))) << 6;
 	return (a | b);
 }
 
 //Convert boards to FEN
-string IO::convertBoardToFEN(ArrayBoard board)
+
+string IO::convertBoardToFEN(BitBoard board, bool color)
 {
 	string fenString;
 	int emptyCounter = 0;
 	//Positions
-	for (int y = 0; y < 8; y++)
+	for (int y = 7; y > -1; y--)
 	{
 		for (int x = 0; x < 8; x++)
 		{
-			if (emptyCounter != 0 && board.board[y * 8 + x] != 0)
+			if (emptyCounter != 0 && board.mailBox[y * 8 + x] != 14)
 			{
 				fenString += to_string(emptyCounter);
 				emptyCounter = 0;
 			}
-			switch (board.board[y * 8 + x])
+			switch (board.mailBox[y * 8 + x])
 			{
-			case 1: //White pieces
+			case 5: //White pieces
 				fenString += 'P';
 				break;
-			case 2:
+			case 3:
 				fenString += 'R';
 				break;
-			case 3:
+			case 4:
 				fenString += 'N';
 				break;
-			case 4:
+			case 2:
 				fenString += 'B';
 				break;
-			case 5:
+			case 1:
 				fenString += 'Q';
 				break;
-			case 6:
+			case 0:
 				fenString += 'K';
 				break;
-			case 11: //Black pieces
+			case 12: //Black pieces
 				fenString += 'p';
 				break;
-			case 12:
+			case 10:
 				fenString += 'r';
 				break;
-			case 13:
+			case 11:
 				fenString += 'n';
 				break;
-			case 14:
+			case 9:
 				fenString += 'b';
 				break;
-			case 15:
+			case 8:
 				fenString += 'q';
 				break;
-			case 16:
+			case 7:
 				fenString += 'k';
 				break;
-			case 0: //Space
+			case 14: //Space
 				emptyCounter++;
 				break;
 			}
@@ -88,15 +89,15 @@ string IO::convertBoardToFEN(ArrayBoard board)
 			fenString += to_string(emptyCounter);
 			emptyCounter = 0;
 		}
-		if (y != 7)
+		if (y != 1)
 			fenString += '/';
 	}
 	fenString += " ";
 	//Color turn
-	fenString += ((board.totalPly % 2) == 1) ? 'w' : 'b';
+	fenString += color ? 'w' : 'b';
 	fenString += " ";
 	//Castling
-	if (!(board.castlingWhiteKingSide || board.castlingWhiteQueenSide
+	/*if (!(board.castlingWhiteKingSide || board.castlingWhiteQueenSide
 		|| board.castlingBlackKingSide || board.castlingBlackQueenSide))
 	{
 		fenString += "-";
@@ -120,28 +121,20 @@ string IO::convertBoardToFEN(ArrayBoard board)
 	//Turns
 	fenString += " " + to_string(board.drawCounter);
 	fenString += " " + to_string((board.totalPly + 1) / 2);
-
+	*/
 	return fenString;
 }
 
-string IO::convertBoardToFEN(BitBoard board)
-{
-	return string();
-}
 
 //Converting FEN to Boards
-BitBoard IO::convertFENtoBitBoard(string fenString)
-{
-	return BitBoard();
-}
 
-ArrayBoard IO::convertFENtoArrayBoard(string fenString)
+/*int * IO::convertFENtoBoard(string fenString)
 {
-	ArrayBoard board = ArrayBoard();
+	u32 board[64];
 	//Set all values to 0
 	for (size_t i = 0; i < 64; i++)
 	{
-		board.board[i] = 0;
+		board[i] = 0;
 	}
 	vector<string> fenParts = split(fenString, ' ');
 	int x = 0;
@@ -151,40 +144,40 @@ ArrayBoard IO::convertFENtoArrayBoard(string fenString)
 		switch (fenParts[0][i])
 		{
 		case 'P': //White pieces
-			board.board[y * 8 + x] = 1;
+			board[y * 8 + x] = 1;
 			break;
 		case 'R':
-			board.board[y * 8 + x] = 2;
+			board[y * 8 + x] = 2;
 			break;
 		case 'N':
-			board.board[y * 8 + x] = 3;
+			board[y * 8 + x] = 3;
 			break;
 		case 'B':
-			board.board[y * 8 + x] = 4;
+			board[y * 8 + x] = 4;
 			break;
 		case 'Q':
-			board.board[y * 8 + x] = 5;
+			board[y * 8 + x] = 5;
 			break;
 		case 'K':
-			board.board[y * 8 + x] = 6;
+			board[y * 8 + x] = 6;
 			break;
 		case 'p': //Black pieces
-			board.board[y * 8 + x] = 11;
+			board[y * 8 + x] = 11;
 			break;
 		case 'r':
-			board.board[y * 8 + x] = 12;
+			board[y * 8 + x] = 12;
 			break;
 		case 'n':
-			board.board[y * 8 + x] = 13;
+			board[y * 8 + x] = 13;
 			break;
 		case 'b':
-			board.board[y * 8 + x] = 14;
+			board[y * 8 + x] = 14;
 			break;
 		case 'q':
-			board.board[y * 8 + x] = 15;
+			board[y * 8 + x] = 15;
 			break;
 		case 'k':
-			board.board[y * 8 + x] = 16;
+			board[y * 8 + x] = 16;
 			break;
 		case '/':
 			y++;
@@ -209,7 +202,7 @@ ArrayBoard IO::convertFENtoArrayBoard(string fenString)
 	(fenParts[2].find('q') != string::npos) ? board.castlingBlackQueenSide = true : board.castlingBlackQueenSide = false;
 	//En passant
 	if (fenParts[3] != "-")
-		board.enPassantSquare = (8 - (fenParts[3][1] - '0')) * 8 + (fenParts[3][0] - 'a');
+		board.enPassantSquare = 63 - (8 - (fenParts[3][1] - '0')) * 8 + (fenParts[3][0] - 'a');
 	else
 		board.enPassantSquare = -1;
 	//Last step: Information about Turn and Ply
@@ -223,32 +216,18 @@ ArrayBoard IO::convertFENtoArrayBoard(string fenString)
 	board.totalPly = stoi(fenParts[5]) * 2 - (fenParts[1] == "w");
 
 	//Piece values
-	/*White:
-	//1 = pawn
-	//2 = rook
-	//3 = knight
-	//4 = bishop
-	//5 = queen
-	//6 = king
-	//Black
-	//11 = pawn
-	//12 = rook
-	//13 = knight
-	//14 = bishop
-	//15 = queen
-	//16 = king*/
-	return board;
-}
-
+	//White: king 0, queen 1, bishop 2, rook  3, knight  4, pawn 5
+	//Black: king 7, queen 8, bishop 9, rook 10, knight 11, pawn 12
+}*/
 //Returns a string representing the board in a cool format, used for debugging
-string IO::displayBoard(ArrayBoard board)
+string IO::displayBoard(BitBoard board)
 {
 	string boardString = "\n";
 	for (size_t y = 0; y < 8; y++)
 	{
 		for (size_t x = 0; x < 8; x++)
 		{
-			switch (board.board[y * 8 + x])
+			switch (board.mailBox[y * 8 + x])
 			{
 			case 1: //White pieces
 				boardString += 'P';
