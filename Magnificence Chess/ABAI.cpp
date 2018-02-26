@@ -146,8 +146,8 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 int ABAI::eval()
 {
 	nodes++;
-	return (int)bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
-		- (int)(bb->pc(bb->Pieces[12]) * Pawn + bb->pc(bb->Pieces[11]) * Knight + bb->pc(bb->Pieces[10]) * Rook + bb->pc(bb->Pieces[9]) * Bishop + bb->pc(bb->Pieces[8]) * Queen);
+	return bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
+		- bb->pc(bb->Pieces[12]) * Pawn - bb->pc(bb->Pieces[11]) * Knight - bb->pc(bb->Pieces[10]) * Rook - bb->pc(bb->Pieces[9]) * Bishop - bb->pc(bb->Pieces[8]) * Queen;
 }
 
 vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDepth)
@@ -172,7 +172,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	u32 movePlaceHolder = 0;
 	int score = negamax(-1000000, 1000000, maxDepth, maxDepth, color, MoveStart, triangularPV, 0);
 	clock_t end = clock();
-	cout << score << "   " << nodes << "   " << to_string(nodes / (((end - start) / double CLOCKS_PER_SEC) * 1000)) << " kpos/sec\n";
+	cout << score << "   " << nodes << "   " << to_string(nodes / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec\n";
 	for (size_t i = 0; i < maxDepth; i++)
 	{
 		PV.push_back(triangularPV[i]);

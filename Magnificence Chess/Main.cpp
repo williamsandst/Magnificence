@@ -63,6 +63,7 @@ void guiInterface()
 	cout.setf(ios::unitbuf);
 
 	int flag = 1;
+	bool unknownCommand = false;
 
 	clock_t timer;
 	double duration;
@@ -162,10 +163,15 @@ void guiInterface()
 					cout << splitCommand[2] << " moves generated in " << duration << " s" << endl;
 				}
 			}
+			else
+			{
+				unknownCommand = true;
+			}
 		}
 		if (recievedCommand == "uci")
 		{
 			CONSOLEDEBUG = false;
+			unknownCommand = false;
 			cout << "id name Magnificence" << endl;
 			cout << "id author William" << endl;
 			cout << "uciok" << endl;
@@ -182,11 +188,13 @@ void guiInterface()
 		else if (splitCommand[0] == "position" && splitCommand[1] == "startpos")
 		{
 			board.SetState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+			color = true;
 			if (splitCommand.size() > 2 && splitCommand[2] == "moves")
 			{
 				for (size_t i = 3; i < splitCommand.size(); i++)
 				{
-					board.makeMove(IO::convertAlgToMove(splitCommand[i]));
+					board.MakeMove(IO::convertAlgToMove(splitCommand[i]));
+					color = !color;
 				}
 			}
 		}
@@ -200,7 +208,7 @@ void guiInterface()
 				for (size_t i = 8; i < splitCommand.size(); i++)
 				{
 					color = !color;
-					board.makeMove(IO::convertAlgToMove(splitCommand[i]));
+					board.MakeMove(IO::convertAlgToMove(splitCommand[i]));
 				}
 			}
 		}
@@ -230,11 +238,11 @@ void guiInterface()
 		{
 			//Stop the engine
 		}
-		else if (CONSOLEDEBUG)
-		{
+		else if (unknownCommand)
 			cout << "Unknown command. Type 'help' for a list of commands." << endl;
+		if (CONSOLEDEBUG == true)
 			cout << "mgnf: ";
-		}
+		unknownCommand = false;
 
 	}
 	gameState->run = false;
@@ -257,6 +265,7 @@ void runEngine(GameState* gameState)
 			gameState->principalVariation = AI->bestMove(gameState->board, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
 			//gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
+			cout << "mgnf: ";
 			gameState->idle = true;
 		}
 	}
