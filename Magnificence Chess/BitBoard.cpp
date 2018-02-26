@@ -8,7 +8,7 @@ using namespace std;
 
 BitBoard::BitBoard()
 {
-	SetUp();
+
 }
 
 BitBoard::~BitBoard()
@@ -163,6 +163,37 @@ inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, 
 		moves &= moves - 1;
 	}
 	return movesOut;
+}
+
+void BitBoard::Copy(BitBoard bb)
+{
+	for (int i = 0; i < 64; i++)
+	{
+		mailBox[i] = bb.mailBox[i];
+	}
+	MRook = bb.MRook;
+	MBishop = bb.MBishop;
+	rows = bb.rows;
+	nRows = bb.nRows;
+	zoobristKey = bb.zoobristKey;
+	ElementArray = bb.ElementArray;
+	columns = bb.columns;
+	nColumns = bb.nColumns;
+	KnightSet = bb.KnightSet;
+	KingSet = bb.KingSet;
+	URDL = bb.URDL;
+	ULDR = bb.ULDR;
+	LR = bb.LR;
+	UD = bb.UD;
+	EP = bb.EP;
+	rockad = bb.rockad;
+	for (int i = 0; i < 15; i++)
+	{
+		Pieces[i] = bb.Pieces[i];
+	}
+	color = bb.color;
+	silent = bb.silent;
+
 }
 
 void BitBoard::allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64>* out)
@@ -471,10 +502,21 @@ void BitBoard::CalculateZoobrist()
 	}
 }
 
-
-
 void BitBoard::SetUp()
 {
+	MRook = new Magic[64];
+	MBishop = new Magic[64];
+	rows = new u64[8];
+	nRows = new u64[8];
+	ElementArray = new u64[960];
+	columns = new u64[8];
+	nColumns = new u64[8];
+	KnightSet = new u64[64];
+	KingSet = new u64[64];
+	URDL = new u64[64];
+	ULDR = new u64[64];
+	LR = new u64[64];
+	UD = new u64[64];
 	//creating rows and columns tables
 	for (int i = 0; i < 8; i++)
 	{

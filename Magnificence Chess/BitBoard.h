@@ -32,12 +32,12 @@ public:
 	void SetState(string fen);
 	void CalculateZoobrist();
 	const u64 one = 1, universal = 0xffffffffffffffff;
-	Magic MRook[64];
-	Magic MBishop[64];
-	u64 rows[8], nRows[8], zoobristKey, ElementArray[960];
-	u64 columns[8], nColumns[8];
-	u64 KnightSet[64], KingSet[64];
-	u64 URDL[64], ULDR[64], LR[64], UD[64];
+	Magic *MRook;
+	Magic *MBishop;
+	u64 *rows, *nRows, zoobristKey, *ElementArray;
+	u64 *columns, *nColumns;
+	u64 *KnightSet, *KingSet;
+	u64 *URDL, *ULDR, *LR, *UD;
 	//up left, up right, down left, down right, up, down, right, left
 	u8 EP;
 	//WK << 3, WQ << 2, BK << 1, BQ << 0;
@@ -65,6 +65,7 @@ public:
 		u8 returnValue = __popcnt64(valeu);
 		return returnValue;
 	}
+	void Copy(BitBoard bb);
 private:
 	void allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64> *out);
 };
