@@ -19,17 +19,16 @@ void ABAI::movcpy(u32* pTarget, const u32* pSource, int n)
 	while (n-- && (*pTarget++ = *pSource++));
 }
 
-int ABAI::insertTT(UnpackedHashEntry newEntry)
-{
-	PackedHashEntry entry(newEntry);
-	int index = newEntry.key & hashMask;
+int ABAI::insertTT(PackedHashEntry newEntry)
+{;
+	int index = extractKey(newEntry) & hashMask;
 	//if both type 0 and generation different or depth lower or 
-	if ((extractNodeType(ttDepthFirst[index]) != 0 || newEntry.typeOfNode == 0) &&
-		(extractDepth(ttDepthFirst[index]) <= newEntry.depth || extractGeneration(ttDepthFirst[index]) != newEntry.depth))
-		ttDepthFirst[index] = entry;
+	if ((extractNodeType(ttDepthFirst[index]) != 0 || extractNodeType(newEntry) == 0 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
+		(extractDepth(ttDepthFirst[index]) <= extractDepth(newEntry) || extractGeneration(ttDepthFirst[index]) != extractGeneration(newEntry)))
+		ttDepthFirst[index] = newEntry;
 	else
-		ttAlwaysOverwrite[index] = entry;
-	return 1;
+		ttAlwaysOverwrite[index] = newEntry;
+	return extractDepth(newEntry);
 }
 
 bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
@@ -120,7 +119,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 				bb->UnMakeMove(move);
 				if (returned >= beta)
 				{
-					insertTT(UnpackedHashEntry(0, depth, bestScore, bestMove, bb->zoobristKey, generation));
+					insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 					return beta;
 				}
 				if (returned > alpha)
@@ -136,9 +135,9 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 				return 0;
 		}
 		if (alpha == bestScore)
-			insertTT(UnpackedHashEntry(1, depth, bestScore, bestMove, bb->zoobristKey, generation));
+			insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 		else
-			insertTT(UnpackedHashEntry(2, depth, bestScore, bestMove, bb->zoobristKey, generation));
+			insertTT(UnpackedHashEntry(2, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 		return alpha;
 	}
 }
@@ -195,7 +194,7 @@ PackedHashEntry::PackedHashEntry(UnpackedHashEntry start)
 	//generation is the point when the node was created. It is updated by generation = (generation + 1) & 0b11
 	//generation is 2 bits. 12 - 2 = 10;
 	//10 ^ 2 - 1 = 1023 which is more than sufficient for the depht.
-	data = start.score | start.bestMove << 16 | start.typeOfNode << 48 | start.generation << 51 | start.generation << 53;
+	data = ((u16)start.score) | (u64)start.bestMove << 16 | (u64)start.typeOfNode << 48 | (u64)start.generation << 51 | (u64)start.depth << 54;
 	key = start.key ^ data;
 }
 
@@ -221,7 +220,7 @@ UnpackedHashEntry::UnpackedHashEntry(PackedHashEntry in)
 	bestMove = (u32)(0xffffffff & (in.data >> 16));
 	typeOfNode = (u8)(((u8)0b11) & (in.data >> 48));
 	generation = (u8)(((u8)0b11) & in.data >> 51);
-	depth = (short)(in.data >> 53);
+	depth = (short)(in.data >> 54);
 	key = in.key ^ in.data;
 }
 
@@ -232,7 +231,7 @@ u8 ABAI::extractNodeType(PackedHashEntry in)
 
 short ABAI::extractDepth(PackedHashEntry in)
 {
-	return (short)(in.data >> 53);
+	return (short)(in.data >> 54);
 }
 
 short ABAI::extractScore(PackedHashEntry in)

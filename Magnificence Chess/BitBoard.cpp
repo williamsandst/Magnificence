@@ -140,6 +140,52 @@ inline u32* BitBoard::extractBlackPawnMoves(u64 moves, u32 baseMove, u32 start, 
 	return movesOut;
 }
 
+bool BitBoard::LegailityChecker(u32 move)
+{
+	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
+	u8 moved = mailBox[from];
+	u8 taken = move >> 29;
+	if (moved < 6 || taken == 7)
+	{
+		taken += 7;
+	}
+	if (moved == 14 || mailBox[to] != taken || (moved < 7 && !color || moved > 7 && color) || mailBox[from] < 7 && mailBox[to] < 7 || mailBox[from] > 7 && mailBox[to] > 7 &&  mailBox[to] < 14)
+		return false;
+	u64 toSet = one << to, fromSet = one << from;
+	switch (moved)
+	{
+	case 7:
+	case 0:
+		return (bool)(((KingSet[from] & toSet) != 0 || (to - from == 2 || from - to == 2)));
+		break;
+	case 8:
+	case 1:
+		return (bool)(((MagicBishop(fromSet, Pieces[6] | Pieces[13]) & toSet) != 0 || (MagicRook(fromSet, Pieces[6] | Pieces[13]) & toSet) != 0));
+		break;
+	case 9:
+	case 2:
+		return (bool)((MagicBishop(fromSet, Pieces[6] | Pieces[13]) & toSet) != 0);
+		break;
+	case 10:
+	case 3:
+		return (bool)((MagicRook(fromSet, Pieces[6] | Pieces[13]) & toSet) != 0);
+		break;
+	case 11:
+	case 4:
+		return (bool)((KnightSet[from] & toSet) != 0);
+		break;
+	case 5:
+		return (to - from == 7 || to - from == 8 || to - from == 9 || to - from == 16);
+		break;
+	case 12:
+		return (from - to == 7 || from - to == 8 || from - to == 9 || from - to == 16);
+		break;
+	default:
+		break;
+	}
+	return false;
+}
+
 inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
 {
 	u32 move, BaseMove = baseMove | start, index;
@@ -842,7 +888,7 @@ Positions 64 * 6 + 0 to 64 * 6 + 7 are used for EP square h through a,
 //in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
 //Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
-// TTTUUUERRRRsssSSSSSSttttttFFFFFF
+// TTTUUUERRRRsssSSSSSSttttttFFFFFFF
 u32* BitBoard::WhiteLegalMoves(u32 *Start)
 {
 	u32 *MoveInsert = Start;
@@ -1486,7 +1532,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
 					(MagicBishop(king, mockOccupancy) & (Pieces[1] | Pieces[2]))))
 				{
-					*MoveInsert = baseMove | (index + 9) | (index << 6);
+					*MoveInsert = baseMove | (index + 9) | (index << 6) | 7 << 29;
 					MoveInsert++;
 				}
 			}
@@ -1509,7 +1555,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
 					(MagicBishop(king, mockOccupancy) & (Pieces[1] | Pieces[2]))))
 				{
-					*MoveInsert = baseMove | (index + 7) | (index << 6);
+					*MoveInsert = baseMove | (index + 7) | (index << 6) | 7 << 29;
 					MoveInsert++;
 				}
 			}
@@ -1751,7 +1797,7 @@ int BitBoard::MakeMove(u32 move)
 //in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
 //Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
-// TTTUUURRRRssssSSSSSSttttttFFFFFF
+// TTTUUURRRRssssSSSSSSttttttFFFFFFF
 
 void BitBoard::UnMakeMove(u32 move)
 {

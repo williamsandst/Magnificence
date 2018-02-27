@@ -60,6 +60,7 @@ public:
 	inline u32* extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut);
 	inline u32* extractBlackMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut);
 	inline u32* extractBlackPawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut);
+	bool LegailityChecker(u32 move); //Checks if a move is legal, considers moved from, moved to, piece taken, but not EP, blocked pieces
 	u8 pc(u64 valeu)
 	{
 		u8 returnValue = __popcnt64(valeu);

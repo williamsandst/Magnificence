@@ -68,6 +68,11 @@ u64 Test::perft(int depth, int startDepth, BitBoard *bb, bool color, u32 *start,
 			start++;
 			if (move != 0 && move != 1)
 			{
+				if (!bb->LegailityChecker(move))
+				{
+					seePos(bb);
+					cout << "terrible";
+				}
 				bb->MakeMove(move);
 				res += perft(depth, startDepth, bb, color, nextStart, Hash, tableSize);
 				bb->UnMakeMove(move);

@@ -9,7 +9,8 @@ struct UnpackedHashEntry
 {
 	u8 typeOfNode;//(0 is minimum value, 1 is exact, 2 is maximum value)
 	u8 generation;
-	short depth, score;
+	unsigned short depth;
+	short score;
 	u32 bestMove;
 	u64 key;
 	UnpackedHashEntry(u8 typeOfNode, short depth, short score, u32 bestM, u64 key, u8 generation);
@@ -40,7 +41,7 @@ public:
 	u64 extractKey(PackedHashEntry in);
 	u8 extractGeneration(PackedHashEntry in);
 	void movcpy(u32* pTarget, const u32* pSource, int n);
-	int insertTT(UnpackedHashEntry newEntry);
+	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u32 *triangularPV, short pvIndex);
 	int eval();
