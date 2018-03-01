@@ -2,6 +2,7 @@
 #include "ABAI.h"
 #pragma once
 #include "IO.h"
+#include <cmath>
 
 
 ABAI::ABAI()
@@ -50,101 +51,103 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 
 int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u32 *triangularPV, short pvIndex)
 {
-	if (depth == 0)
+	nodes[depth]++;
+	if (depth == 0) return color ? lazyEval(): -lazyEval();
+	u32 bestMove;
+	short bestScore = -8192;
+	bool previousBestMove = false;
+
+	//Check whether there is a transposition that can be used for this position
 	{
-		if (color)
-			return eval();
-		else
-			return -eval();
+		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+		if (getFromTT(bb->zoobristKey, &potEntry))
+		{
+			if (potEntry.depth >= depth)
+			{
+				if (potEntry.typeOfNode == 1)
+					return potEntry.score;
+				else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
+					return beta;
+				else if (potEntry.score == 1 && potEntry.score <= alpha)
+					return alpha;
+			}
+			bestMove = potEntry.bestMove;
+			previousBestMove = true;
+		}
 	}
+	
+	triangularPV[pvIndex] = 0;
+	u16 pvNextIndex = pvIndex + depth;
+	u32 *end;
+	
+	//Generate legal moves for this position
+	if (color)
+		end = bb->WhiteLegalMoves(start);
 	else
+		end = bb->BlackLegalMoves(start);
+	depth--;
+	color = !color;
+
+	//If a move is part of the principal variation, search that first!
+	if (previousBestMove)
 	{
-		u32 bestMove;
-		short bestScore = -1000000;
-		bool previousBestMove = false;
-		{
-			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (getFromTT(bb->zoobristKey, &potEntry))
-			{
-				if (potEntry.depth >= depth)
-				{
-					if (potEntry.typeOfNode == 1)
-						return potEntry.score;
-					else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
-						return beta;
-					else if (potEntry.score == 1 && potEntry.score <= alpha)
-						return alpha;
-				}
-				bestMove = potEntry.bestMove;
-				previousBestMove = true;
-			}
-		}
-		triangularPV[pvIndex] = 0;
-		u16 pvNextIndex = pvIndex + depth;
-		u32 *end;
-		if (color)
-			end = bb->WhiteLegalMoves(start);
-		else
-			end = bb->BlackLegalMoves(start);
-		depth--;
-		color = !color;
-		if (previousBestMove)
-		{
-			u32 *mem = start;
-			while (start != end)
-			{
-				if (*start == bestMove)
-				{
-					u32 memory = *mem;
-					*mem = *start;
-					*start = memory;
-				}
-				start++;
-			}
-			start = mem;
-		}
+		u32 *mem = start;
 		while (start != end)
 		{
-			u32 move = *start;
-			start++;
-			if (move != 0 && move != 1)
+			if (*start == bestMove)
 			{
-				bb->MakeMove(move);
-				int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, triangularPV, pvNextIndex);
-				if (returned > bestScore)
-				{
-					bestScore = returned;
-					bestMove = move;
-				}
-				bb->UnMakeMove(move);
-				if (returned >= beta)
-				{
-					insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
-					return beta;
-				}
-				if (returned > alpha)
-				{
-					triangularPV[pvIndex] = move;
-					movcpy(triangularPV + pvIndex + 1, triangularPV + pvNextIndex, depth);
-					alpha = returned;
-				}
+				u32 memory = *mem;
+				*mem = *start;
+				*start = memory;
 			}
-			else if (move == 1)
-				return -8191 + maxDepth - depth;
-			else
-				return 0;
+			start++;
 		}
-		if (alpha == bestScore)
-			insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
-		else
-			insertTT(UnpackedHashEntry(2, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
-		return alpha;
+		start = mem;
 	}
+	
+	//Go through the legal moves
+	while (start != end)
+	{
+		u32 move = *start;
+		start++;
+		if (move != 0 && move != 1)
+		{
+			bb->MakeMove(move);
+			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, triangularPV, pvNextIndex);
+			if (returned > bestScore)
+			{
+				bestScore = returned;
+				bestMove = move;
+			}
+			bb->UnMakeMove(move);
+			if (returned >= beta)
+			{
+				insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+				return beta;
+			}
+			if (returned > alpha)
+			{
+				triangularPV[pvIndex] = move;
+				movcpy(triangularPV + pvIndex + 1, triangularPV + pvNextIndex, depth);
+				alpha = returned;
+			}
+		}
+		else if (move == 1) //If in check, return a very bad score
+			return -4095 + maxDepth - depth;
+		else
+			return 0; //If draw, return 0
+	}
+	//Create an entry for the transposition table
+	if (alpha == bestScore)
+		insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+	else
+		insertTT(UnpackedHashEntry(2, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+	return alpha;
 }
 
-int ABAI::eval()
+int ABAI::lazyEval()
 {
-	nodes++;
+	//nodes[0]++;
 	return bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
 		- bb->pc(bb->Pieces[12]) * Pawn - bb->pc(bb->Pieces[11]) * Knight - bb->pc(bb->Pieces[10]) * Rook - bb->pc(bb->Pieces[9]) * Bishop - bb->pc(bb->Pieces[8]) * Queen;
 }
@@ -156,28 +159,79 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		int size = 24 + 1; //bits
 		int i = 1;
 		while ((size -= 1) && (i *= 2));
-		cout << i << endl;
+		//cout << i << endl;
 		ttAlwaysOverwrite = new PackedHashEntry[i];
 		ttDepthFirst = new PackedHashEntry[i];
 		hashMask = i - 1;
 	}
 	generation = (generation + 1) & 0b11;
+
+	//Create the static array used for storing legal moves
 	u32 *MoveStart = new u32[218 * 100];
-	clock_t start = clock();
+
+	//Create the triangular principal variation array
 	u32 *triangularPV = new u32[(maxDepth * (maxDepth + 1)) / 2];
+
 	this->bb = IBB;
-	nodes = 0;
 	vector<u32> PV;
-	u32 movePlaceHolder = 0;
-	int score = negamax(-1000000, 1000000, maxDepth, maxDepth, color, MoveStart, triangularPV, 0);
+
+	//Reset the debug node counter
+	for (size_t i = 0; i < 100; i++)
+		nodes[i] = 0;
+
+	//Variables used for debugging
+	clock_t start = clock();
+
+	//Run search
+	int score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, triangularPV, 0);
+	
 	clock_t end = clock();
-	cout << score << "   " << nodes << "   " << to_string(nodes / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec\n";
+
+	//Debug output
+	cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
+	cout << to_string(nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
+		to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
+	cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)maxDepth) << endl;
+	
+	/*cout << "Branching factors: ";
+	for (size_t i = 0; i < maxDepth-1; i++)
+	{
+		cout << endl << to_string(nodes[i]) << " / " << to_string(nodes[i + 1]) << " = ";
+		cout << to_string(maxDepth - i) << "/" << to_string(maxDepth - i - 1) << ": " << to_string((float)nodes[i] / (float)nodes[i + 1])
+			<< ", ";
+	}*/
+	/*cout << endl << "Principal variation (tri-pV table): ";
 	for (size_t i = 0; i < maxDepth; i++)
 	{
-		PV.push_back(triangularPV[i]);
-		cout << IO::convertMoveToAlg(triangularPV[i]) << endl;
+		//PV.push_back(triangularPV[i]);
+		cout << IO::convertMoveToAlg(triangularPV[i]) << " ";
+	}*/
+
+	//Find pV variation from transposition table
+	cout << endl << "Principal variation (TT): ";
+	u32 pV[100];
+	for (size_t i = 0; i < maxDepth; i++)
+	{
+		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+		if (!getFromTT(bb->zoobristKey, &potEntry))
+			cout << "ERROR: Move not part of pV? Check replacement scheme!" << endl;
+		pV[i] = potEntry.bestMove;
+		PV.push_back(pV[i]);
+		cout << IO::convertMoveToAlg(pV[i]) << ", ";
+		bb->MakeMove(pV[i]);
 	}
+	cout << endl;
+	//Undo the pV moves
+	for (size_t i = 1; i < maxDepth+1; i++)
+	{
+		bb->UnMakeMove(pV[maxDepth-i]);
+	}
+
+	cout << endl;
+
+	//Memory cleanup
 	delete[] triangularPV, MoveStart;
+
 	return PV;
 }
 

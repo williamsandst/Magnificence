@@ -26,12 +26,17 @@ struct PackedHashEntry
 
 class ABAI
 {
-public:
+private:
+	//Material values
 	const int Bishop = 300, Rook = 500, Knight = 300, Queen = 900, Pawn = 100;
+	//Piece square tables
+	//Debugging variables
+	u64 nodes[100];
+public:
 	BitBoard *bb;
 	PackedHashEntry *ttDepthFirst, *ttAlwaysOverwrite;
 	u8 generation;
-	u64 nodes, hashMask;
+	u64 hashMask;
 	ABAI();
 	~ABAI();
 	u8 extractNodeType(PackedHashEntry in);
@@ -44,7 +49,7 @@ public:
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u32 *triangularPV, short pvIndex);
-	int eval();
+	int lazyEval();
 	vector<u32> bestMove(BitBoard *IBB, bool color, clock_t time, int maxDepth);
 
 };
