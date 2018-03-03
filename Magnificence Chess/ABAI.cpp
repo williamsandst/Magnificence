@@ -133,8 +133,27 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 int ABAI::lazyEval()
 {
 	//nodes[0]++;
-	return bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
+	short score = 0;
+	score += bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
 		- bb->pc(bb->Pieces[12]) * Pawn - bb->pc(bb->Pieces[11]) * Knight - bb->pc(bb->Pieces[10]) * Rook - bb->pc(bb->Pieces[9]) * Bishop - bb->pc(bb->Pieces[8]) * Queen;
+	score += pieceSquareValues(whitePawnEarlyPST, bb->Pieces[5]);
+	score -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
+	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
+	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[10]);
+	return score;
+}
+
+int ABAI::pieceSquareValues(short * pieceSquareTable, u64 pieceSet)
+{
+	u32 index;
+	short sum = 0;
+	while (pieceSet)
+	{
+		_BitScanForward64(&index, pieceSet);
+		pieceSet &= pieceSet - 1;
+		sum += pieceSquareTable[index];
+	}
+	return sum;
 }
 
 vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDepth)
