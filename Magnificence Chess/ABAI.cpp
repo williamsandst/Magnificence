@@ -207,11 +207,12 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	clock_t end = clock();
 
 	//Debug output
+	/*
 	cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
 	cout << to_string(nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
 		to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
 	cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)maxDepth) << endl;
-	
+	*/
 	/*cout << "Branching factors: ";
 	for (size_t i = 0; i < maxDepth-1; i++)
 	{
@@ -227,7 +228,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	}*/
 
 	//Find pV variation from transposition table
-	cout << endl << "Principal variation (TT): ";
+	//cout << endl << "Principal variation (TT): ";
 	u32 pV[100];
 	for (size_t i = 0; i < maxDepth; i++)
 	{
@@ -236,7 +237,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 			cout << "ERROR: Move not part of pV? Check replacement scheme!" << endl;
 		pV[i] = potEntry.bestMove;
 		PV.push_back(pV[i]);
-		cout << IO::convertMoveToAlg(pV[i]) << ", ";
+		//cout << IO::convertMoveToAlg(pV[i]) << ", ";
 		bb->MakeMove(pV[i]);
 	}
 	cout << endl;
@@ -246,7 +247,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		bb->UnMakeMove(pV[maxDepth-i]);
 	}
 
-	cout << endl;
+	//cout << endl;
 
 	//Memory cleanup
 	delete[] triangularPV, MoveStart;

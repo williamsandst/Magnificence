@@ -265,7 +265,7 @@ void runEngine(GameState* gameState)
 			gameState->principalVariation = AI->bestMove(gameState->board, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
 			//gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
-			cout << "mgnf: ";
+			//cout << "mgnf: ";
 			gameState->idle = true;
 		}
 	}
