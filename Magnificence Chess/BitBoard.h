@@ -17,7 +17,7 @@ using namespace std;
 class BitBoard : public Board
 {
 public:
-
+	// TTTUUUERRRRsssSSSSSSttttttFFFFFF
 	struct Magic
 	{
 	public:
@@ -52,6 +52,7 @@ public:
 	void SetUp();
 	u32* WhiteLegalMoves(u32 *start);
 	u32* BlackLegalMoves(u32 *start);
+	u32 getBaseMove();
 	int MakeMove(u32 move);
 	void UnMakeMove(u32 move);
 	inline u64 MagicRook(u64 piece, u64 occupancy);
@@ -66,7 +67,7 @@ public:
 		u8 returnValue = __popcnt64(valeu);
 		return returnValue;
 	}
-	void Copy(BitBoard bb);
+	void Copy(BitBoard *bb);
 private:
 	void allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64> *out);
 };

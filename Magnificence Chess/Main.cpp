@@ -258,11 +258,13 @@ void runEngine(GameState* gameState)
 	ABAI *AI = new ABAI();
 	while (gameState->run)
 	{
-		this_thread::sleep_for(chrono::milliseconds(1));
+		this_thread::sleep_for(chrono::milliseconds(2));
 		while (!gameState->idle)
 		{
+			BitBoard localBB;
+			localBB.Copy(gameState->board);
 			//gameState->principalVariation = engine.startSearch(gameState->board, true , 0 , gameState->maxDepth);
-			gameState->principalVariation = AI->bestMove(gameState->board, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
+			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
 			//gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			cout << "mgnf: ";

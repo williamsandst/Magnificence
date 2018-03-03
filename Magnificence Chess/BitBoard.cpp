@@ -211,35 +211,34 @@ inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, 
 	return movesOut;
 }
 
-void BitBoard::Copy(BitBoard bb)
+void BitBoard::Copy(BitBoard *bb)
 {
 	for (int i = 0; i < 64; i++)
 	{
-		mailBox[i] = bb.mailBox[i];
+		mailBox[i] = bb->mailBox[i];
 	}
-	MRook = bb.MRook;
-	MBishop = bb.MBishop;
-	rows = bb.rows;
-	nRows = bb.nRows;
-	zoobristKey = bb.zoobristKey;
-	ElementArray = bb.ElementArray;
-	columns = bb.columns;
-	nColumns = bb.nColumns;
-	KnightSet = bb.KnightSet;
-	KingSet = bb.KingSet;
-	URDL = bb.URDL;
-	ULDR = bb.ULDR;
-	LR = bb.LR;
-	UD = bb.UD;
-	EP = bb.EP;
-	rockad = bb.rockad;
+	MRook = bb->MRook;
+	MBishop = bb->MBishop;
+	rows = bb->rows;
+	nRows = bb->nRows;
+	zoobristKey = bb->zoobristKey;
+	ElementArray = bb->ElementArray;
+	columns = bb->columns;
+	nColumns = bb->nColumns;
+	KnightSet = bb->KnightSet;
+	KingSet = bb->KingSet;
+	URDL = bb->URDL;
+	ULDR = bb->ULDR;
+	LR = bb->LR;
+	UD = bb->UD;
+	EP = bb->EP;
+	rockad = bb->rockad;
 	for (int i = 0; i < 15; i++)
 	{
-		Pieces[i] = bb.Pieces[i];
+		Pieces[i] = bb->Pieces[i];
 	}
-	color = bb.color;
-	silent = bb.silent;
-
+	color = bb->color;
+	silent = bb->silent;
 }
 
 void BitBoard::allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64>* out)
@@ -869,7 +868,8 @@ void BitBoard::SetUp()
 			}
 		}
 	}
-	mt19937_64 rng(3475028622465894905);
+	//3475028622465894905
+	mt19937_64 rng(12930851248845704758);
 	for (int i = 0; i < 960; i++)
 	{
 		ElementArray[i] = rng();
@@ -889,6 +889,23 @@ Positions 64 * 6 + 0 to 64 * 6 + 7 are used for EP square h through a,
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
 //Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
 // TTTUUUERRRRsssSSSSSSttttttFFFFFFF
+u32 BitBoard::getBaseMove()
+{
+	u32 baseMove;
+	{
+		u32 index;
+		if (EP)
+		{
+			_BitScanForward(&index, EP);
+		}
+		else
+		{
+			index = 8;
+		}
+		baseMove = index << 18 | rockad << 22 | silent << 12;
+	}
+	return baseMove;
+}
 u32* BitBoard::WhiteLegalMoves(u32 *Start)
 {
 	u32 *MoveInsert = Start;
