@@ -24,7 +24,7 @@ int ABAI::insertTT(PackedHashEntry newEntry)
 {;
 	int index = extractKey(newEntry) & hashMask;
 	//if both type 0 and generation different or depth lower or 
-	if ((extractNodeType(ttDepthFirst[index]) != 0 || extractNodeType(newEntry) == 0 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
+	if ((extractNodeType(ttDepthFirst[index]) != 1 || extractNodeType(newEntry) == 1 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
 		(extractDepth(ttDepthFirst[index]) <= extractDepth(newEntry) || extractGeneration(ttDepthFirst[index]) != extractGeneration(newEntry)))
 		ttDepthFirst[index] = newEntry;
 	else
@@ -49,11 +49,13 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 		return false;
 }
 
-int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u32 *triangularPV, short pvIndex)
+
+
+int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves)
 {
 	nodes[depth]++;
 	if (depth == 0) return color ? lazyEval(): -lazyEval();
-	u32 bestMove;
+	u32 bestMove = 0;
 	short bestScore = -8192;
 	bool previousBestMove = false;
 
@@ -72,12 +74,9 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 					return alpha;
 			}
 			bestMove = potEntry.bestMove;
-			previousBestMove = true;
 		}
 	}
-	
-	triangularPV[pvIndex] = 0;
-	u16 pvNextIndex = pvIndex + depth;
+
 	u32 *end;
 	
 	//Generate legal moves for this position
@@ -89,21 +88,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	color = !color;
 
 	//If a move is part of the principal variation, search that first!
-	if (previousBestMove)
-	{
-		u32 *mem = start;
-		while (start != end)
-		{
-			if (*start == bestMove)
-			{
-				u32 memory = *mem;
-				*mem = *start;
-				*start = memory;
-			}
-			start++;
-		}
-		start = mem;
-	}
+	SortMoves(start, end, bestMove, killerMoves);
 	
 	//Go through the legal moves
 	while (start != end)
@@ -113,7 +98,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		if (move != 0 && move != 1)
 		{
 			bb->MakeMove(move);
-			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, triangularPV, pvNextIndex);
+			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2);
 			if (returned > bestScore)
 			{
 				bestScore = returned;
@@ -122,13 +107,13 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bb->UnMakeMove(move);
 			if (returned >= beta)
 			{
+				*(killerMoves + moveOveride[depth]) = (u16)move;
+				moveOveride[depth] = (moveOveride[depth] + 1) & 1;
 				insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 				return beta;
 			}
 			if (returned > alpha)
 			{
-				triangularPV[pvIndex] = move;
-				movcpy(triangularPV + pvIndex + 1, triangularPV + pvNextIndex, depth);
 				alpha = returned;
 			}
 		}
@@ -173,6 +158,17 @@ int ABAI::pieceSquareValues(short * pieceSquareTable, u64 pieceSet)
 
 vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDepth)
 {
+	/*
+	To do
+	0.	Q-search
+	1.	Iterative Depening
+	2.	History Heurestic
+	3.	Move Sorting
+	4.	Multithreading
+	6.	PV search
+	7.	Lazy eval into make unmake move
+	8.	More heuristics
+	*/
 	if (ttAlwaysOverwrite == nullptr)
 	{	
 		int size = 24 + 1; //bits
@@ -184,12 +180,19 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		hashMask = i - 1;
 	}
 	generation = (generation + 1) & 0b11;
+	for (int i = 0; i < 100; i++)
+	{
+		if (moveOveride[i] > 1)
+		{
+			moveOveride[i] = 0;
+		}
+	}
 
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = new u32[218 * 100];
+	u16 *KillerMoves = new u16[200];
 
 	//Create the triangular principal variation array
-	u32 *triangularPV = new u32[(maxDepth * (maxDepth + 1)) / 2];
 
 	this->bb = IBB;
 	vector<u32> PV;
@@ -202,24 +205,23 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	clock_t start = clock();
 
 	//Run search
-	int score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, triangularPV, 0);
+	int score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
 	
 	clock_t end = clock();
 
 	//Debug output
-	/*
 	cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
 	cout << to_string(nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
 		to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
 	cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)maxDepth) << endl;
-	*/
+	
 	/*cout << "Branching factors: ";
 	for (size_t i = 0; i < maxDepth-1; i++)
 	{
 		cout << endl << to_string(nodes[i]) << " / " << to_string(nodes[i + 1]) << " = ";
 		cout << to_string(maxDepth - i) << "/" << to_string(maxDepth - i - 1) << ": " << to_string((float)nodes[i] / (float)nodes[i + 1])
 			<< ", ";
-	}*/
+	}
 	/*cout << endl << "Principal variation (tri-pV table): ";
 	for (size_t i = 0; i < maxDepth; i++)
 	{
@@ -228,7 +230,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	}*/
 
 	//Find pV variation from transposition table
-	//cout << endl << "Principal variation (TT): ";
+	cout << endl << "Principal variation (TT): ";
 	u32 pV[100];
 	for (size_t i = 0; i < maxDepth; i++)
 	{
@@ -237,20 +239,21 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 			cout << "ERROR: Move not part of pV? Check replacement scheme!" << endl;
 		pV[i] = potEntry.bestMove;
 		PV.push_back(pV[i]);
-		//cout << IO::convertMoveToAlg(pV[i]) << ", ";
+		cout << IO::convertMoveToAlg(pV[i]) << ", ";
 		bb->MakeMove(pV[i]);
 	}
 	cout << endl;
+
 	//Undo the pV moves
 	for (size_t i = 1; i < maxDepth+1; i++)
 	{
 		bb->UnMakeMove(pV[maxDepth-i]);
 	}
 
-	//cout << endl;
+	cout << endl;
 
 	//Memory cleanup
-	delete[] triangularPV, MoveStart;
+	delete[] MoveStart, KillerMoves;
 
 	return PV;
 }
@@ -311,6 +314,44 @@ short ABAI::extractDepth(PackedHashEntry in)
 short ABAI::extractScore(PackedHashEntry in)
 {
 	return (short)(0xffff & in.data);
+}
+
+void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves)
+{
+	u32 *OGstart = start, mem, u32, *KMStart = start, *mover;
+	bestMove &= (ToFromMask);
+	u16 KM1 = *killerMoves & ToFromMask, KM2 = *(killerMoves + 1) & ToFromMask;
+	while (start != end)
+	{
+		u16 move = (*start) & ToFromMask;
+		if (move == bestMove)
+		{
+			if (OGstart != KMStart)
+			{
+				mover = KMStart - 1;
+				while (mover >= OGstart)
+				{
+					mem = *mover;
+					*mover = *(mover + 1);
+					*(mover + 1) = mem;
+					mover--;
+				}
+			}
+			mem = *start;
+			*start = *OGstart;
+			KMStart++;
+			*OGstart = mem;
+			OGstart++;
+		}
+		else if (move == KM1 || move == KM2)
+		{
+			mem = *start;
+			*start = *KMStart;
+			*KMStart = mem;
+			KMStart++;
+		}
+		start++;
+	}
 }
 
 u32 ABAI::extractBestMove(PackedHashEntry in)
