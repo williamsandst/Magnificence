@@ -273,7 +273,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
 	cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)maxDepth) << endl;
 	
-	cout << "Branching factors: ";
+	/*cout << "Branching factors: ";
 	for (size_t i = 0; i < maxDepth-1; i++)
 	{
 		cout << endl << to_string(nodes[i]) << " / " << to_string(nodes[i + 1]) << " = ";
@@ -301,6 +301,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		bb->MakeMove(pV[i]);
 	}
 	cout << endl;
+
 	//Undo the pV moves
 	for (size_t i = 1; i < maxDepth+1; i++)
 	{

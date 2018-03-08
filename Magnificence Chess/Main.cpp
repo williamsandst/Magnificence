@@ -264,9 +264,7 @@ void runEngine(GameState* gameState)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			//gameState->principalVariation = engine.startSearch(gameState->board, true , 0 , gameState->maxDepth);
-			gameState->principalVariation = AI->bestMove(gameState->board, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
-			//gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
+			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			cout << "mgnf: ";
 			gameState->idle = true;
