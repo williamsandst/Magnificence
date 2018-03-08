@@ -130,7 +130,7 @@ private:
 		9,  18,  24,  27,  27,  24,  18,   9,
 		6,  15,  21,  24,  24,  21,  15,   6,
 		3,  12,  15,  18,  18,  15,  12,   3,
-		-15, -12,  -9,  -6,  -6,  -9, -12, -15 };
+	  -15, -12,  -9,  -6,  -6,  -9, -12, -15 };
 			
 	short whiteKnightLatePST[64] = 
 	  { 0,  3,  6,  9,  9,  6,  3,  0,
@@ -293,7 +293,8 @@ public:
 	void movcpy(u32* pTarget, const u32* pSource, int n);
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
-	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves);
+	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, u8 *overide);
+	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, u8 *overide);
 	int lazyEval();
 	int pieceSquareValues(short * pieceSquareTable, u64 pieceSet);
 	vector<u32> bestMove(BitBoard *IBB, bool color, clock_t time, int maxDepth);

@@ -49,16 +49,58 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 		return false;
 }
 
-
-
-int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves)
+int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, u8 *overide)
 {
-	nodes[depth]++;
-	if (depth == 0) return color ? lazyEval(): -lazyEval();
-	u32 bestMove = 0;
-	short bestScore = -8192;
-	bool previousBestMove = false;
+	int nodeval;
+	if (color)
+		nodeval = lazyEval();
+	else
+		nodeval = -lazyEval();
+	if (nodeval > alpha)
+	{
+		alpha = nodeval;
+		if (nodeval > beta)
+		{
+			return beta;
+		}
+	}
+	u32 *end;
+	//Generate legal QSearch moves for this position
+	if (color)
+		end = bb->WhiteQSearchMoves(start);
+	else
+		end = bb->BlackQSearchMoves(start);
+	//SortMoves(start, end, 0, killerMoves);
+	if (*start == 1 || *start == 0)
+		return nodeval;
+	SortMoves(start, end, 0, killerMoves);
+	u32 move;
+	color = !color;
+	while (start != end)
+	{
+		move = *start;
+		start++;
+		bb->MakeMove(move);
+		int score = -QSearch(-beta, -alpha, color, killerMoves + 2, end, overide + 1);
+		bb->UnMakeMove(move);
+		if (score >= beta)
+		{
+			*(killerMoves + *overide) = (u16)move;
+			*overide ^= 1;
+			return beta;
+		}
+		if (score > alpha)
+			alpha = score;
+	}
+	return alpha;
+}
 
+
+
+int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, u8 *overide)
+{
+	u32 bestMove = 0;
+	nodes[depth]++;
 	//Check whether there is a transposition that can be used for this position
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -76,6 +118,15 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bestMove = potEntry.bestMove;
 		}
 	}
+	if (depth == 0)
+	{
+		//if (color)
+		//	return lazyEval();
+		//else
+		//	return -lazyEval();
+		return QSearch(alpha, beta, color, killerMoves, start, overide);
+	}
+	short bestScore = -8192;
 
 	u32 *end;
 	
@@ -90,6 +141,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	//If a move is part of the principal variation, search that first!
 	SortMoves(start, end, bestMove, killerMoves);
 	
+	if (*start == 0)
+		return 0;
+	else if (*start == 1)
+		return -4095 + maxDepth - depth;
 	//Go through the legal moves
 	while (start != end)
 	{
@@ -98,7 +153,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		if (move != 0 && move != 1)
 		{
 			bb->MakeMove(move);
-			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2);
+			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, overide + 1);
 			if (returned > bestScore)
 			{
 				bestScore = returned;
@@ -107,8 +162,8 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bb->UnMakeMove(move);
 			if (returned >= beta)
 			{
-				*(killerMoves + moveOveride[depth]) = (u16)move;
-				moveOveride[depth] = (moveOveride[depth] + 1) & 1;
+				*(killerMoves + (*overide)) = (u16)move;
+				*overide ^= 1;
 				insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 				return beta;
 			}
@@ -139,7 +194,11 @@ int ABAI::lazyEval()
 	score += pieceSquareValues(whitePawnEarlyPST, bb->Pieces[5]);
 	score -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
 	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
-	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[10]);
+	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
+	if (bb->color)
+		score += 20;
+	else
+		score -= 20;
 	return score;
 }
 
@@ -160,7 +219,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 {
 	/*
 	To do
-	0.	Q-search
+	//0.	Q-search
 	1.	Iterative Depening
 	2.	History Heurestic
 	3.	Move Sorting
@@ -189,10 +248,9 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	}
 
 	//Create the static array used for storing legal moves
-	u32 *MoveStart = new u32[218 * 100];
+	u32 *MoveStart = new u32[218 * 200];
 	u16 *KillerMoves = new u16[200];
 
-	//Create the triangular principal variation array
 
 	this->bb = IBB;
 	vector<u32> PV;
@@ -205,7 +263,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	clock_t start = clock();
 
 	//Run search
-	int score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
+	int score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves, moveOveride);
 	
 	clock_t end = clock();
 

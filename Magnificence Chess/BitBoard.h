@@ -51,7 +51,9 @@ public:
 	u8 silent;
 	void SetUp();
 	u32* WhiteLegalMoves(u32 *start);
+	u32* WhiteQSearchMoves(u32 *start);
 	u32* BlackLegalMoves(u32 *start);
+	u32* BlackQSearchMoves(u32 *start);
 	u32 getBaseMove();
 	int MakeMove(u32 move);
 	void UnMakeMove(u32 move);

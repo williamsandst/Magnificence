@@ -215,6 +215,7 @@ void guiInterface()
 		else if (splitCommand[0] == "setboard")
 		{
 			board.SetState(recievedCommand.substr(9, recievedCommand.size()));
+			color = board.color;
 		}
 		else if (recievedCommand == "stop")
 		{
@@ -264,7 +265,7 @@ void runEngine(GameState* gameState)
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
 			//gameState->principalVariation = engine.startSearch(gameState->board, true , 0 , gameState->maxDepth);
-			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
+			gameState->principalVariation = AI->bestMove(gameState->board, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
 			//gameState->principalVariation = engine.startSearch(gameState->board, 0, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			cout << "mgnf: ";
