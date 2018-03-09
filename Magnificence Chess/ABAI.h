@@ -13,7 +13,7 @@ struct UnpackedHashEntry
 	short score;
 	u32 bestMove;
 	u64 key;
-	UnpackedHashEntry(u8 typeOfNode, short depth, short score, u32 bestM, u64 key, u8 generation);
+	UnpackedHashEntry(u8 typeOfNode, u16 depth, short score, u32 bestM, u64 key, u8 generation);
 	UnpackedHashEntry(PackedHashEntry in);
 };
 
@@ -288,7 +288,6 @@ public:
 	u32 extractBestMove(PackedHashEntry in);
 	u64 extractKey(PackedHashEntry in);
 	u8 extractGeneration(PackedHashEntry in);
-	void movcpy(u32* pTarget, const u32* pSource, int n);
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
 	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start);

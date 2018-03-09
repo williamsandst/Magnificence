@@ -205,6 +205,7 @@ char Test::pieceToChar(int piece)
 	case 14: //Space
 		return '.';
 	}
+	return 0;
 }
 
 string Test::pieceToString(int piece)
@@ -238,6 +239,7 @@ string Test::pieceToString(int piece)
 	case 0: //Space
 		return "Empty";
 	}
+	return "Broken";
 }
 
 //Debug functions for BitBoard

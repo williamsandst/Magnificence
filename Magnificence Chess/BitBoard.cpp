@@ -661,8 +661,8 @@ void BitBoard::SetUp()
 				memory = memory & (memory - 1);
 				indexes.push_back(index);
 			}
-			allVariations(mask, indexes, 0, count - 1, &out);
-			int size = out.size();
+			allVariations(mask, indexes, 0, (int)(count - 1), &out);
+			size_t size = out.size();
 			u64 *ptr = new u64[size];
 			for (int i2 = 0; i2 < size; i2++)
 			{
@@ -784,8 +784,8 @@ void BitBoard::SetUp()
 				memory = memory & (memory - 1);
 				indexes.push_back(index);
 			}
-			allVariations(mask, indexes, 0, count - 1, &out);
-			int size = out.size();
+			allVariations(mask, indexes, 0, (int)(count - 1), &out);
+			size_t size = out.size();
 			u64 *ptr = new u64[size];
 			for (int i2 = 0; i2 < size; i2++)
 			{

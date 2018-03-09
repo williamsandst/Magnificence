@@ -163,7 +163,7 @@ public:
 	//a wrapper for population count
 	u8 pc(u64 valeu)
 	{
-		u8 returnValue = __popcnt64(valeu);
+		u8 returnValue = (u8)__popcnt64(valeu);
 		return returnValue;
 	}
 

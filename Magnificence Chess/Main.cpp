@@ -11,12 +11,12 @@
 #include <atomic>
 #include <ctime>
 #include "Board.h"
-#include "GameState.h";
-#include "BitBoard.h";
-#include "IO.h";
+#include "GameState.h"
+#include "BitBoard.h"
+#include "IO.h"
 #include "Move.h"
-#include "Test.h";
-#include "Engine.h";
+#include "Test.h"
+#include "Engine.h"
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
