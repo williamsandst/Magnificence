@@ -273,8 +273,6 @@ private:
 		0, 10, 20, 30, 30, 20, 10,  0  };
 	
 	u64 nodes[100];
-	u8 moveOveride[100];
-	u16 killerMoves[200];
 public:
 	BitBoard *bb;
 	const u16 ToFromMask = 0b111111111111;
@@ -293,8 +291,8 @@ public:
 	void movcpy(u32* pTarget, const u32* pSource, int n);
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
-	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, u8 *overide);
-	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, u8 *overide);
+	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start);
+	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves);
 	int lazyEval();
 	int pieceSquareValues(short * pieceSquareTable, u64 pieceSet);
 	vector<u32> bestMove(BitBoard *IBB, bool color, clock_t time, int maxDepth);

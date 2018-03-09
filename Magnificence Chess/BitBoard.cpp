@@ -6,6 +6,16 @@
 
 using namespace std;
 
+//move definition
+//1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
+//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
+// TTTUUURRRRssssSSSSSSttttttffffff
+
+//useful masks,       TTTUUURRRRssssSSSSSSttttttffffff
+//metadata mask =	0b00000011111111111111000000000000
+//~metadatoa mask	0b11111100000000000000111111111111 
+
+//Creates an empty bitboard with no variables initiated
 BitBoard::BitBoard()
 {
 
@@ -13,8 +23,10 @@ BitBoard::BitBoard()
 
 BitBoard::~BitBoard()
 {
+
 }
 
+//removes a piece from the board and updates Zoobrist hash
 inline void BitBoard::RemovePiece(u8 pos)
 {
 	u8 removed = mailBox[pos];
@@ -32,6 +44,7 @@ inline void BitBoard::RemovePiece(u8 pos)
 	}
 }
 
+//Adds a piece to the board and updates ZoobristHash
 inline void BitBoard::AddPiece(u8 pos, u8 piece)
 {
 	u8 removed = mailBox[pos];
@@ -58,6 +71,9 @@ inline void BitBoard::AddPiece(u8 pos, u8 piece)
 	}
 }
 
+//Acces the magics for rooks
+//Piece: marked bit reperesenting piece to move, in case of multiple pieces will use LSB1
+//Occupancy: the occupancy mask used
 inline u64 BitBoard::MagicRook(u64 piece, u64 occupancy)
 {
 	u32 Index;
@@ -65,6 +81,9 @@ inline u64 BitBoard::MagicRook(u64 piece, u64 occupancy)
 	return MRook[Index].table[_pext_u64(occupancy, MRook[Index].mask)];
 }
 
+//Acces the magics for bishops
+//Piece: marked bit representing piece to move, in case of multiple pieces will use LSB1
+//Occupancy: the occupancy mask used
 inline u64 BitBoard::MagicBishop(u64 piece, u64 occupancy)
 {
 	u32 index;
@@ -72,6 +91,11 @@ inline u64 BitBoard::MagicBishop(u64 piece, u64 occupancy)
 	return MBishop[index].table[_pext_u64(occupancy, MBishop[index].mask)];
 }
 
+//Extracts white moves
+//moves: marked bits representing legalmoves
+//baseMove : metadata of position
+//start: moved from
+//movesOut: move array
 inline u32* BitBoard::extractWhiteMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
 {
 	u32 move, BaseMove = baseMove | start, index;
@@ -86,6 +110,11 @@ inline u32* BitBoard::extractWhiteMoves(u64 moves, u32 baseMove, u32 start, u32 
 	return movesOut;
 }
 
+//Extracts black moves
+//moves: marked bits representing legalmoves
+//baseMove : metadata of position
+//start: moved from
+//movesOut: move array
 inline u32* BitBoard::extractBlackMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
 {
 	u32 move, BaseMove = baseMove | start , index;
@@ -107,6 +136,11 @@ inline u32* BitBoard::extractBlackMoves(u64 moves, u32 baseMove, u32 start, u32 
 	return movesOut;
 }
 
+//Extracts black pawn moves moves
+//moves: marked bits representing legalmoves
+//baseMove : metadata of position
+//start: moved from
+//movesOut: move array
 inline u32* BitBoard::extractBlackPawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
 {
 	u32 move, BaseMove = baseMove | start, index;
@@ -140,11 +174,16 @@ inline u32* BitBoard::extractBlackPawnMoves(u64 moves, u32 baseMove, u32 start, 
 	return movesOut;
 }
 
-bool BitBoard::LegailityChecker(u32 move)
+//checks if move is pseudo legal and updates metadata to the current position;
+//requirement:
+//Legal move pattern for piece to move and not an empty square moved
+//Does not take a friendly piece
+bool BitBoard::LegailityChecker(u32 *move)
 {
-	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
+	*move = ((*move) & 0b11111100000000000000111111111111) | getBaseMove();
+	u8 from = (0b111111 & (*move)), to = 0b111111 & ((*move) >> 6);
 	u8 moved = mailBox[from];
-	u8 taken = move >> 29;
+	u8 taken = (*move) >> 29;
 	if (moved < 6 || taken == 7)
 	{
 		taken += 7;
@@ -186,6 +225,11 @@ bool BitBoard::LegailityChecker(u32 move)
 	return false;
 }
 
+//Extracts white pawn moves moves
+//moves: marked bits representing legalmoves
+//baseMove : metadata of position
+//start: moved from
+//movesOut: move array
 inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut)
 {
 	u32 move, BaseMove = baseMove | start, index;
@@ -211,6 +255,7 @@ inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, 
 	return movesOut;
 }
 
+//Copies the state of bb onto this bitboard
 void BitBoard::Copy(BitBoard *bb)
 {
 	for (int i = 0; i < 64; i++)
@@ -241,6 +286,7 @@ void BitBoard::Copy(BitBoard *bb)
 	silent = bb->silent;
 }
 
+//useed for magic generation
 void BitBoard::allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64>* out)
 {
 	if (index == maxindex)
@@ -257,12 +303,14 @@ void BitBoard::allVariations(u64 mask, vector<u32> positions, int index, int max
 	}
 }
 
+//Generates a bitboard from given fen string
 BitBoard::BitBoard(string fen)
 {
 	SetUp();
 	SetState(fen);
 }
 
+//Sets bitboard state to mimick given fen string
 void BitBoard::SetState(string fen)
 {
 	int i = 0;
@@ -521,6 +569,7 @@ void BitBoard::SetState(string fen)
 	CalculateZoobrist();
 }
 
+//Calculates zoobrist for given position
 void BitBoard::CalculateZoobrist()
 {
 	zoobristKey = 0;
@@ -547,8 +596,10 @@ void BitBoard::CalculateZoobrist()
 	}
 }
 
+//Calculates precalculated states such as magics
 void BitBoard::SetUp()
 {
+
 	MRook = new Magic[64];
 	MBishop = new Magic[64];
 	rows = new u64[8];
@@ -562,6 +613,7 @@ void BitBoard::SetUp()
 	ULDR = new u64[64];
 	LR = new u64[64];
 	UD = new u64[64];
+
 	//creating rows and columns tables
 	for (int i = 0; i < 8; i++)
 	{
@@ -876,19 +928,7 @@ void BitBoard::SetUp()
 	}
 }
 
-/*
-Zoobrist definition
-Pieces in pos + 64 * piecenumber. There is no piece with piecenumber 6 or 13 leaving these for EP squares and such.
-Positions 64 * 6 + 0 to 64 * 6 + 7 are used for EP square h through a, 
-64 * 6 + 8 is for black queen rockad, 64 * 6 + 9 is for black king side rockad
-64 * 6 + 10 is for white queen side rockad and 64 * 6 + 11 is for white king side rockad
-64 * 6 + 12 is on for white and off for black
-*/
-
-//in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
-//1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
-//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
-// TTTUUUERRRRsssSSSSSSttttttFFFFFFF
+//gets base move containing all rellevant metadata
 u32 BitBoard::getBaseMove()
 {
 	u32 baseMove;
@@ -906,6 +946,9 @@ u32 BitBoard::getBaseMove()
 	}
 	return baseMove;
 }
+
+//Returns all legal moves for white in current position
+//Start is the start of the move return array
 u32* BitBoard::WhiteLegalMoves(u32 *Start)
 {
 	u32 *MoveInsert = Start;
@@ -1292,6 +1335,8 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 	return MoveInsert;
 }
 
+//Returns all taking moves for white in current position
+//Start is the start of the move return array
 u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 {
 	u32 *MoveInsert = Start;
@@ -1667,6 +1712,8 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 	return MoveInsert;
 }
 
+//Returns all legal moves for black in current position
+//Start is the start of the move return array
 u32* BitBoard::BlackLegalMoves(u32 *Start)
 {
 	u32 *MoveInsert = Start;
@@ -2048,6 +2095,8 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 	return MoveInsert;
 }
 
+//Returns all taking moves for black in current position
+//Start is the start of the move return array
 u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 {
 	u32 *MoveInsert = Start;
@@ -2418,6 +2467,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 	return MoveInsert;
 }
 
+//makes the specified move
 int BitBoard::MakeMove(u32 move)
 {
 	zoobristKey ^= ElementArray[64 * 6 + 12];
@@ -2560,11 +2610,7 @@ int BitBoard::MakeMove(u32 move)
 	return 1;
 }
 
-//in order to store entire state 4 bit rockad, 3 bit EP, 6 bit silent = 13 bits; Would need to free another 5 bits;
-//1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
-//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
-// TTTUUURRRRssssSSSSSSttttttFFFFFFF
-
+//unmkes specified move
 void BitBoard::UnMakeMove(u32 move)
 {
 	zoobristKey ^= ElementArray[64 * 6 + 12];
