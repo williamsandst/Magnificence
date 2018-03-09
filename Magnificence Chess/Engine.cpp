@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Engine.h"
-#include "Move.h";
+#include "Move.h"
 #include <iostream>
 #include "IO.h"
 #include <ctime>
@@ -80,7 +80,7 @@ int Engine::negaMax2(BitBoard * board, int depth, bool color, u32 * start)
 	else
 	end = board->BlackLegalMoves(start);
 	u32 *nextStart = (start + 218);
-	u64 res = 0;
+	int res = 0;
 	depth--;
 	color = !color;
 	while (start != end)
@@ -154,7 +154,6 @@ vector<u32> Engine::startSearch(BitBoard * board, bool color, int timeLeft, int 
 	//Debug output
 	double duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 	cout << "Score " << score << " took " << to_string(duration) << " s at depth " << maxDepth << endl;
-
 	cout << "Total transpositions performed: " << to_string(transpositions) << endl;
 	for (size_t i = 0; i < maxDepth; i++)
 	{

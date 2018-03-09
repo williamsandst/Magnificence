@@ -14,7 +14,7 @@ public:
 	BitBoard * board;
 	vector<u32> principalVariation;
 	bool color;
-	int maxDepth = 5;
+	int maxDepth = 7;
 	GameState();
 	~GameState();
 };

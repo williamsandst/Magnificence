@@ -68,6 +68,9 @@ u64 Test::perft(int depth, int startDepth, BitBoard *bb, bool color, u32 *start,
 			start++;
 			if (move != 0 && move != 1)
 			{
+				//BitBoard c;
+				//c.Copy(bb);
+				//c.MakeMove(move);
 				bb->MakeMove(move);
 				res += perft(depth, startDepth, bb, color, nextStart, Hash, tableSize);
 				bb->UnMakeMove(move);
@@ -202,6 +205,7 @@ char Test::pieceToChar(int piece)
 	case 14: //Space
 		return '.';
 	}
+	return 0;
 }
 
 string Test::pieceToString(int piece)
@@ -235,6 +239,7 @@ string Test::pieceToString(int piece)
 	case 0: //Space
 		return "Empty";
 	}
+	return "Broken";
 }
 
 //Debug functions for BitBoard
