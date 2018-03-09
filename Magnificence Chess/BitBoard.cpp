@@ -225,6 +225,132 @@ bool BitBoard::LegailityChecker(u32 *move)
 	return false;
 }
 
+//Finds the move that comes from the lowest valued attacker attacking square
+//Order: Pawn, Knight, Bishop, Rook, queen, king
+//Legality not taken into account. Meta values taken into account
+//baseMove is meta data
+//side is the side moves are generated for
+u32 BitBoard::LowestValuedAttacker(u64 square, u64 baseMove, bool side)
+{
+	//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
+	// TTTUUURRRRssssSSSSSSttttttffffff
+
+	u32 index; //The index of the square being attacked
+	_BitScanForward64(&index, square);
+	u8 adding; //Added to indexing of pieces to allow use of the same function for black and white. = 0 for white and = 7 for black
+	u8 taken = mailBox[index]; //Used for adding to moves to properly build move
+	if (taken > 6)
+		taken = taken - 7;
+	if (side)
+	{
+		//if white, check white pawns
+		if ((square >> 7) & nColumns[0] & Pieces[5])
+		{
+			if (square & rows[7])
+				return ((u32)(taken)) << 29 | 1 << 26 | index << 6 | (index - 7) | baseMove;
+			else
+				return ((u32)(taken)) << 29 | index << 6 | (index - 7) | baseMove;
+		}
+		if ((square >> 9) & nColumns[7] & Pieces[5])
+		{
+			if (square & rows[7])
+				return ((u32)(taken)) << 29 | 1 << 26 | index << 6 | (index - 9) | baseMove;
+			else
+				return ((u32)(taken)) << 29 | index << 6 | (index - 9) | baseMove;
+		}
+		adding = 0;
+	}
+	else
+	{
+		//if black check black pawns
+		if ((square << 7) & nColumns[7] & Pieces[12])
+		{
+			if (square & rows[0])
+			{
+				return ((u32)(taken)) << 29 | 1 << 26 | index << 6 | (index + 7) | baseMove;
+			}
+			else
+			{
+				return ((u32)(taken)) << 29 | index << 6 | (index + 7) | baseMove;
+			}
+		}
+		if ((square << 9) & nColumns[0] & Pieces[12])
+		{
+			if (square & rows[0])
+			{
+				return ((u32)(taken)) << 29 | 1 << 26 | index << 6 | (index + 9) | baseMove;
+			}
+			else
+			{
+				return ((u32)(taken)) << 29 | index << 6 | (index + 9) | baseMove;
+			}
+		}
+		adding = 7;
+	}
+	u64 occupancy = Pieces[6] | Pieces[13];
+	u64 mem;
+	if (mem = KnightSet[index] & Pieces[4 + adding]);							//knights
+	else if (mem = MagicBishop(square, occupancy) & Pieces[2 + adding]);		//bishops
+	else if (mem = MagicRook(square, occupancy) & Pieces[3 + adding]);			//Rooks
+	else if (mem = ((MagicRook(square, occupancy) | MagicBishop(square, occupancy)) & Pieces[1 + adding]));//Queens
+	else if (mem = KingSet[index] & Pieces[adding]);							//Kings
+	else mem = 0;
+	if (mem)
+	{
+		u32 from = 0; //used to store where a piece was moved from
+		_BitScanForward64(&from, mem);
+		return ((u32)taken) << 29 | index << 6 | from | baseMove;
+	}
+	//no taken piece
+	return 0;
+}
+
+//recursivly creates a SEE score
+//square: the square being looked at
+//important to note that move being evaluated must habe been made before it can be evaluated!!!
+//Use
+//Make move
+//seescore = piecetaken - see(square moved to)
+//unmake move
+//this allows negative values for bad trades
+int BitBoard::SEE(u64 square)
+{
+	u32 move = LowestValuedAttacker(square, getBaseMove(), color);
+	if (move)
+	{
+		int value = 0;
+		switch (move >> 29)
+		{
+		case 0:
+			value = 50000;
+			break;
+		case 1:
+			value = 900;
+			break;
+		case 2:
+			value = 300;
+			break;
+		case 3:
+			value = 500;
+			break;
+		case 4:
+			value = 300;
+			break;
+		case 5:
+			value = 100;
+			break;
+		case 7:
+			value = 0;
+			break;
+		}
+		MakeMove(move);
+		value -= SEE(square);
+		UnMakeMove(move);
+		return (0, value);
+	}
+	return 0;
+}
+
 //Extracts white pawn moves moves
 //moves: marked bits representing legalmoves
 //baseMove : metadata of position
