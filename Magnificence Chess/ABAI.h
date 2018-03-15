@@ -32,7 +32,7 @@ private:
 	//Piece square tables
 
 	//Bishop PST
-	short whiteBishopEarlyPST[64] =
+	const short whiteBishopEarlyPST[64] =
 	{ 19, 16, 17, 18, 18, 17, 16, 19,
 	 -14, 23, 20, 21, 21, 20, 23,-14,
 	  17, 20, 26, 23, 23, 26, 20, 17,
@@ -42,7 +42,7 @@ private:
 	  16, 23, 20, 21, 21, 20, 23, 16,
 	  9,  6,  7,  8,  8,  7,  6,  9 };
 
-	short blackBishopEarlyPST[64] =
+	const short blackBishopEarlyPST[64] =
 	{ 9,  6,  7,  8,  8,  7,  6,  9,
 	 16, 23, 20, 21, 21, 20, 23, 16,
 	 17, 20, 26, 23, 23, 26, 20, 17,
@@ -52,7 +52,7 @@ private:
 	-14, 23, 20, 21, 21, 20, 23,-14,
 	 19, 16, 17, 18, 18, 17, 16, 19, };
 			
-	short whiteBishopLatePST[64] =
+	const short whiteBishopLatePST[64] =
 	{ 20, 22, 24, 26, 26, 24, 22, 20,
 	  22, 28, 30, 32, 32, 30, 28, 22,
 	  24, 30, 34, 36, 36, 34, 30, 24,
@@ -62,7 +62,7 @@ private:
 	  22, 28, 30, 32, 32, 30, 28, 22,
 	  20, 22, 24, 26, 26, 24, 22, 20 };
 
-	short blackBishopLatePST[64] =
+	const short blackBishopLatePST[64] =
 	{ 20, 22, 24, 26, 26, 24, 22, 20,
 	  22, 28, 30, 32, 32, 30, 28, 22,
 	  24, 30, 34, 36, 36, 34, 30, 24,
@@ -72,7 +72,7 @@ private:
 	  22, 28, 30, 32, 32, 30, 28, 22,
 	  20, 22, 24, 26, 26, 24, 22, 20 };
 
-	short whitePawnEarlyPST[64] = 
+	const short whitePawnEarlyPST[64] = 
 	  { 0,   5,  10,  15,  15,  10,   5,   0,
 		2,   7,  12,  -5,  -5,  12,   7,   2,
 		0,   5,  10,  15,  15,  10,   5,   0,
@@ -82,7 +82,7 @@ private:
 		0,   5,  10,  15,  15,  10,   5,   0,
 		0,   5,  10,  15,  15,  10,   5,   0, };
 
-	short blackPawnEarlyPST[64] = 
+	const short blackPawnEarlyPST[64] = 
 	  { 0,   5,  10,  15,  15,  10,   5,   0,
 		0,   5,  10,  15,  15,  10,   5,   0,
 		0,   5,  10,  15,  15,  10,   5,   0,
@@ -92,7 +92,7 @@ private:
 		2,   7,  12,  -5,  -5,  12,   7,   2,
 		0,   5,  10,  15,  15,  10,   5,   0, };
 			
-	short whitePawnLatePST[64] = 
+	const short whitePawnLatePST[64] = 
 	  { 0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0,
@@ -102,7 +102,7 @@ private:
 		0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0 };
 
-	short blackPawnLatePST[64] = 
+	const short blackPawnLatePST[64] = 
 	  { 0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0,
@@ -112,7 +112,7 @@ private:
 		0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0 };
 
-	short whiteKnightEarlyPST[64] = 
+	const short whiteKnightEarlyPST[64] = 
 	{ -15, -12,  -9,  -6,  -6,  -9, -12, -15,
 		3,  12,  15,  18,  18,  15,  12,   3,
 		6,  15,  21,  24,  24,  21,  15,   6,
@@ -122,7 +122,7 @@ private:
 		3,  12,  15,  18,  18,  15,  12,   3,
 		-50,   3,   6,   9,   9,   6,   3, -50 };
 
-	short blackKnightEarlyPST[64] = 
+	const short blackKnightEarlyPST[64] = 
 	{ -50,   3,   6,   9,   9,   6,   3, -50,
 		3,  12,  15,  18,  18,  15,  12,   3,
 		6,  15,  21,  27,  27,  21,  15,   6,
@@ -132,7 +132,7 @@ private:
 		3,  12,  15,  18,  18,  15,  12,   3,
 	  -15, -12,  -9,  -6,  -6,  -9, -12, -15 };
 			
-	short whiteKnightLatePST[64] = 
+	const short whiteKnightLatePST[64] = 
 	  { 0,  3,  6,  9,  9,  6,  3,  0,
 		3, 12, 15, 18, 18, 15, 12,  3,
 		6, 15, 21, 24, 24, 21, 15,  6,
@@ -142,7 +142,7 @@ private:
 		3, 12, 15, 18, 18, 15, 12,  3,
 		0,  3,  6,  9,  9,  6,  3,  0, };
 
-	short blackKnightLatePST[64] =
+	const short blackKnightLatePST[64] =
       { 0,  3,  6,  9,  9,  6,  3,  0,
 		3, 12, 15, 18, 18, 15, 12,  3,
 		6, 15, 21, 24, 24, 21, 15,  6,
@@ -152,7 +152,7 @@ private:
 		3, 12, 15, 18, 18, 15, 12,  3,
 		0,  3,  6,  9,  9,  6,  3,  0, };
 
-	short whiteRookEarlyPST[64] = 
+	const short whiteRookEarlyPST[64] =
 	  { 0,  3,  6,  9,  9,  6,  3,  0,
 		25, 28, 31, 34, 34, 31, 28, 25,
 		0,  3,  6,  9,  9,  6,  3,  0,
@@ -162,7 +162,7 @@ private:
 		0,  3,  6,  9,  9,  6,  3,  0,
 		1,  4,  7, 10, 10,  7,  4,  1, };
 
-	short blackRookEarlyPST[64] = 
+	const short blackRookEarlyPST[64] = 
 	  { 1,  4,  7, 10, 10,  7,  4,  1,
 		0,  3,  6,  9,  9,  6,  3,  0,
 		0,  3,  6,  9,  9,  6,  3,  0,
@@ -172,7 +172,7 @@ private:
 		25, 28, 31, 34, 34, 31, 28, 25,
 		0,  3,  6,  9,  9,  6,  3,  0};
 			
-	short whiteRookLatePST[64] = 
+	const short whiteRookLatePST[64] =
 	  { 25, 25, 25, 25, 25, 25, 25, 25,
 		25, 25, 25, 25, 25, 25, 25, 25,
 		25, 25, 25, 25, 25, 25, 25, 25,
@@ -182,7 +182,7 @@ private:
 		25, 25, 25, 25, 25, 25, 25, 25,
 		25, 25, 25, 25, 25, 25, 25, 25, };
 
-	short blackRookLatePST[64] = 
+	const short blackRookLatePST[64] = 
 	  { 25, 25, 25, 25, 25, 25, 25, 25,
 		25, 25, 25, 25, 25, 25, 25, 25,
 		25, 25, 25, 25, 25, 25, 25, 25,
@@ -192,7 +192,7 @@ private:
 		25, 25, 25, 25, 25, 25, 25, 25,
 		25, 25, 25, 25, 25, 25, 25, 25, };
 
-	short whiteQueenEarlyPST[64] = 
+	const short whiteQueenEarlyPST[64] = 
 	  { 100,100,100,100,100,100,100,100,
 		115,115,115,115,115,115,115,115,
 		100,100,100,100,100,100,100,100,
@@ -202,7 +202,7 @@ private:
 		100,100,100,100,100,100,100,100,
 		95, 95, 95, 95, 95, 95, 95, 95 };
 
-	short blackQueenEarlyPST[64] = 
+	const short blackQueenEarlyPST[64] = 
 	  { 95, 95, 95, 95, 95, 95, 95, 95,
 		100,100,100,100,100,100,100,100,
 		100,100,100,100,100,100,100,100,
@@ -212,7 +212,7 @@ private:
 		115,115,115,115,115,115,115,115,
 		100,100,100,100,100,100,100,100, };
 			
-	short whiteQueenLatePST[64] = 
+	const short whiteQueenLatePST[64] = 
 	  { 80, 83, 86, 89, 89, 86, 83, 80,
 		83, 92, 95, 98, 98, 95, 92, 83,
 		86, 95,101,104,104,101, 95, 86,
@@ -222,7 +222,7 @@ private:
 		83, 92, 95, 98, 98, 95, 92, 83,
 		80, 83, 86, 89, 89, 86, 83, 80 };
 
-	short blackQueenLatePST[64] = 
+	const short blackQueenLatePST[64] = 
 	  { 80, 83, 86, 89, 89, 86, 83, 80,
 		83, 92, 95, 98, 98, 95, 92, 83,
 		86, 95,101,104,104,101, 95, 86,
@@ -232,7 +232,7 @@ private:
 		83, 92, 95, 98, 98, 95, 92, 83,
 		80, 83, 86, 89, 89, 86, 83, 80 };
 
-	short whiteKingEarlyPST[64] = 
+	const short whiteKingEarlyPST[64] = 
 	  { -175,-175,-175,-175,-175,-175,-175,-175,
 		-150,-150,-150,-150,-150,-150,-150,-150,
 		-125,-125,-125,-125,-125,-125,-125,-125,
@@ -242,7 +242,7 @@ private:
 		50,  50,   0,   0,   0,   0,  50,  50,
 		50,  50,   0,   0,  20,   0,  50,  50 };
 
-	short blackKingEarlyPST[64] = 
+	const short blackKingEarlyPST[64] = 
 	  { 50,  50,   0,   0,  20,   0,  50,  50,
 		50,  50,   0,   0,   0,   0,  50,  50,
 		-50, -50, -50, -50, -50, -50, -50, -50,
@@ -252,7 +252,7 @@ private:
 		-150,-150,-150,-150,-150,-150,-150,-150,
 		-175,-175,-175,-175,-175,-175,-175,-175 };
 			
-	short whiteKingLatePST[64] = 
+	const short whiteKingLatePST[64] = 
 	  { 0, 10, 20, 30, 30, 20, 10,  0,
 		10, 40, 50, 60, 60, 50, 40, 10,
 		20, 50, 70, 80, 80, 70, 50, 20,
@@ -262,7 +262,7 @@ private:
 		10, 40, 50, 60, 60, 50, 40, 10,
 		0, 10, 20, 30, 30, 20, 10,  0 };
 
-	short blackKingLatePST[64] = 
+	const short blackKingLatePST[64] = 
 	  { 0, 10, 20, 30, 30, 20, 10,  0,
 		10, 40, 50, 60, 60, 50, 40, 10,
 		20, 50, 70, 80, 80, 70, 50, 20,
@@ -293,7 +293,7 @@ public:
 	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves);
 	int lazyEval();
-	int pieceSquareValues(short * pieceSquareTable, u64 pieceSet);
+	int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);
 	vector<u32> bestMove(BitBoard *IBB, bool color, clock_t time, int maxDepth);
 
 };

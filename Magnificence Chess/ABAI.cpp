@@ -204,15 +204,12 @@ int ABAI::lazyEval()
 	score -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
 	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
 	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
-	if (bb->color)
-		score += 20;
-	else
-		score -= 20;
+	if (bb->color) score += 40;
 	return score;
 }
 
 //Used in eval to extract values from the piece square tables for positional awareness 
-int ABAI::pieceSquareValues(short * pieceSquareTable, u64 pieceSet)
+int ABAI::pieceSquareValues(const short * pieceSquareTable, u64 pieceSet)
 {
 	u32 index;
 	short sum = 0;
@@ -269,7 +266,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	//Run search
 	int score;
 
-	for (int i = 1; i < maxDepth + 1; i++)
+	/*for (int i = 1; i < maxDepth + 1; i++)
 	{
 		//generation = (generation + 1) & 0b11;
 		//for (int i = 0; i < 200; i++)
@@ -277,9 +274,9 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		//	KillerMoves[i] = 0;
 		//}
 		score = negamax(-8192, 8192, i, i, color, MoveStart, KillerMoves);
-	}
+	}*/
 
-	//score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
+	score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
 
 	/*UnpackedHashEntry q(0, 0, 0, 0, 0, 0);
 	int depth = 0;
@@ -338,6 +335,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	u32 pV[100];
 
 	//Debug output
+	
 	cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
 	cout << to_string(nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
 		to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
@@ -350,15 +348,16 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		cout << to_string(maxDepth - i) << "/" << to_string(maxDepth - i - 1) << ": " << to_string((float)nodes[i] / (float)nodes[i + 1])
 			<< ", ";
 	}
-	/*cout << endl << "Principal variation (tri-pV table): ";
-	for (size_t i = 0; i < maxDepth; i++)
+	//cout << endl << "Principal variation (tri-pV table): ";
+	/*for (size_t i = 0; i < maxDepth; i++)
 	{
 		//PV.push_back(triangularPV[i]);
 		cout << IO::convertMoveToAlg(triangularPV[i]) << " ";
 	}*/
 	//u32 *pV = new u32[100];
 	//Find pV variation from transposition table
-	cout << endl << "Principal variation (TT): ";
+	//cout << endl << "Principal variation (TT): ";
+	cout << "info multipv ";
 	for (size_t i = 0; i < maxDepth; i++)
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -366,11 +365,11 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 			cout << "ERROR: Move not part of pV? Check replacement scheme!" << endl;
 		pV[i] = potEntry.bestMove;
 		PV.push_back(pV[i]);
-		cout << IO::convertMoveToAlg(pV[i]) << ", ";
+		cout << IO::convertMoveToAlg(pV[i]) << " ";
 		bb->MakeMove(pV[i]);
 	}
 	cout << endl;
-
+	cout << "info score " << to_string(score) << endl;
 	//Undo the pV moves
 	for (size_t i = 1; i < maxDepth+1; i++)
 	{
