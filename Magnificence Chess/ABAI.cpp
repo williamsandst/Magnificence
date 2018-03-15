@@ -101,6 +101,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 {
 	u32 bestMove = 0;
 	nodes[depth]++;
+
 	//Check whether there is a transposition that can be used for this position
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -114,7 +115,14 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			if (potEntry.depth >= depth)
 			{
 				if (potEntry.typeOfNode == 1)
-					return potEntry.score;
+				{
+					if (potEntry.score >= alpha && potEntry.score <= beta)
+						return potEntry.score;
+					else if (potEntry.score < alpha)
+						return potEntry.score;
+					else
+						return potEntry.score;
+				}
 				else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
 					return beta;
 				else if (potEntry.typeOfNode == 2 && potEntry.score <= alpha)
@@ -123,14 +131,32 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bestMove = potEntry.bestMove;
 		}
 	}
+
 	if (depth <= 0)
 	{
 		//if (color)
 		//	return lazyEval();
 		//else
 		//	return -lazyEval();
-		return QSearch(alpha, beta, color, killerMoves, start);
+		int value = QSearch(alpha, beta, color, killerMoves, start);
+		if (value >= beta)
+		{
+			insertTT(UnpackedHashEntry(0, depth + 1, beta, bestMove, bb->zoobristKey, generation));
+			return beta;
+		}
+		else if (value > alpha)
+		{
+			insertTT(UnpackedHashEntry(1, depth + 1, beta, bestMove, bb->zoobristKey, generation));
+			return value;
+		}
+		else
+		{
+			insertTT(UnpackedHashEntry(2, depth + 1, beta, bestMove, bb->zoobristKey, generation));
+			return alpha;
+		}
+		return value;
 	}
+
 	short bestScore = -8192;
 
 	u32 *end;
@@ -205,9 +231,7 @@ int ABAI::lazyEval()
 	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
 	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
 	if (bb->color)
-		score += 20;
-	else
-		score -= 20;
+		score += 40;
 	return score;
 }
 
@@ -281,58 +305,59 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 
 	//score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
 
-	/*UnpackedHashEntry q(0, 0, 0, 0, 0, 0);
-	int depth = 0;
-	u32 bestMove = 0;
-	if (getFromTT(bb->zoobristKey, &q))
-	{
-		depth = q.depth;
-		maxDepth = depth;
-		score = q.score;
-		q.generation = generation;
-		insertTT(q);
-	}
-	u32 *startM = MoveStart, *endM;
-	if (color)
-		endM = bb->WhiteLegalMoves(startM);
-	else
-		endM = bb->WhiteLegalMoves(startM);
-	u16 *mockKillerMoves = new u16[2]{ 0, 0 };
-	u8 or = 0;
-	int nrNodes = 0;
-	while (clock() - start < time)
-	{
-		int alpha = -8192, beta = 8192;
-		startM = MoveStart;
-		u32 move;
-		SortMoves(startM, endM, bestMove, mockKillerMoves);
-		while (startM != endM && clock() - start < time)
-		{
-			move = *startM;
-			startM++;
-			bb->MakeMove(move);
-			int returned = -negamax(-beta, -alpha, depth, depth, !color, endM, KillerMoves);
-			bb->UnMakeMove(move);
-			if (returned > alpha)
-			{
-				if (mockKillerMoves[0] != ((u16)move & ToFromMask))
-				{
-					mockKillerMoves[1] = mockKillerMoves[0];
-					mockKillerMoves[0] = (u16)move & ToFromMask;
-				}
-				alpha = returned;
-				bestMove = move;
-			}
-		}
-		if (clock() - start < time)
-		{
-			insertTT(UnpackedHashEntry(1, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
-			score = alpha;
-			maxDepth = depth + 1;
-		}
-		depth++;
-	}
-	delete[] mockKillerMoves;*/
+	//UnpackedHashEntry q(0, 0, 0, 0, 0, 0);
+	//int depth = 0;
+	//u32 bestMove = 0;
+	//if (getFromTT(bb->zoobristKey, &q))
+	//{
+	//	depth = q.depth;
+	//	maxDepth = depth;
+	//	score = q.score;
+	//	q.generation = generation;
+	//	insertTT(q);
+	//}
+	//u32 *startM = MoveStart, *endM;
+	//if (color)
+	//	endM = bb->WhiteLegalMoves(startM);
+	//else
+	//	endM = bb->WhiteLegalMoves(startM);
+	//u16 *mockKillerMoves = new u16[2]{ 0, 0 };
+	//u8 or = 0;
+	//int nrNodes = 0;
+	//while (clock() - start < time)
+	//{
+	//	int alpha = -8192, beta = 8192;
+	//	startM = MoveStart;
+	//	u32 move;
+	//	SortMoves(startM, endM, bestMove, mockKillerMoves);
+	//	while (startM != endM && clock() - start < time)
+	//	{
+	//		move = *startM;
+	//		startM++;
+	//		bb->MakeMove(move);
+	//		int returned = -negamax(-beta, -alpha, depth, depth, !color, endM, KillerMoves);
+	//		bb->UnMakeMove(move);
+	//		if (returned > alpha)
+	//		{
+	//			if (mockKillerMoves[0] != ((u16)move & ToFromMask))
+	//			{
+	//				mockKillerMoves[1] = mockKillerMoves[0];
+	//				mockKillerMoves[0] = (u16)move & ToFromMask;
+	//			}
+	//			alpha = returned;
+	//			bestMove = move;
+	//		}
+	//	}
+	//	if (clock() - start < time)
+	//	{
+	//		insertTT(UnpackedHashEntry(1, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
+	//		score = alpha;
+	//		maxDepth = depth + 1;
+	//	}
+	//	depth++;
+	//}
+	//delete[] mockKillerMoves;
+
 	clock_t end = clock();
 
 	u32 pV[100];
@@ -396,8 +421,8 @@ PackedHashEntry::PackedHashEntry(UnpackedHashEntry start)
 	//64 - 16 = 48;
 	//type of node takes exactly 3 bits. 48 - 3 = 45;
 	//The move is 32 bit and can be stored as such. 47 - 32 = 12;
-	//generation is the point when the node was created. It is updated by generation = (generation + 1) & 0b11
-	//generation is 2 bits. 12 - 2 = 10;
+	//generation is the point when the node was created. It is updated by generation = (generation + 1) & 0b111
+	//generation is 2 bits. 12 - 3 = 9;
 	//10 ^ 2 - 1 = 1023 which is more than sufficient for the depht.
 	data = ((u16)start.score) | (u64)start.bestMove << 16 | (u64)start.typeOfNode << 48 | (u64)start.generation << 51 | (u64)start.depth << 54;
 	key = start.key ^ data;
@@ -434,7 +459,7 @@ UnpackedHashEntry::UnpackedHashEntry(PackedHashEntry in)
 	score = (short)(0xffff & in.data);
 	bestMove = (u32)(0xffffffff & (in.data >> 16));
 	typeOfNode = (u8)(((u8)0b11) & (in.data >> 48));
-	generation = (u8)(((u8)0b11) & in.data >> 51);
+	generation = (u8)(((u8)0b111) & in.data >> 51);
 	depth = (short)(in.data >> 54);
 	key = in.key ^ in.data;
 }
@@ -512,5 +537,5 @@ u64 ABAI::extractKey(PackedHashEntry in)
 //extracts generation from a packed hash entry
 u8 ABAI::extractGeneration(PackedHashEntry in)
 {
-	return (u8)(((u8)0b11) & in.data >> 51);
+	return (u8)(((u8)0b111) & in.data >> 51);
 }
