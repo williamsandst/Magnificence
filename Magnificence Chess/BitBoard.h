@@ -159,6 +159,9 @@ public:
 	inline u32* extractBlackMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut);
 	inline u32* extractBlackPawnMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut);
 	bool LegailityChecker(u32 *move);
+	u32 LowestValuedAttacker(u64 square, u64 baseMove, bool side);
+	int SEE(u64 square);
+	int SEEWrapper(u32 move);
 
 	//a wrapper for population count
 	u8 pc(u64 valeu)
