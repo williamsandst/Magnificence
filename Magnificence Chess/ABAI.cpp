@@ -15,14 +15,10 @@ ABAI::~ABAI()
 {
 }
 
-void ABAI::movcpy(u32* pTarget, const u32* pSource, int n)
-{
-	while (n-- && (*pTarget++ = *pSource++));
-}
-
+//adds a board position to the transposition table
 int ABAI::insertTT(PackedHashEntry newEntry)
 {;
-	int index = extractKey(newEntry) & hashMask;
+	u32 index = (u32)(extractKey(newEntry) & hashMask);
 	//if both type 0 and generation different or depth lower or 
 	if ((extractNodeType(ttDepthFirst[index]) != 1 || extractNodeType(newEntry) == 1 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
 		(extractDepth(ttDepthFirst[index]) <= extractDepth(newEntry) || extractGeneration(ttDepthFirst[index]) != extractGeneration(newEntry)))
@@ -32,9 +28,10 @@ int ABAI::insertTT(PackedHashEntry newEntry)
 	return extractDepth(newEntry);
 }
 
+//Checks if a board position is in the transposition table
 bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 {
-	u32 index = key & hashMask;
+	u32 index = (u32)(key & hashMask);
 	if (extractKey(ttDepthFirst[index]) == key)
 	{
 		*in = UnpackedHashEntry(ttDepthFirst[index]);
@@ -49,33 +46,92 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 		return false;
 }
 
+//Does a qSearch
+int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start)
+{
+	int nodeval;
+	if (color)
+		nodeval = lazyEval();
+	else
+		nodeval = -lazyEval();
+	if (nodeval > alpha)
+	{
+		alpha = nodeval;
+		if (nodeval > beta)
+		{
+			return beta;
+		}
+	}
+	u32 *end;
+	//Generate legal QSearch moves for this position
+	if (color)
+		end = bb->WhiteQSearchMoves(start);
+	else
+		end = bb->BlackQSearchMoves(start);
+	SortMoves(start, end, 0, killerMoves);
+	if (*start == 1 || *start == 0)
+		return nodeval;
+	//SortMoves(start, end, 0, killerMoves);
+	u32 move;
+	color = !color;
+	while (start != end)
+	{
+		move = *start;
+		start++;
+		bb->MakeMove(move);
+		int score = -QSearch(-beta, -alpha, color, killerMoves + 2, end);
+		bb->UnMakeMove(move);
+		if (score >= beta)
+		{
+			if (*killerMoves != ((u16)move & ToFromMask))
+			{
+				*(killerMoves + 1) = *killerMoves;
+				*killerMoves = (u16)move & ToFromMask;
+			}
+			return beta;
+		}
+		if (score > alpha)
+			alpha = score;
+	}
+	return alpha;
+}
 
-
+//A nega max implementation of Alpha beta search
 int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves)
 {
-	nodes[depth]++;
-	if (depth == 0) return color ? lazyEval(): -lazyEval();
 	u32 bestMove = 0;
-	short bestScore = -8192;
-	bool previousBestMove = false;
-
+	nodes[depth]++;
 	//Check whether there is a transposition that can be used for this position
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
 		if (getFromTT(bb->zoobristKey, &potEntry))
 		{
+			if (potEntry.generation != generation)
+			{
+				potEntry.generation = generation;
+				insertTT(potEntry);
+			}
 			if (potEntry.depth >= depth)
 			{
 				if (potEntry.typeOfNode == 1)
 					return potEntry.score;
 				else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
 					return beta;
-				else if (potEntry.score == 1 && potEntry.score <= alpha)
+				else if (potEntry.typeOfNode == 2 && potEntry.score <= alpha)
 					return alpha;
 			}
 			bestMove = potEntry.bestMove;
 		}
 	}
+	if (depth <= 0)
+	{
+		//if (color)
+		//	return lazyEval();
+		//else
+		//	return -lazyEval();
+		return QSearch(alpha, beta, color, killerMoves, start);
+	}
+	short bestScore = -8192;
 
 	u32 *end;
 	
@@ -90,6 +146,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	//If a move is part of the principal variation, search that first!
 	SortMoves(start, end, bestMove, killerMoves);
 	
+	if (*start == 0)
+		return 0;
+	else if (*start == 1)
+		return -4095 + maxDepth - depth;
 	//Go through the legal moves
 	while (start != end)
 	{
@@ -107,8 +167,11 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bb->UnMakeMove(move);
 			if (returned >= beta)
 			{
-				*(killerMoves + moveOveride[depth]) = (u16)move;
-				moveOveride[depth] = (moveOveride[depth] + 1) & 1;
+				if ((*killerMoves) != ((u16)move & ToFromMask))
+				{
+					*(killerMoves + 1) = *killerMoves;
+					*killerMoves = (u16)move & ToFromMask;
+				}
 				insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 				return beta;
 			}
@@ -130,6 +193,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	return alpha;
 }
 
+//Returns an aproximate score based on material
 int ABAI::lazyEval()
 {
 	//nodes[0]++;
@@ -139,10 +203,15 @@ int ABAI::lazyEval()
 	score += pieceSquareValues(whitePawnEarlyPST, bb->Pieces[5]);
 	score -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
 	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
-	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[10]);
+	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
+	if (bb->color)
+		score += 20;
+	else
+		score -= 20;
 	return score;
 }
 
+//Used in eval to extract values from the piece square tables for positional awareness 
 int ABAI::pieceSquareValues(short * pieceSquareTable, u64 pieceSet)
 {
 	u32 index;
@@ -156,12 +225,13 @@ int ABAI::pieceSquareValues(short * pieceSquareTable, u64 pieceSet)
 	return sum;
 }
 
+//Returns a vector of PV from current position. Under development
 vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDepth)
 {
 	/*
 	To do
-	0.	Q-search
-	1.	Iterative Depening
+	//0.	Q-search
+	//1.	Iterative Depening
 	2.	History Heurestic
 	3.	Move Sorting
 	4.	Multithreading
@@ -180,19 +250,11 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		hashMask = i - 1;
 	}
 	generation = (generation + 1) & 0b11;
-	for (int i = 0; i < 100; i++)
-	{
-		if (moveOveride[i] > 1)
-		{
-			moveOveride[i] = 0;
-		}
-	}
 
 	//Create the static array used for storing legal moves
-	u32 *MoveStart = new u32[218 * 100];
+	u32 *MoveStart = new u32[218 * 200];
 	u16 *KillerMoves = new u16[200];
 
-	//Create the triangular principal variation array
 
 	this->bb = IBB;
 	vector<u32> PV;
@@ -205,9 +267,75 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	clock_t start = clock();
 
 	//Run search
-	int score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
-	
+	int score;
+
+	for (int i = 1; i < maxDepth + 1; i++)
+	{
+		//generation = (generation + 1) & 0b11;
+		//for (int i = 0; i < 200; i++)
+		//{
+		//	KillerMoves[i] = 0;
+		//}
+		score = negamax(-8192, 8192, i, i, color, MoveStart, KillerMoves);
+	}
+
+	//score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
+
+	/*UnpackedHashEntry q(0, 0, 0, 0, 0, 0);
+	int depth = 0;
+	u32 bestMove = 0;
+	if (getFromTT(bb->zoobristKey, &q))
+	{
+		depth = q.depth;
+		maxDepth = depth;
+		score = q.score;
+		q.generation = generation;
+		insertTT(q);
+	}
+	u32 *startM = MoveStart, *endM;
+	if (color)
+		endM = bb->WhiteLegalMoves(startM);
+	else
+		endM = bb->WhiteLegalMoves(startM);
+	u16 *mockKillerMoves = new u16[2]{ 0, 0 };
+	u8 or = 0;
+	int nrNodes = 0;
+	while (clock() - start < time)
+	{
+		int alpha = -8192, beta = 8192;
+		startM = MoveStart;
+		u32 move;
+		SortMoves(startM, endM, bestMove, mockKillerMoves);
+		while (startM != endM && clock() - start < time)
+		{
+			move = *startM;
+			startM++;
+			bb->MakeMove(move);
+			int returned = -negamax(-beta, -alpha, depth, depth, !color, endM, KillerMoves);
+			bb->UnMakeMove(move);
+			if (returned > alpha)
+			{
+				if (mockKillerMoves[0] != ((u16)move & ToFromMask))
+				{
+					mockKillerMoves[1] = mockKillerMoves[0];
+					mockKillerMoves[0] = (u16)move & ToFromMask;
+				}
+				alpha = returned;
+				bestMove = move;
+			}
+		}
+		if (clock() - start < time)
+		{
+			insertTT(UnpackedHashEntry(1, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
+			score = alpha;
+			maxDepth = depth + 1;
+		}
+		depth++;
+	}
+	delete[] mockKillerMoves;*/
 	clock_t end = clock();
+
+	u32 pV[100];
 
 	//Debug output
 	cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
@@ -228,10 +356,9 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 		//PV.push_back(triangularPV[i]);
 		cout << IO::convertMoveToAlg(triangularPV[i]) << " ";
 	}*/
-
+	//u32 *pV = new u32[100];
 	//Find pV variation from transposition table
 	cout << endl << "Principal variation (TT): ";
-	u32 pV[100];
 	for (size_t i = 0; i < maxDepth; i++)
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -258,6 +385,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	return PV;
 }
 
+//Generates a packed hash entry from an unpacked hash entry
 PackedHashEntry::PackedHashEntry(UnpackedHashEntry start)
 {
 	//data needs to store the best move, the score of the node, 
@@ -275,13 +403,21 @@ PackedHashEntry::PackedHashEntry(UnpackedHashEntry start)
 	key = start.key ^ data;
 }
 
+//generates an empty packed hash entry
 PackedHashEntry::PackedHashEntry()
 {
 	key = 0;
 	data = 0;
 }
 
-UnpackedHashEntry::UnpackedHashEntry(u8 typeOfNode, short depth, short score, u32 bestMove, u64 key, u8 generation)
+//generates an unpacked hash entry
+//type of node: The type of node 0 is a minimum value, 1 is an exact value, 2 is a maximum value
+//Depth: the depth it was searched at
+//Score: The score returned
+//Bestmove: The move causing the highest score
+//Key: The zoobrist hash of position
+//Generation: A variable showing roughly when it was searched
+UnpackedHashEntry::UnpackedHashEntry(u8 typeOfNode, u16 depth, short score, u32 bestMove, u64 key, u8 generation)
 {
 	this->typeOfNode = typeOfNode; //(0 is minimum value, 1 is exact, 2 is maximum value)
 	this->depth = depth;
@@ -291,6 +427,8 @@ UnpackedHashEntry::UnpackedHashEntry(u8 typeOfNode, short depth, short score, u3
 	this->generation = generation;
 }
 
+
+//Decodes a packed hash entry into a unpacked hash entry
 UnpackedHashEntry::UnpackedHashEntry(PackedHashEntry in)
 {
 	score = (short)(0xffff & in.data);
@@ -301,24 +439,29 @@ UnpackedHashEntry::UnpackedHashEntry(PackedHashEntry in)
 	key = in.key ^ in.data;
 }
 
+//extracts the type of node from a packed hash entrt
+//0 is minimum value, 1 is exact value and 2 is maximum value
 u8 ABAI::extractNodeType(PackedHashEntry in)
 {
 	return (u8)(((u8)0b11) & (in.data >> 48));
 }
 
+//Extracts the depth from a packed hash entry
 short ABAI::extractDepth(PackedHashEntry in)
 {
 	return (short)(in.data >> 54);
 }
 
+//Extracts the score from a packed hash entry
 short ABAI::extractScore(PackedHashEntry in)
 {
 	return (short)(0xffff & in.data);
 }
 
+//Sorts the moves based on Killer moves and hash move
 void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves)
 {
-	u32 *OGstart = start, mem, u32, *KMStart = start, *mover;
+	u32 *OGstart = start, mem, *KMStart = start, *mover;
 	bestMove &= (ToFromMask);
 	u16 KM1 = *killerMoves & ToFromMask, KM2 = *(killerMoves + 1) & ToFromMask;
 	while (start != end)
@@ -354,16 +497,19 @@ void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves)
 	}
 }
 
+//extracts the bestmove from a packed hash entry
 u32 ABAI::extractBestMove(PackedHashEntry in)
 {
 	return (u32)(0xffffffff & (in.data >> 16));
 }
 
+//extracts the zoobrist hash from a packed hash entry
 u64 ABAI::extractKey(PackedHashEntry in)
 {
 	return in.key ^ in.data;
 }
 
+//extracts generation from a packed hash entry
 u8 ABAI::extractGeneration(PackedHashEntry in)
 {
 	return (u8)(((u8)0b11) & in.data >> 51);

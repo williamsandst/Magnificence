@@ -13,7 +13,7 @@ struct UnpackedHashEntry
 	short score;
 	u32 bestMove;
 	u64 key;
-	UnpackedHashEntry(u8 typeOfNode, short depth, short score, u32 bestM, u64 key, u8 generation);
+	UnpackedHashEntry(u8 typeOfNode, u16 depth, short score, u32 bestM, u64 key, u8 generation);
 	UnpackedHashEntry(PackedHashEntry in);
 };
 
@@ -130,7 +130,7 @@ private:
 		9,  18,  24,  27,  27,  24,  18,   9,
 		6,  15,  21,  24,  24,  21,  15,   6,
 		3,  12,  15,  18,  18,  15,  12,   3,
-		-15, -12,  -9,  -6,  -6,  -9, -12, -15 };
+	  -15, -12,  -9,  -6,  -6,  -9, -12, -15 };
 			
 	short whiteKnightLatePST[64] = 
 	  { 0,  3,  6,  9,  9,  6,  3,  0,
@@ -273,8 +273,6 @@ private:
 		0, 10, 20, 30, 30, 20, 10,  0  };
 	
 	u64 nodes[100];
-	u8 moveOveride[100];
-	u16 killerMoves[200];
 public:
 	BitBoard *bb;
 	const u16 ToFromMask = 0b111111111111;
@@ -290,9 +288,9 @@ public:
 	u32 extractBestMove(PackedHashEntry in);
 	u64 extractKey(PackedHashEntry in);
 	u8 extractGeneration(PackedHashEntry in);
-	void movcpy(u32* pTarget, const u32* pSource, int n);
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
+	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves);
 	int lazyEval();
 	int pieceSquareValues(short * pieceSquareTable, u64 pieceSet);

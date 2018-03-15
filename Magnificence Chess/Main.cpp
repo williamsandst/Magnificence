@@ -11,12 +11,12 @@
 #include <atomic>
 #include <ctime>
 #include "Board.h"
-#include "GameState.h";
-#include "BitBoard.h";
-#include "IO.h";
+#include "GameState.h"
+#include "BitBoard.h"
+#include "IO.h"
 #include "Move.h"
-#include "Test.h";
-#include "Engine.h";
+#include "Test.h"
+#include "Engine.h"
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
@@ -215,6 +215,7 @@ void guiInterface()
 		else if (splitCommand[0] == "setboard")
 		{
 			board.SetState(recievedCommand.substr(9, recievedCommand.size()));
+			color = board.color;
 		}
 		else if (recievedCommand == "stop")
 		{
@@ -263,7 +264,7 @@ void runEngine(GameState* gameState)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 10, gameState->maxDepth);
+			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 1, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			cout << "mgnf: ";
 			gameState->idle = true;

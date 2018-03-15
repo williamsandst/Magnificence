@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Engine.h"
-#include "Move.h";
+#include "Move.h"
 #include <iostream>
 #include "IO.h"
 #include <ctime>
@@ -80,7 +80,7 @@ int Engine::negaMax2(BitBoard * board, int depth, bool color, u32 * start)
 	else
 	end = board->BlackLegalMoves(start);
 	u32 *nextStart = (start + 218);
-	u64 res = 0;
+	int res = 0;
 	depth--;
 	color = !color;
 	while (start != end)
