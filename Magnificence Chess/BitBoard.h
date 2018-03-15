@@ -161,6 +161,7 @@ public:
 	bool LegailityChecker(u32 *move);
 	u32 LowestValuedAttacker(u64 square, u64 baseMove, bool side);
 	int SEE(u64 square);
+	int SEEWrapper(u32 move);
 
 	//a wrapper for population count
 	u8 pc(u64 valeu)

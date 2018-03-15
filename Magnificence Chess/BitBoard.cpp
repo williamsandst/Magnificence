@@ -305,6 +305,43 @@ u32 BitBoard::LowestValuedAttacker(u64 square, u64 baseMove, bool side)
 	return 0;
 }
 
+//Calls the static exchange evaluation correctly for you
+//Returns the aproximated change in material if the input
+//move is made
+int BitBoard::SEEWrapper(u32 move)
+{
+	u32 to = (move >> 6) & 0b111111;
+	int value = 0;
+	switch (move >> 29)
+	{
+	case 0:
+		value = 50000;
+		break;
+	case 1:
+		value = 900;
+		break;
+	case 2:
+		value = 300;
+		break;
+	case 3:
+		value = 500;
+		break;
+	case 4:
+		value = 300;
+		break;
+	case 5:
+		value = 100;
+		break;
+	case 7:
+		value = 0;
+		break;
+	}
+	MakeMove(move);
+	value -= SEE(one << to);
+	UnMakeMove(move);
+	return value;
+}
+
 //recursivly creates a SEE score
 //square: the square being looked at
 //important to note that move being evaluated must habe been made before it can be evaluated!!!
@@ -346,7 +383,7 @@ int BitBoard::SEE(u64 square)
 		MakeMove(move);
 		value -= SEE(square);
 		UnMakeMove(move);
-		return (0, value);
+		return max(0, value);
 	}
 	return 0;
 }
