@@ -266,7 +266,7 @@ void runEngine(GameState* gameState)
 			localBB.Copy(gameState->board);
 			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 4, gameState->maxDepth);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
-			cout << "mgnf: ";
+			//cout << "mgnf: ";
 			gameState->idle = true;
 		}
 	}
