@@ -306,11 +306,11 @@ u32 BitBoard::LowestValuedAttacker(u64 square, u64 baseMove, bool side)
 }
 
 //Calls the static exchange evaluation correctly for you
-//Returns the aproximated change in material if the input
+//Returns the approximated change in material if the input
 //move is made
-int BitBoard::SEEWrapper(u32 move, short *startWhite, short *startBlack)
+int BitBoard::SEEWrapper(u32 move)
 {
-	u32 to = (move >> 6) & 0b111111, from = (move) & 0b111111;
+	u32 to = (move >> 6) & 0b111111;
 	int value = 0;
 	switch (move >> 29)
 	{
@@ -335,15 +335,6 @@ int BitBoard::SEEWrapper(u32 move, short *startWhite, short *startBlack)
 	case 7:
 		value = 0;
 		break;
-	}
-	u64 NToSet = ~(one << to), NFromSet = ~(one << from), occupancy = Pieces[6] | Pieces[13], square = one << to;
-	short *white = startWhite;
-	{
-		//pawns
-		u64  occupancy = Pieces[6] | Pieces[13];
-		u64 piece = Pieces[5] & (((square >> 9) & nColumns[7]) | ((square >> 7) & nColumns[0]));
-		//090131312
-		
 	}
 	MakeMove(move);
 	value -= SEE(one << to);

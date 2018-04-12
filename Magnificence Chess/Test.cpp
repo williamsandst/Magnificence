@@ -5,8 +5,11 @@
 #include <ctime>
 #include "stdafx.h"
 #include <algorithm>
+#pragma once
+#include <random>
 
 //Static class used for testing purposes
+mt19937 rng;
 
 string Test::displayBoard(BitBoard board)
 {
@@ -26,15 +29,109 @@ string Test::displayBoard(BitBoard board)
 
 }
 
-u64 Test::perft(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize)
+//u64 Test::perftLazySMP(int depth, int startDepth, BitBoard * bb, bool color, u32 * start, HashEntryPerft * Hash, u32 tableSize)
+//{
+//	//if (depth == 0)
+//	//return 1;
+//	u32 *end;
+//	if (color)
+//		end = bb->WhiteLegalMoves(start);
+//	else
+//		end = bb->BlackLegalMoves(start);
+//	if (depth == 1)
+//	{
+//		//return 1;
+//		if (end - start == 1)
+//		{
+//			if (*start == 0 || *start == 1)
+//			{
+//				return 0;
+//			}
+//		}
+//		return end - start;
+//	}
+//	else
+//	{
+//		HashEntryPerft *thisPos = (Hash + (((bb->zoobristKey & tableSize) * 2)));
+//		if (depth > 2)
+//		{
+//			HashEntryPerft P = *thisPos;
+//			if (thisPos->GetKey() == bb->zoobristKey && thisPos->GetDepth() == depth)
+//			{
+//				return thisPos->GetResult();
+//			}
+//			P = *(thisPos + 1);
+//			if (thisPos->GetKey() == bb->zoobristKey && thisPos->GetDepth() == depth)
+//			{
+//				return thisPos->GetResult();
+//			}
+//		}
+//		u32 *nextStart = (start + 218);
+//		u64 res = 0;
+//		depth--;
+//		color = !color;
+//		while (start != end)
+//		{
+//			u32 move = *start;
+//			start++;
+//			if (move != 0 && move != 1)
+//			{
+//				//BitBoard c;
+//				//c.Copy(bb);
+//				//c.MakeMove(move);
+//				bb->MakeMove(move);
+//				res += perftHash(depth, startDepth, bb, color, nextStart, Hash, tableSize);
+//				bb->UnMakeMove(move);
+//			}
+//		}
+//		if (depth > 2)
+//		{
+//			HashEntryPerft entry = *thisPos;
+//			if (entry.GetDepth() <= depth)
+//			{
+//				*(thisPos + 1) = entry;
+//				*(thisPos) = HashEntryPerft(bb->zoobristKey, res, depth + 1);
+//				//thisPos->key = bb->zoobristKey;
+//				//thisPos->depth = depth + 1;
+//				//thisPos->Result = res;
+//			}
+//			else
+//			{
+//				*(thisPos + 1) = HashEntryPerft(bb->zoobristKey, res, depth + 1);
+//				//(thisPos + 1)->key = bb->zoobristKey;
+//				//(thisPos + 1)->depth = depth + 1;
+//				//(thisPos + 1)->Result = res;
+//			}
+//		}
+//		return res;
+//	}
+//}
+
+u64 Test::perftHash(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize, bool *output)
 {
 	//if (depth == 0)
 		//return 1;
+	if (!(*output))
+	{
+		return 0;
+	}
 	u32 *end;
 	if (color)
 		end = bb->WhiteLegalMoves(start);
 	else
 		end = bb->BlackLegalMoves(start);
+	if (depth == startDepth)
+	{
+		u32 *copy = start;
+		while (copy != end - 1)
+		{
+			u32 OVRD = rand() % (end - start);
+			u32 c = *copy;
+			*(copy) = *(start + OVRD);
+			*(start + OVRD) = c;
+			copy++;
+		}
+	}
 	if (depth == 1)
 	{
 		//return 1;
@@ -50,13 +147,15 @@ u64 Test::perft(int depth, int startDepth, BitBoard *bb, bool color, u32 *start,
 	else
 	{
 		HashEntryPerft *thisPos = (Hash + (((bb->zoobristKey & tableSize) * 2)));
-		if (thisPos->key == bb->zoobristKey && thisPos->depth == depth)
+		HashEntryPerft P = *thisPos;
+		if (thisPos->GetKey() == bb->zoobristKey && thisPos->GetDepth() == depth)
 		{
-			return thisPos->Result;
+			return thisPos->GetResult();
 		}
-		else if ((thisPos + 1)->key == bb->zoobristKey && (thisPos + 1)->depth == depth)
+		P = *(thisPos + 1);
+		if (thisPos->GetKey() == bb->zoobristKey && thisPos->GetDepth() == depth)
 		{
-			return (thisPos + 1)->Result;
+			return thisPos->GetResult();
 		}
 		u32 *nextStart = (start + 218);
 		u64 res = 0;
@@ -72,21 +171,33 @@ u64 Test::perft(int depth, int startDepth, BitBoard *bb, bool color, u32 *start,
 				//c.Copy(bb);
 				//c.MakeMove(move);
 				bb->MakeMove(move);
-				res += perft(depth, startDepth, bb, color, nextStart, Hash, tableSize);
+				res += perftHash(depth, startDepth, bb, color, nextStart, Hash, tableSize, output);
 				bb->UnMakeMove(move);
 			}
 		}
-		if (thisPos->depth < depth)
+		P = *thisPos;
+		if (!(*output))
 		{
-			thisPos->key = bb->zoobristKey;
-			thisPos->depth = depth + 1;
-			thisPos->Result = res;
+			return 0;
+		}
+		if (P.GetDepth() <= depth)
+		{
+			*(thisPos + 1) = P;
+			*(thisPos) = HashEntryPerft(bb->zoobristKey, res, depth + 1);
+			//thisPos->key = bb->zoobristKey;
+			//thisPos->depth = depth + 1;
+			//thisPos->Result = res;
 		}
 		else
 		{
-			(thisPos + 1)->key = bb->zoobristKey;
-			(thisPos + 1)->depth = depth + 1;
-			(thisPos + 1)->Result = res;
+			*(thisPos + 1) = HashEntryPerft(bb->zoobristKey, res, depth + 1);
+			//(thisPos + 1)->key = bb->zoobristKey;
+			//(thisPos + 1)->depth = depth + 1;
+			//(thisPos + 1)->Result = res;
+		}
+		if (depth + 1 == startDepth)
+		{
+			*(output) = true;
 		}
 		return res;
 	}
@@ -95,7 +206,7 @@ u64 Test::perft(int depth, int startDepth, BitBoard *bb, bool color, u32 *start,
 u64 Test::perft(int depth, BitBoard *bb, bool color, u32 *start)
 {
 	//if (depth == 0)
-	//return 1;
+		//return 1;
 	u32 *end;
 	if (color)
 		end = bb->WhiteLegalMoves(start);

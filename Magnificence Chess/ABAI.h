@@ -291,7 +291,7 @@ public:
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
 	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start);
-	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves);
+	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 * moveSortValues);
 	int lazyEval();
 	int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);
 	vector<u32> bestMove(BitBoard *IBB, bool color, clock_t time, int maxDepth);

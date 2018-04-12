@@ -16,7 +16,7 @@ public:
 
 
 	vector<u32> startSearch(BitBoard * board, bool color, int timeLeft, int maxDepth);
-
+	
 	Engine();
 	~Engine();
 private:
