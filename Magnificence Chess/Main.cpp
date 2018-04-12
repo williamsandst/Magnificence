@@ -23,6 +23,8 @@ string commandList =
 "disp			Display the board\n"
 "move	<MOVE>		Perform a move\n"
 "perft	<DEPTH>		Calculate the perft score for current position\n"
+"hperft <DEPTH>		Perft score with hasing\n"
+"mperft <DEPTH> <THREADS> Multithreaded perft using Lazy SMP\n"
 "divide	<DEPTH>		Divide the perft on first depth for debugging\n"
 "moves	<COLOR>		Display legal moves at current position\n"
 "setboard <FEN>		Set the board to FEN position\n"
@@ -31,6 +33,9 @@ string commandList =
 
 using namespace std;
 
+static const int threadCount = 4;
+
+void perftTest(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize);
 void DebugWrite(wchar_t* msg);
 void runEngine(GameState* gameState);
 void guiInterface();
@@ -87,14 +92,54 @@ void guiInterface()
 		{
 			if (splitCommand[0] == "help" || splitCommand[0] == "commands")
 				cout << commandList;
-			else if (splitCommand[0] == "perft" && splitCommand.size() == 2)
+			else if (splitCommand[0] == "hperft" && splitCommand.size() == 2)
 			{
 				//tablesize should be power of 2 - 1;
 				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
 				u32 tableSize = 16777215;//8388607;
 				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
 				timer = clock();
-				u64 perftNumber = Test::perft(stoi(splitCommand[1]), stoi(splitCommand[1]), &board, color, start, Hash, tableSize);
+				u64 perftNumber = Test::perftHash(stoi(splitCommand[1]), stoi(splitCommand[1]), &board, color, start, Hash, tableSize);
+				HashEntryPerft *thisPos = (Hash + (((board.zoobristKey & tableSize) * 2)));
+				u64 perftNumber2 = thisPos->Result;
+				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
+				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
+				delete[] start;
+				delete[] Hash;
+			}
+			else if (splitCommand[0] == "perft" && splitCommand.size() == 2)
+			{
+				//tablesize should be power of 2 - 1;
+				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
+				timer = clock();
+				u64 perftNumber = Test::perft(stoi(splitCommand[1]), &board, color, start);
+				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
+				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
+				delete[] start;
+			}
+			else if (splitCommand[0] == "mperft" && splitCommand.size() >= 2)
+			{
+				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
+				u32 tableSize = 16777215;//8388607;
+				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
+				timer = clock();
+				BitBoard threadBoard[threadCount];
+				for (size_t i = 0; i < threadCount; i++)
+				{
+					threadBoard[i].Copy(&board);
+				}
+				thread perftThreads[threadCount-1];
+				for (size_t i = 0; i < threadCount-1; i++)
+				{
+					perftThreads[i] = thread(perftTest, stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[i], color, start, Hash, tableSize);
+				}
+				Test::perftHash(stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[threadCount], color, start, Hash, tableSize);
+				for (size_t i = 0; i < threadCount; i++)
+				{
+					perftThreads[i].join();
+				}
+				HashEntryPerft *thisPos = (Hash + (((board.zoobristKey & tableSize) * 2)));
+				u64 perftNumber = thisPos->Result;
 				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
 				delete[] start;
@@ -272,3 +317,7 @@ void runEngine(GameState* gameState)
 	}
 }
 
+void perftTest(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize)
+{
+	Test::perftHash(depth, startDepth, bb, color, start, Hash, tableSize);
+}

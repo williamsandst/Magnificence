@@ -5,6 +5,8 @@
 #include <cmath>
 
 
+const bool DEBUG_OUTPUT = false;
+
 ABAI::ABAI()
 {
 
@@ -22,7 +24,9 @@ int ABAI::insertTT(PackedHashEntry newEntry)
 	//if both type 0 and generation different or depth lower or 
 	if ((extractNodeType(ttDepthFirst[index]) != 1 || extractNodeType(newEntry) == 1 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
 		(extractDepth(ttDepthFirst[index]) <= extractDepth(newEntry) || extractGeneration(ttDepthFirst[index]) != extractGeneration(newEntry)))
+	{
 		ttDepthFirst[index] = newEntry;
+	}
 	else
 		ttAlwaysOverwrite[index] = newEntry;
 	return extractDepth(newEntry);
@@ -125,10 +129,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	}
 	if (depth <= 0)
 	{
-		//if (color)
-		//	return lazyEval();
-		//else
-		//	return -lazyEval();
+		//return color ? lazyEval(): -lazyEval();
 		return QSearch(alpha, beta, color, killerMoves, start);
 	}
 	short bestScore = -8192;
@@ -223,6 +224,7 @@ int ABAI::pieceSquareValues(const short * pieceSquareTable, u64 pieceSet)
 }
 
 //Returns a vector of PV from current position. Under development
+
 vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDepth)
 {
 	/*
@@ -263,21 +265,85 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	//Variables used for debugging
 	clock_t start = clock();
 
-	//Run search
 	int score;
 
-	/*for (int i = 1; i < maxDepth + 1; i++)
+	u32 pV[100];
+
+	//Run search
+	//Iterative deepening
+	/*
+	cout << endl;
+	for (int i = 1; i < maxDepth + 1; i++)
 	{
-		//generation = (generation + 1) & 0b11;
-		//for (int i = 0; i < 200; i++)
-		//{
-		//	KillerMoves[i] = 0;
-		//}
+		//Do search
 		score = negamax(-8192, 8192, i, i, color, MoveStart, KillerMoves);
-	}*/
 
-	score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
+		//Information generation
+		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
+		//Find pV
+		for (size_t i2 = 0; i2 < i; i2++)
+		{
+			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+			if (!getFromTT(bb->zoobristKey, &potEntry))
+				cout << "ERROR! Non-PV Node: " << endl;
+			pV[i2] = potEntry.bestMove;
+			if (i == maxDepth)
+				PV.push_back(pV[i2]);
+			cout << IO::convertMoveToAlg(pV[i2]) << " ";
+			bb->MakeMove(pV[i2]);
+		}
+		//Unmake pV
+		for (size_t i2 = 1; i2 < i + 1; i2++)
+		{
+			bb->UnMakeMove(pV[i - i2]);
+		}
+		cout << endl;
+	}
+	*/
 
+	//Normal search
+	//score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
+
+	//Iterative deepening with time limit. William version
+	double totalTime;
+	double branchingFactor;
+	const int maxTime = 20;
+	bool runSearch = true;
+	cout << endl;
+	int i = 1;
+	while (runSearch)
+	{
+		//Do search
+		PV.clear();
+		score = negamax(-8192, 8192, i, i, color, MoveStart, KillerMoves);
+		clock_t timerEnd = clock();
+		totalTime = (timerEnd - start) / double CLOCKS_PER_SEC;
+		branchingFactor = pow(nodes[0], 1 / (double)i);
+		if (totalTime * branchingFactor > maxTime)
+			runSearch = false;
+		//Information generation
+		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
+		//Find pV
+		for (size_t i2 = 0; i2 < i; i2++)
+		{
+			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+			if (!getFromTT(bb->zoobristKey, &potEntry))
+				cout << "ERROR! Non-PV Node: " << endl;
+			pV[i2] = potEntry.bestMove;
+			PV.push_back(pV[i2]);
+			cout << IO::convertMoveToAlg(pV[i2]) << " ";
+			bb->MakeMove(pV[i2]);
+		}
+		//Unmake pV
+		for (size_t i2 = 1; i2 < i + 1; i2++)
+		{
+			bb->UnMakeMove(pV[i - i2]);
+		}
+		cout << endl;
+		i++;
+	}
+
+	//Iterative deepening with time limit. Haralds version; broken?
 	/*UnpackedHashEntry q(0, 0, 0, 0, 0, 0);
 	int depth = 0;
 	u32 bestMove = 0;
@@ -299,6 +365,7 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	int nrNodes = 0;
 	while (clock() - start < time)
 	{
+		PV.clear();
 		int alpha = -8192, beta = 8192;
 		startM = MoveStart;
 		u32 move;
@@ -327,26 +394,44 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 			score = alpha;
 			maxDepth = depth + 1;
 		}
+		cout << "info depth " << to_string(depth) << " score cp " << to_string(score) << " pv ";
+		for (size_t i2 = 0; i2 < depth; i2++)
+		{
+			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+			if (!getFromTT(bb->zoobristKey, &potEntry))
+				cout << "ERROR! Non-PV Node: " << endl;
+			pV[i2] = potEntry.bestMove;
+			PV.push_back(pV[i2]);
+			cout << IO::convertMoveToAlg(pV[i2]) << " ";
+			bb->MakeMove(pV[i2]);
+		}
+		//Unmake pV
+		for (size_t i2 = 1; i2 < depth + 1; i2++)
+		{
+			bb->UnMakeMove(pV[depth - i2]);
+		}
+		cout << endl;
 		depth++;
 	}
 	delete[] mockKillerMoves;*/
 	clock_t end = clock();
 
-	u32 pV[100];
-
 	//Debug output
 	
-	cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
-	cout << to_string(nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
-		to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
-	cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)maxDepth) << endl;
-	
-	cout << "Branching factors: ";
-	for (size_t i = 0; i < maxDepth-1; i++)
+	if (DEBUG_OUTPUT)
 	{
-		cout << endl << to_string(nodes[i]) << " / " << to_string(nodes[i + 1]) << " = ";
-		cout << to_string(maxDepth - i) << "/" << to_string(maxDepth - i - 1) << ": " << to_string((float)nodes[i] / (float)nodes[i + 1])
-			<< ", ";
+		cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
+		cout << to_string(nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
+			to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
+		cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)maxDepth) << endl;
+
+		cout << "Branching factors: ";
+		for (size_t i = 0; i < maxDepth - 1; i++)
+		{
+			cout << endl << to_string(nodes[i]) << " / " << to_string(nodes[i + 1]) << " = ";
+			cout << to_string(maxDepth - i) << "/" << to_string(maxDepth - i - 1) << ": " << to_string((float)nodes[i] / (float)nodes[i + 1])
+				<< ", ";
+		}
 	}
 	//cout << endl << "Principal variation (tri-pV table): ";
 	/*for (size_t i = 0; i < maxDepth; i++)
@@ -357,26 +442,8 @@ vector<u32> ABAI::bestMove(BitBoard * IBB, bool color, clock_t time, int maxDept
 	//u32 *pV = new u32[100];
 	//Find pV variation from transposition table
 	//cout << endl << "Principal variation (TT): ";
-	cout << "info multipv ";
-	for (size_t i = 0; i < maxDepth; i++)
-	{
-		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-		if (!getFromTT(bb->zoobristKey, &potEntry))
-			cout << "ERROR: Move not part of pV? Check replacement scheme!" << endl;
-		pV[i] = potEntry.bestMove;
-		PV.push_back(pV[i]);
-		cout << IO::convertMoveToAlg(pV[i]) << " ";
-		bb->MakeMove(pV[i]);
-	}
 	cout << endl;
-	cout << "info score " << to_string(score) << endl;
 	//Undo the pV moves
-	for (size_t i = 1; i < maxDepth+1; i++)
-	{
-		bb->UnMakeMove(pV[maxDepth-i]);
-	}
-
-	cout << endl;
 
 	//Memory cleanup
 	delete[] MoveStart, KillerMoves;
