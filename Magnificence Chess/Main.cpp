@@ -27,6 +27,7 @@ string commandList =
 "mperft <DEPTH> <THREADS> Multithreaded perft using Lazy SMP\n"
 "divide	<DEPTH>		Divide the perft on first depth for debugging\n"
 "moves	<COLOR>		Display legal moves at current position\n"
+"sortmoves  <COLOR> Sorts the possible moves with movesorting\n"
 "setboard <FEN>		Set the board to FEN position\n"
 "fen			Output a fen string for current position\n"
 "uci			Enables uci-mode and gives control to a GUI\n\n";
@@ -79,6 +80,7 @@ void guiInterface()
 
 	cout << "Generating magic tables..." << endl;
 	BitBoard board = BitBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	
 	gameState->board = &board;
 	cout << "Magic tables complete." << endl << endl;
 	cout << "For help, type 'help'." << endl << endl;
@@ -156,6 +158,51 @@ void guiInterface()
 				}
 				delete[] starts;
 			}
+			else if (splitCommand[0] == "movesort" && splitCommand.size() == 2)
+			{
+				if (splitCommand[1] == "white")
+				{
+					u32 *start = new u32[218];
+					i16 *sortingScores = new i16[218];
+					u32 *end = board.WhiteLegalMoves(start);
+
+					u16 killerMoves[2] = { 0,0 };
+
+					ABAI tempEngine = ABAI();
+					tempEngine.bb = &board;
+					tempEngine.calculateSortingValues(start, end, 0, killerMoves, sortingScores);
+
+					for (size_t i = 0; i < (u32)(end - start); i++)
+					{
+						cout << IO::convertMoveToAlg(start[i]) << " [" <<
+							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << "] " << 
+							to_string(sortingScores[i]) << endl;
+					}
+					delete[]start;
+				}
+				else if (splitCommand[1] == "black")
+				{
+					u32 *start = new u32[218];
+					i16 *sortingScores = new i16[218];
+					u32 *end = board.BlackLegalMoves(start);
+
+					u16 killerMoves[2] = { 0,0 };
+
+					ABAI tempEngine = ABAI();
+					tempEngine.bb = &board;
+					tempEngine.calculateSortingValues(start, end, 0, killerMoves, sortingScores);
+
+					for (size_t i = 0; i < (u32)(end - start); i++)
+					{
+						cout << IO::convertMoveToAlg(start[i]) << " [" <<
+							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << "] " <<
+							to_string(sortingScores[i]) << endl;
+					}
+					delete[]start;
+				}
+			}
 			else if (splitCommand[0] == "fen")
 				cout << IO::convertBoardToFEN(board, color) << endl;
 			else if (splitCommand[0] == "display" || splitCommand[0] == "disp")
@@ -184,8 +231,8 @@ void guiInterface()
 					for (size_t i = 0; i < (u32)(end - start); i++)
 					{
 						cout << IO::convertMoveToAlg(start[i]) << " [" <<
-							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << " to " <<
-							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << "]" << endl;
+							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << "]" << endl;
 					}
 					delete []start;
 				}
@@ -197,8 +244,8 @@ void guiInterface()
 					for (size_t i = 0; i < (u32)(end - moves); i++)
 					{
 						cout << IO::convertMoveToAlg(moves[i]) << " [" <<
-							Test::pieceToString(board.mailBox[Move::getFrom(moves[i])]) << " to " <<
-							Test::pieceToString(board.mailBox[Move::getTo(moves[i])]) << "]" << endl;
+							Test::pieceToString(board.mailBox[Move::getTo(moves[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(moves[i])]) << "]" << endl;
 					}
 					delete[] moves;
 				}

@@ -284,7 +284,8 @@ public:
 	u8 extractNodeType(PackedHashEntry in);
 	short extractDepth(PackedHashEntry in);
 	short extractScore(PackedHashEntry in);
-	void SortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves);
+	void SortMoves(u32 * start, u32 * end, u32 bestMove, u16 * killerMoves);
+	void calculateSortingValues(u32 * start, u32 * end, u32 bestMove, u16 * killerMoves,  i16 *sortValuesStart);
 	u32 extractBestMove(PackedHashEntry in);
 	u64 extractKey(PackedHashEntry in);
 	u8 extractGeneration(PackedHashEntry in);

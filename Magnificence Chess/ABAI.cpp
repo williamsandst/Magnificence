@@ -5,7 +5,7 @@
 #include <cmath>
 
 
-const bool DEBUG_OUTPUT = false;
+const bool DEBUG_OUTPUT = true;
 
 using namespace std;
 
@@ -172,23 +172,44 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	mvcnt = end - start;
 	depth--;
 	color = !color;
-
-	//If a move is part of the principal variation, search that first!
-	SortMoves(start, end, bestMove, killerMoves);
 	
 	if (*start == 0)
 		return 0;
 	else if (*start == 1)
 		return -4095 + maxDepth - depth;
+	
+	//Calculate move sorting values (hashMove, SSE, killerMoves)
+	//Also ensures that the principal variation is always searched first (hashMove)
+	calculateSortingValues(start, end, bestMove, killerMoves, moveSortValues);
+
 	//Go through the legal moves
+	//Pick the first move, it's the best move or best capture
+	u32 move;
+
+	//Variables for move-sorting
+	//Counter = What is incremented during the looking for the highest value move
+	//Position = The positon of the currently best found move
+	//SortIncrementer = same as 'start', but for the sorting-value array
+	//start = global incrementer for which move has been done
+	u32 *moveCounter = start, *movePos;
+	i16 *sortPos, bestFoundValue, *sortIncrementer = moveSortValues, *sortCounter = moveSortValues;
+
 	while (start != end)
 	{
-		u32 move = *start;
+		bestFoundValue = -10000;
+		//Time to pick the best move.
+		move = *start;
 		start++;
+		sortIncrementer++;
+		moveCounter = start;
+		sortCounter = sortIncrementer;
+		//Do the swap-a-roo
+		swap(movePos, start);
+		swap(sortPos, sortIncrementer);
 		if (move != 0 && move != 1)
 		{
 			bb->MakeMove(move);
-			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + 256);//mvcnt);
 			if (returned > bestScore)
 			{
 				bestScore = returned;
@@ -214,6 +235,21 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			return -4095 + maxDepth - depth;
 		else
 			return 0; //If draw, return 0
+
+		//Move sorting below
+		//This move wasn't that great, let's look for the next best one
+		//in the half-sorted move list. Find highest value!
+		while (moveCounter != end)
+		{
+			if (*sortCounter > bestFoundValue)
+			{
+				bestFoundValue = *sortCounter;
+				sortPos = sortCounter;
+				movePos = moveCounter;
+			}
+			moveCounter++;
+			sortCounter++;
+		}
 	}
 	//Create an entry for the transposition table
 	if (alpha == bestScore)
@@ -553,30 +589,6 @@ short ABAI::extractScore(PackedHashEntry in)
 //Sorts the moves based on Killer moves and hash move
 void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves)
 {
-	/*
-	Grab best move from hash
-	Check if best move is valid
-	Run best move
-	
-	Remove best move from move array by swapping it first and iterating pointer
-	
-	SSE move sort grabbing
-	create array of sse values //preallocated
-	
-	taking moves set to see
-	killer move taking is set to max(50, see + 50)
-	killer moves set to 50
-	quiet moves set to - 10000 + some score from history heuristic
-	
-	BXXXXXXXXXXXXX
-	 
-	
-	Bestmove
-	SSE +
-	Killer moves
-	SSE -
-	Quiet moves - History Heurestic
-*/
 	u32 *OGstart = start, mem, *KMStart = start, *mover;
 	bestMove &= (ToFromMask);
 	u16 KM1 = *killerMoves & ToFromMask, KM2 = *(killerMoves + 1) & ToFromMask;
@@ -610,6 +622,79 @@ void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves)
 			KMStart++;
 		}
 		start++;
+	}
+}
+
+void ABAI::calculateSortingValues(u32 * moveCounter, u32 * moveEnd, u32 bestMove, u16 *killerMoves, i16 *sortCounter)
+{
+	/*
+	Grab best move from hash
+	Check if best move is valid
+	Run best move
+
+	Remove best move from move array by swapping it first and iterating pointer
+
+	SSE move sort grabbing
+	create array of sse values //preallocated
+
+	capturing moves set to see
+	killer move taking is set to max(50, see + 50) or just -1
+	quiet moves set to some constant (-10000) + some score from history heuristic
+
+	BXXXXXXXXXXXXX
+
+
+	Bestmove
+	SSE +
+	Killer moves
+	SSE -
+	Quiet moves - History Heurestic
+	*/
+	u32 *mover;
+	bestMove &= (ToFromMask);
+	u32 *moveStart = moveCounter;
+	i16 *sortStart = sortCounter;
+	u16 KM1 = *killerMoves & ToFromMask, KM2 = *(killerMoves + 1) & ToFromMask;
+	bool foundBestMove = false;
+	u32 *bestCaptureMovePos;
+	i16 *bestCaptureSortPos;
+	i16 bestCaptureSortValue = -1;
+	while (moveCounter != moveEnd)
+	{
+		//u32 testOutput = moveCounter[0] & 0x3F000;
+		//for (int i = 32; i >= 0; i--) std::cout << to_string(((moveCounter[0] >> i) & 1));
+		u16 move = (*moveCounter) & ToFromMask;
+		if (move == bestMove && moveCounter != moveStart) //Found hashmove
+		{
+			swap(moveCounter, moveStart);
+			swap(sortCounter, sortStart);
+			foundBestMove = true;
+		}
+		else if (move == KM1 || move == KM2) //Killer move
+		{
+			*sortCounter = -1;
+		}
+		else if ((*moveCounter >> 29) == 7)//Quiet move
+		{
+			*sortCounter = -2;
+		}
+		else //Capture move, perform SSE
+		{
+			*sortCounter = bb->SEEWrapper(*moveCounter);
+			if (*sortCounter > bestCaptureSortValue) //Find best score
+			{
+				bestCaptureMovePos = moveCounter;
+				bestCaptureSortPos = sortCounter;
+				bestCaptureSortValue = *sortCounter;
+			}
+		}
+		moveCounter++;
+		sortCounter++;
+	}
+	if (!foundBestMove)
+	{
+		swap(bestCaptureMovePos, moveStart);
+		swap(bestCaptureSortPos, sortStart);
 	}
 }
 
