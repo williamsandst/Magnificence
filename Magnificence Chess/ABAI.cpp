@@ -5,7 +5,7 @@
 #include <cmath>
 
 
-const bool DEBUG_OUTPUT = false;
+const bool DEBUG_OUTPUT = true;
 
 using namespace std;
 
@@ -21,7 +21,7 @@ ABAI::~ABAI()
 
 //adds a board position to the transposition table
 int ABAI::insertTT(PackedHashEntry newEntry)
-{;
+{
 	u32 index = (u32)(extractKey(newEntry) & hashMask);
 	//if both type 0 and generation different or depth lower or 
 	if ((extractNodeType(ttDepthFirst[index]) != 1 || extractNodeType(newEntry) == 1 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
@@ -53,7 +53,7 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 }
 
 //Does a qSearch
-int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start)
+int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, i16 *score)
 {
 	int nodeval;
 	if (color)
@@ -74,7 +74,8 @@ int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		end = bb->WhiteQSearchMoves(start);
 	else
 		end = bb->BlackQSearchMoves(start);
-	SortMoves(start, end, 0, killerMoves);
+	//SortMoves(start, end, 0, killerMoves, score);
+	i16 *nextScore = score + (start - end);
 	if (*start == 1 || *start == 0)
 		return nodeval;
 	//SortMoves(start, end, 0, killerMoves);
@@ -84,10 +85,11 @@ int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 	{
 		move = *start;
 		start++;
+		score++;
 		bb->MakeMove(move);
-		int score = -QSearch(-beta, -alpha, color, killerMoves + 2, end);
+		int scoreE = -QSearch(-beta, -alpha, color, killerMoves + 2, end, nextScore);
 		bb->UnMakeMove(move);
-		if (score >= beta)
+		if (scoreE >= beta)
 		{
 			if (*killerMoves != ((u16)move & ToFromMask))
 			{
@@ -96,8 +98,9 @@ int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 			}
 			return beta;
 		}
-		if (score > alpha)
-			alpha = score;
+		if (scoreE > alpha)
+			alpha = scoreE;
+		FetchBest(start, end, score);
 	}
 	return alpha;
 }
@@ -107,7 +110,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 {
 	u32 bestMove = 0;
 	nodes[depth]++;
-
+	i16 *scorePTR = moveSortValues;
 	//Check whether there is a transposition that can be used for this position
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -141,7 +144,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	if (depth <= 0)
 	{
 		//return color ? lazyEval(): -lazyEval();
-		int value = QSearch(alpha, beta, color, killerMoves, start);
+		int value = QSearch(alpha, beta, color, killerMoves, start, moveSortValues);
 		if (value >= beta)
 		{
 			insertTT(UnpackedHashEntry(0, depth + 1, beta, bestMove, bb->zoobristKey, generation));
@@ -174,7 +177,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	color = !color;
 
 	//If a move is part of the principal variation, search that first!
-	SortMoves(start, end, bestMove, killerMoves);
+	SortMoves(start, end, bestMove, killerMoves, moveSortValues);
 	
 	if (*start == 0)
 		return 0;
@@ -185,6 +188,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	{
 		u32 move = *start;
 		start++;
+		scorePTR++;
 		if (move != 0 && move != 1)
 		{
 			bb->MakeMove(move);
@@ -214,6 +218,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			return -4095 + maxDepth - depth;
 		else
 			return 0; //If draw, return 0
+		FetchBest(start, end, scorePTR);
 	}
 	//Create an entry for the transposition table
 	if (alpha == bestScore)
@@ -551,7 +556,7 @@ short ABAI::extractScore(PackedHashEntry in)
 }
 
 //Sorts the moves based on Killer moves and hash move
-void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves)
+void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16 *score)
 {
 	/*
 	Grab best move from hash
@@ -577,40 +582,56 @@ void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves)
 	SSE -
 	Quiet moves - History Heurestic
 */
-	u32 *OGstart = start, mem, *KMStart = start, *mover;
+	u32 *OGstart = start, mem, *KMStart = start, *BestMove = start;
+	i16 BestScore = -32000, *OGScore = score, *bestScorePTR = score;
 	bestMove &= (ToFromMask);
 	u16 KM1 = *killerMoves & ToFromMask, KM2 = *(killerMoves + 1) & ToFromMask;
-	while (start != end)
+	while (start < end)
 	{
 		u16 move = (*start) & ToFromMask;
 		if (move == bestMove)
-		{
-			if (OGstart != KMStart)
-			{
-				mover = KMStart - 1;
-				while (mover >= OGstart)
-				{
-					mem = *mover;
-					*mover = *(mover + 1);
-					*(mover + 1) = mem;
-					mover--;
-				}
-			}
-			mem = *start;
-			*start = *OGstart;
-			KMStart++;
-			*OGstart = mem;
-			OGstart++;
-		}
+			*score = 32000;
 		else if (move == KM1 || move == KM2)
+			*score = -1;
+		else if (bb->mailBox[move >> 6] == 14)
+		//	//((*start) >> 29) != 7)
+			*score = -50;
+		else
+			*score = bb->SEEWrapper(*start);
+		if (*score > BestScore)
 		{
-			mem = *start;
-			*start = *KMStart;
-			*KMStart = mem;
-			KMStart++;
+			BestScore = *score;
+			bestScorePTR = score;
+			BestMove = start;
 		}
 		start++;
+		score++;
 	}
+	u32 temp = *OGstart;
+	*OGstart = *BestMove;
+	*BestMove = temp;
+	*bestScorePTR = *OGScore;
+}
+
+void ABAI::FetchBest(u32 * start, u32 * end, i16 * score)
+{
+	//u32 * bestMove = start, *ogStart = start;
+	//i16 bestScore = -32000, ogScore = *score, *scoreRef = score;
+	//while (start != end)
+	//{
+	//	if (bestScore < *score)
+	//	{
+	//		bestScore = *score;
+	//		scoreRef = score;
+	//		bestMove = start;
+	//	}
+	//	start++;
+	//	score++;
+	//}
+	//u32 temp = *ogStart;
+	//*ogStart = *bestMove;
+	//*bestMove = temp;
+	//*scoreRef = ogScore;
 }
 
 //extracts the bestmove from a packed hash entry

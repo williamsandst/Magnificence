@@ -10,6 +10,8 @@ using namespace std;
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
 //Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
 // TTTUUURRRRssssSSSSSSttttttffffff
+// is silent if ((move >> 29) == 7)
+// is promotion if (((move >> 26) & 0b111) > 0)
 
 //useful masks,       TTTUUURRRRssssSSSSSSttttttffffff
 //metadata mask =	0b00000011111111111111000000000000
@@ -315,7 +317,7 @@ int BitBoard::SEEWrapper(u32 move)
 	switch (move >> 29)
 	{
 	case 0:
-		value = 50000;
+		value = 10000;
 		break;
 	case 1:
 		value = 900;

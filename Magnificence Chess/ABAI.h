@@ -284,13 +284,14 @@ public:
 	u8 extractNodeType(PackedHashEntry in);
 	short extractDepth(PackedHashEntry in);
 	short extractScore(PackedHashEntry in);
-	void SortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves);
+	void SortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i16 *score);
+	void FetchBest(u32 *start, u32 *end, i16 *score);
 	u32 extractBestMove(PackedHashEntry in);
 	u64 extractKey(PackedHashEntry in);
 	u8 extractGeneration(PackedHashEntry in);
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
-	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start);
+	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i16 *score);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 * moveSortValues);
 	int lazyEval();
 	int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);
