@@ -1091,6 +1091,15 @@ void BitBoard::SetUp()
 	{
 		ElementArray[i] = rng();
 	}
+	for (int i = 0; i < 960; i++)
+	{
+		u64 number = ElementArray[i];
+		for (int i2 = i + 1; i2 < 960; i2++)
+		{
+			if (number &  == ElementArray[i2] & )
+				cout << "bad";
+		}
+	}
 }
 
 //gets base move containing all rellevant metadata

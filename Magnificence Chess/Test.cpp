@@ -29,84 +29,6 @@ string Test::displayBoard(BitBoard board)
 
 }
 
-//u64 Test::perftLazySMP(int depth, int startDepth, BitBoard * bb, bool color, u32 * start, HashEntryPerft * Hash, u32 tableSize)
-//{
-//	//if (depth == 0)
-//	//return 1;
-//	u32 *end;
-//	if (color)
-//		end = bb->WhiteLegalMoves(start);
-//	else
-//		end = bb->BlackLegalMoves(start);
-//	if (depth == 1)
-//	{
-//		//return 1;
-//		if (end - start == 1)
-//		{
-//			if (*start == 0 || *start == 1)
-//			{
-//				return 0;
-//			}
-//		}
-//		return end - start;
-//	}
-//	else
-//	{
-//		HashEntryPerft *thisPos = (Hash + (((bb->zoobristKey & tableSize) * 2)));
-//		if (depth > 2)
-//		{
-//			HashEntryPerft P = *thisPos;
-//			if (thisPos->GetKey() == bb->zoobristKey && thisPos->GetDepth() == depth)
-//			{
-//				return thisPos->GetResult();
-//			}
-//			P = *(thisPos + 1);
-//			if (thisPos->GetKey() == bb->zoobristKey && thisPos->GetDepth() == depth)
-//			{
-//				return thisPos->GetResult();
-//			}
-//		}
-//		u32 *nextStart = (start + 218);
-//		u64 res = 0;
-//		depth--;
-//		color = !color;
-//		while (start != end)
-//		{
-//			u32 move = *start;
-//			start++;
-//			if (move != 0 && move != 1)
-//			{
-//				//BitBoard c;
-//				//c.Copy(bb);
-//				//c.MakeMove(move);
-//				bb->MakeMove(move);
-//				res += perftHash(depth, startDepth, bb, color, nextStart, Hash, tableSize);
-//				bb->UnMakeMove(move);
-//			}
-//		}
-//		if (depth > 2)
-//		{
-//			HashEntryPerft entry = *thisPos;
-//			if (entry.GetDepth() <= depth)
-//			{
-//				*(thisPos + 1) = entry;
-//				*(thisPos) = HashEntryPerft(bb->zoobristKey, res, depth + 1);
-//				//thisPos->key = bb->zoobristKey;
-//				//thisPos->depth = depth + 1;
-//				//thisPos->Result = res;
-//			}
-//			else
-//			{
-//				*(thisPos + 1) = HashEntryPerft(bb->zoobristKey, res, depth + 1);
-//				//(thisPos + 1)->key = bb->zoobristKey;
-//				//(thisPos + 1)->depth = depth + 1;
-//				//(thisPos + 1)->Result = res;
-//			}
-//		}
-//		return res;
-//	}
-//}
-
 u64 Test::perftHash(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize, bool *output)
 {
 	//if (depth == 0)
@@ -324,32 +246,32 @@ string Test::pieceToString(int piece)
 {
 	switch (piece)
 	{
-	case 1: //White pieces
-		return "WhitePawn";
-	case 2:
-		return "WhiteRook";
-	case 3:
-		return "WhiteKnight";
-	case 4:
-		return "WhiteBishop";
-	case 5:
-		return "WhiteQueen";
-	case 6:
+	case 0: //White pieces
 		return "WhiteKing";
-	case 11: //Black pieces
-		return "BlackPawn";
-	case 12:
-		return "BlackRook";
-	case 13:
-		return "BlackKnight";
-	case 14:
-		return "BlackBishop";
-	case 15:
-		return "BlackQueen";
-	case 16:
+	case 1:
+		return "WhiteQueen";
+	case 2:
+		return "WhiteBishop";
+	case 3:
+		return "WhiteRook";
+	case 4:
+		return "WhiteKnight";
+	case 5:
+		return "WhitePawn";
+	case 7: //Black pieces
 		return "BlackKing";
-	case 0: //Space
-		return "Empty";
+	case 8:
+		return "BlackQueen";
+	case 9:
+		return "BlackBishop";
+	case 10: 
+		return "BlackRook";
+	case 11:
+		return "BlackKnight";
+	case 12:
+		return "BlackPawn";
+	case 14: //Space
+		return "EmptySquare";
 	}
 	return "Broken";
 }
