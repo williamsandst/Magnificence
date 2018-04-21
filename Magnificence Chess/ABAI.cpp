@@ -172,6 +172,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		end = bb->WhiteLegalMoves(start);
 	else
 		end = bb->BlackLegalMoves(start);
+	if (*start == 1)
+		return -4095 + maxDepth - depth;
+	else if (*start == 0)
+		return 0;
 	mvcnt = end - start;
 	depth--;
 	color = !color;
@@ -201,7 +205,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bb->UnMakeMove(move);
 			if (returned >= beta)
 			{
-				if ((*killerMoves) != ((u16)move & ToFromMask))
+				if ((*killerMoves) != ((u16)move & ToFromMask) && ((move >> 29) == 7))
 				{
 					*(killerMoves + 1) = *killerMoves;
 					*killerMoves = (u16)move & ToFromMask;
@@ -592,14 +596,14 @@ void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 		if (move == bestMove)
 			*score = 32000;
 		else if (move == KM1 || move == KM2)
-			*score = -1;
-		else if (bb->mailBox[move >> 6] == 14)
+			*score = 2;
+		else if (((*start) >> 29) == 7)//bb->mailBox[move >> 6] == 14)
 			//	//((*start) >> 29) != 7)
-			*score = -50;
+			*score = -1;
 		else
 		{
-			//*score = bb->SEEWrapper(*start);
-			*score = 50;
+			*score = bb->SEEWrapper(*start);
+			//*score = 50;
 		}
 		if (*score > BestScore)
 		{
