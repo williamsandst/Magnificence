@@ -1086,7 +1086,10 @@ void BitBoard::SetUp()
 		}
 	}
 	//3475028622465894905
-	mt19937_64 rng(12930851248845704758);
+	//12930851248842704758
+	//23046087689389672382
+	//9278947022305972352
+	mt19937_64 rng(9278947022305972352);
 	for (int i = 0; i < 960; i++)
 	{
 		ElementArray[i] = rng();
@@ -1096,7 +1099,7 @@ void BitBoard::SetUp()
 		u64 number = ElementArray[i];
 		for (int i2 = i + 1; i2 < 960; i2++)
 		{
-			if (number &  == ElementArray[i2] & )
+			if (number & 0xffff == ElementArray[i2] & 0xffff)
 				cout << "bad";
 		}
 	}

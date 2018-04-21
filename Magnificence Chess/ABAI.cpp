@@ -100,7 +100,7 @@ int ABAI::QSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		}
 		if (scoreE > alpha)
 			alpha = scoreE;
-		FetchBest(start, end, score);
+		//FetchBest(start, end, score);
 	}
 	return alpha;
 }
@@ -125,12 +125,12 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			{
 				if (potEntry.typeOfNode == 1)
 				{
-					if (potEntry.score >= alpha && potEntry.score <= beta)
+					if (potEntry.score > alpha && potEntry.score < beta)
 						return potEntry.score;
-					else if (potEntry.score < alpha)
-						return potEntry.score;
+					else if (potEntry.score <= alpha)
+						return alpha;
 					else
-						return potEntry.score;
+						return beta;
 				}
 				else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
 					return beta;
@@ -147,17 +147,17 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		int value = QSearch(alpha, beta, color, killerMoves, start, moveSortValues);
 		if (value >= beta)
 		{
-			insertTT(UnpackedHashEntry(0, depth + 1, beta, bestMove, bb->zoobristKey, generation));
+			insertTT(UnpackedHashEntry(0, depth, beta, bestMove, bb->zoobristKey, generation));
 			return beta;
 		}
 		else if (value > alpha)
 		{
-			insertTT(UnpackedHashEntry(1, depth + 1, beta, bestMove, bb->zoobristKey, generation));
+			insertTT(UnpackedHashEntry(1, depth, beta, bestMove, bb->zoobristKey, generation));
 			return value;
 		}
 		else
 		{
-			insertTT(UnpackedHashEntry(2, depth + 1, beta, bestMove, bb->zoobristKey, generation));
+			insertTT(UnpackedHashEntry(2, depth, beta, bestMove, bb->zoobristKey, generation));
 			return alpha;
 		}
 		return value;
@@ -192,7 +192,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		if (move != 0 && move != 1)
 		{
 			bb->MakeMove(move);
-			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt + 1);
 			if (returned > bestScore)
 			{
 				bestScore = returned;
@@ -496,7 +496,7 @@ PackedHashEntry::PackedHashEntry(UnpackedHashEntry start)
 	//generation is the point when the node was created. It is updated by generation = (generation + 1) & 0b111
 	//generation is 2 bits. 12 - 3 = 9;
 	//10 ^ 2 - 1 = 1023 which is more than sufficient for the depht.
-	data = ((u16)start.score) | (u64)start.bestMove << 16 | (u64)start.typeOfNode << 48 | (u64)start.generation << 51 | (u64)start.depth << 54;
+	data = ((u64)((u16)start.score)) | (((u64)start.bestMove) << 16) | (((u64)start.typeOfNode) << 48) | (((u64)start.generation) << 51) | (((u64)start.depth) << 54);
 	key = start.key ^ data;
 }
 
@@ -594,10 +594,13 @@ void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 		else if (move == KM1 || move == KM2)
 			*score = -1;
 		else if (bb->mailBox[move >> 6] == 14)
-		//	//((*start) >> 29) != 7)
+			//	//((*start) >> 29) != 7)
 			*score = -50;
 		else
-			*score = bb->SEEWrapper(*start);
+		{
+			//*score = bb->SEEWrapper(*start);
+			*score = 50;
+		}
 		if (*score > BestScore)
 		{
 			BestScore = *score;
@@ -615,23 +618,37 @@ void ABAI::SortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 
 void ABAI::FetchBest(u32 * start, u32 * end, i16 * score)
 {
-	//u32 * bestMove = start, *ogStart = start;
-	//i16 bestScore = -32000, ogScore = *score, *scoreRef = score;
-	//while (start != end)
-	//{
-	//	if (bestScore < *score)
-	//	{
-	//		bestScore = *score;
-	//		scoreRef = score;
-	//		bestMove = start;
-	//	}
-	//	start++;
-	//	score++;
-	//}
-	//u32 temp = *ogStart;
-	//*ogStart = *bestMove;
-	//*bestMove = temp;
-	//*scoreRef = ogScore;
+	//score++;
+	u32 *ogStart = start, *bestMove = start;
+	i16 ogScore = *score, *bestScore = score;
+	while (start != end)
+	{
+		if (*bestScore < *score)
+		{
+			bestScore = score;
+			bestMove = start;
+		}
+		start++;
+		score++;
+	}
+	u32 temp = *bestMove;
+	*(bestMove) = *ogStart;
+	*ogStart = temp;
+	*bestScore = ogScore;
+	/*
+	u32 * bestMove = start, *ogStart = start;
+	i16 bestScore = -32000, ogScore = *score, *scoreRef = score;
+	while (start != end)
+	{
+		if (bestScore < *score)
+		{
+			bestScore = *score;
+			scoreRef = score;
+			bestMove = start;
+		}
+		start++;
+		score++;
+	}*/
 }
 
 //extracts the bestmove from a packed hash entry
