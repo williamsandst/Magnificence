@@ -28,6 +28,7 @@ struct PackedHashEntry
 class ABAI
 {
 private:
+	const int hashSizeBits = 24;
 	//Arrays for moves and stuff
 	u32 MoveArray[218 * 200];
 	i16 sortArray[218 * 200];
@@ -297,6 +298,8 @@ public:
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
 	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i16 *score);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 * moveSortValues);
+	int SelfPlay(int depth, int moves, GameState *game);
+
 	int lazyEval();
 	int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);
 	void resetTT();
