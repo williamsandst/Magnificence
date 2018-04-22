@@ -141,7 +141,6 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bestMove = potEntry.bestMove;
 		}
 	}
-
 	if (depth <= 0)
 	{
 		//return color ? lazyEval(): -lazyEval();
@@ -275,218 +274,6 @@ void ABAI::resetTT()
 
 //Returns a vector of PV from current position. Under development
 
-vector<u32> ABAI::bestMove(GameState &gameState)
-{
-	/*
-	To do
-	//0.	Q-search
-	//1.	Iterative Depening
-	2.	History Heurestic
-	3.	Move Sorting
-	4.	Multithreading
-	6.	PV search
-	7.	Lazy eval into make unmake move
-	8.	More heuristics
-	*/
-	generation = (generation + 1) & 0b111;
-
-	//Create the static array used for storing legal moves
-	u32 *MoveStart = MoveArray;
-	i16 *moveSortValues = sortArray;
-	u16 *KillerMoves = new u16[200];
-
-	this->bb = gameState.board;
-	vector<u32> PV;
-
-	//Reset the debug node counter
-	for (size_t i = 0; i < 100; i++)
-		nodes[i] = 0;
-
-	//Variables used for debugging
-	clock_t start = clock();
-
-	int score;
-
-	u32 pV[100];
-
-	//Run search
-	//Iterative deepening
-
-	cout << endl;
-	for (int i = 1; i < gameState.maxDepth + 1; i++)
-	{
-		//Do search
-		score = negamax(-8192, 8192, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
-		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
-		for (size_t i2 = 0; i2 < i; i2++)
-		{
-			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!getFromTT(bb->zoobristKey, &potEntry))
-				cout << "ERROR! Non-PV Node: " << endl;
-			pV[i2] = potEntry.bestMove;
-			PV.push_back(pV[i2]);
-			cout << IO::convertMoveToAlg(pV[i2]) << " ";
-			bb->MakeMove(pV[i2]);
-		}
-		//Unmake pV
-		for (size_t i2 = 1; i2 < i + 1; i2++)
-		{
-			bb->UnMakeMove(pV[i - i2]);
-		}
-		cout << endl;
-	}
-
-
-	//Normal search
-	//score = negamax(-8192, 8192, maxDepth, maxDepth, color, MoveStart, KillerMoves);
-
-	//Iterative deepening with time limit. William version
-	/*double totalTime;
-	double branchingFactor;
-	const int maxTime = 20;
-	bool runSearch = true;
-	cout << endl;
-	int i = 1;
-	while (runSearch)
-	{
-		//Do search
-		PV.clear();
-		score = negamax(-8192, 8192, i, i, color, MoveStart, KillerMoves);
-		clock_t timerEnd = clock();
-		totalTime = (timerEnd - start) / double CLOCKS_PER_SEC;
-		branchingFactor = pow(nodes[0], 1 / (double)i);
-		if (totalTime * branchingFactor > maxTime)
-			runSearch = false;
-		//Information generation
-		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
-		//Find pV
-		for (size_t i2 = 0; i2 < i; i2++)
-		{
-			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!getFromTT(bb->zoobristKey, &potEntry))
-				cout << "ERROR! Non-PV Node: " << endl;
-			pV[i2] = potEntry.bestMove;
-			PV.push_back(pV[i2]);
-			cout << IO::convertMoveToAlg(pV[i2]) << " ";
-			bb->MakeMove(pV[i2]);
-		}
-		//Unmake pV
-		for (size_t i2 = 1; i2 < i + 1; i2++)
-		{
-			bb->UnMakeMove(pV[i - i2]);
-		}
-		cout << endl;
-		i++;
-	}
-	*/
-	//Iterative deepening with time limit. Haralds version; broken?
-	/*UnpackedHashEntry q(0, 0, 0, 0, 0, 0);
-	int depth = 0;
-	u32 bestMove = 0;
-	if (getFromTT(bb->zoobristKey, &q))
-	{
-		depth = q.depth;
-		maxDepth = depth;
-		score = q.score;
-		q.generation = generation;
-		insertTT(q);
-	}
-	u32 *startM = MoveStart, *endM;
-	if (color)
-		endM = bb->WhiteLegalMoves(startM);
-	else
-		endM = bb->WhiteLegalMoves(startM);
-	u16 *mockKillerMoves = new u16[2]{ 0, 0 };
-	u8 or = 0;
-	int nrNodes = 0;
-	while (clock() - start < time)
-	{
-		PV.clear();
-		int alpha = -8192, beta = 8192;
-		startM = MoveStart;
-		u32 move;
-		SortMoves(startM, endM, bestMove, mockKillerMoves);
-		while (startM != endM && clock() - start < time)
-		{
-			move = *startM;
-			startM++;
-			bb->MakeMove(move);
-			int returned = -negamax(-beta, -alpha, depth, depth, !color, endM, KillerMoves);
-			bb->UnMakeMove(move);
-			if (returned > alpha)
-			{
-				if (mockKillerMoves[0] != ((u16)move & ToFromMask))
-				{
-					mockKillerMoves[1] = mockKillerMoves[0];
-					mockKillerMoves[0] = (u16)move & ToFromMask;
-				}
-				alpha = returned;
-				bestMove = move;
-			}
-		}
-		if (clock() - start < time)
-		{
-			insertTT(UnpackedHashEntry(1, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
-			score = alpha;
-			maxDepth = depth + 1;
-		}
-		cout << "info depth " << to_string(depth) << " score cp " << to_string(score) << " pv ";
-		for (size_t i2 = 0; i2 < depth; i2++)
-		{
-			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!getFromTT(bb->zoobristKey, &potEntry))
-				cout << "ERROR! Non-PV Node: " << endl;
-			pV[i2] = potEntry.bestMove;
-			PV.push_back(pV[i2]);
-			cout << IO::convertMoveToAlg(pV[i2]) << " ";
-			bb->MakeMove(pV[i2]);
-		}
-		//Unmake pV
-		for (size_t i2 = 1; i2 < depth + 1; i2++)
-		{
-			bb->UnMakeMove(pV[depth - i2]);
-		}
-		cout << endl;
-		depth++;
-	}
-	delete[] mockKillerMoves;*/
-	clock_t end = clock();
-
-	//Debug output
-	
-	if (DEBUG_OUTPUT)
-	{
-		cout << endl << "Score: " << to_string(score) << " at depth " << to_string(gameState.maxDepth) << endl;
-		cout << to_string(nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
-			to_string(nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
-		cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)gameState.maxDepth) << endl;
-
-		cout << "Branching factors: ";
-		for (size_t i = 0; i < gameState.maxDepth - 1; i++)
-		{
-			cout << endl << to_string(nodes[i]) << " / " << to_string(nodes[i + 1]) << " = ";
-			cout << to_string(gameState.maxDepth - i) << "/" << to_string(gameState.maxDepth - i - 1) << ": " << to_string((float)nodes[i] / (float)nodes[i + 1])
-				<< ", ";
-		}
-	}
-	//cout << endl << "Principal variation (tri-pV table): ";
-	/*for (size_t i = 0; i < maxDepth; i++)
-	{
-		//PV.push_back(triangularPV[i]);
-		cout << IO::convertMoveToAlg(triangularPV[i]) << " ";
-	}*/
-	//u32 *pV = new u32[100];
-	//Find pV variation from transposition table
-	//cout << endl << "Principal variation (TT): ";
-	cout << endl;
-	//Undo the pV moves
-
-	//Memory cleanup
-	delete[] KillerMoves;
-
-	return PV;
-}
-
 vector<u32> ABAI::search(GameState &gameState)
 {
 	//Standard search
@@ -585,11 +372,23 @@ vector<u32> ABAI::searchID(GameState &gameState)
 	u32 pV[100];
 
 	cout << endl;
-
+	aspirationAlpha = -8192;
+	aspirationBeta = 8192;
 	for (int i = 1; i < gameState.maxDepth + 1; i++)
 	{
 		//Do search
-		score = negamax(-8192, 8192, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
+		score = negamax(aspirationAlpha, aspirationBeta, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
+		if (score <= aspirationAlpha || score >= aspirationBeta) //If the search is out of bounds
+		{
+			//Another search is needed with a full window
+			if (DEBUG_OUTPUT)
+			{
+				cout << "Window re-search needed" << endl;
+			}
+			score = negamax(-8192, 8192, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
+		}
+		aspirationAlpha = score - 10;
+		aspirationBeta = score + 10;
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
 		for (size_t i2 = 0; i2 < i; i2++)
 		{

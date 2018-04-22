@@ -28,6 +28,9 @@ struct PackedHashEntry
 class ABAI
 {
 private:
+	//Aspiration windows
+	int aspirationAlpha = -8192;
+	int aspirationBeta = 8192;
 	//Arrays for moves and stuff
 	u32 MoveArray[218 * 200];
 	i16 sortArray[218 * 200];
@@ -300,7 +303,6 @@ public:
 	int lazyEval();
 	int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);
 	void resetTT();
-	vector<u32> bestMove(GameState &gameState);
 	vector<u32> search(GameState &gameState);
 	vector<u32> searchID(GameState &gameState);
 	vector<u32> searchIDSimpleTime(GameState &gameState);

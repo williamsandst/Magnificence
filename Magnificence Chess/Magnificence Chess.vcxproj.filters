@@ -60,9 +60,6 @@
     <ClInclude Include="BitBoard.h">
       <Filter>Header Files\Board</Filter>
     </ClInclude>
-    <ClInclude Include="Engine.h">
-      <Filter>Header Files\Engine</Filter>
-    </ClInclude>
     <ClInclude Include="GameState.h">
       <Filter>Header Files\Inteface</Filter>
     </ClInclude>
@@ -78,11 +75,11 @@
     <ClInclude Include="Test.h">
       <Filter>Header Files\Testing</Filter>
     </ClInclude>
-    <ClInclude Include="MCAI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ABAI.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="MCAI.h">
+      <Filter>Header Files\Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -94,9 +91,6 @@
     </ClCompile>
     <ClCompile Include="BitBoard.cpp">
       <Filter>Source Files\Board</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine.cpp">
-      <Filter>Source Files\Engine</Filter>
     </ClCompile>
     <ClCompile Include="GameState.cpp">
       <Filter>Source Files\Interface</Filter>
@@ -116,11 +110,11 @@
     <ClCompile Include="Test.cpp">
       <Filter>Source Files\Testing</Filter>
     </ClCompile>
-    <ClCompile Include="MCAI.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ABAI.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="MCAI.cpp">
+      <Filter>Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
