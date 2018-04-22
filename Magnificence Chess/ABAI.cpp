@@ -38,14 +38,16 @@ int ABAI::insertTT(PackedHashEntry newEntry)
 bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 {
 	u32 index = (u32)(key & hashMask);
-	if (extractKey(ttDepthFirst[index]) == key)
+	PackedHashEntry entry = ttDepthFirst[index];
+	if (extractKey(entry) == key)
 	{
-		*in = UnpackedHashEntry(ttDepthFirst[index]);
+		*in = UnpackedHashEntry(entry);
 		return true;
 	}
-	else if (extractKey(ttAlwaysOverwrite[index]) == key)
+	entry = ttAlwaysOverwrite[index];
+	if (extractKey(entry) == key)
 	{
-		*in = UnpackedHashEntry(ttAlwaysOverwrite[index]);
+		*in = UnpackedHashEntry(entry);
 		return true;
 	}
 	else
@@ -140,7 +142,6 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			bestMove = potEntry.bestMove;
 		}
 	}
-
 	if (depth <= 0)
 	{
 		//return color ? lazyEval(): -lazyEval();
@@ -639,20 +640,6 @@ void ABAI::FetchBest(u32 * start, u32 * end, i16 * score)
 	*(bestMove) = *ogStart;
 	*ogStart = temp;
 	*bestScore = ogScore;
-	/*
-	u32 * bestMove = start, *ogStart = start;
-	i16 bestScore = -32000, ogScore = *score, *scoreRef = score;
-	while (start != end)
-	{
-		if (bestScore < *score)
-		{
-			bestScore = *score;
-			scoreRef = score;
-			bestMove = start;
-		}
-		start++;
-		score++;
-	}*/
 }
 
 //extracts the bestmove from a packed hash entry
