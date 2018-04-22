@@ -7,6 +7,7 @@
 #include <algorithm>
 #pragma once
 #include <random>
+#include <string>
 
 //Static class used for testing purposes
 mt19937 rng;
@@ -206,6 +207,12 @@ string Test::perftDivide(int depth, BitBoard *bb, bool color, u32 *start)
 	}
 	result += "Total count: " + to_string(total) + '\n';
 	return result;
+}
+
+int Test::LCT2()
+{
+	//Load the test file
+	return 0;
 }
 
 char Test::pieceToChar(int piece)

@@ -2,6 +2,7 @@
 #include <chrono>
 #include "BitBoard.h"
 #include <memory>
+#include "GameState.h"
 struct UnpackedHashEntry;
 struct PackedHashEntry;
 
@@ -27,6 +28,9 @@ struct PackedHashEntry
 class ABAI
 {
 private:
+	//Arrays for moves and stuff
+	u32 MoveArray[218 * 200];
+	i16 sortArray[218 * 200];
 	//Material values
 	const int Bishop = 300, Rook = 500, Knight = 300, Queen = 900, Pawn = 100;
 	//Piece square tables
@@ -284,20 +288,23 @@ public:
 	u8 extractNodeType(PackedHashEntry in);
 	short extractDepth(PackedHashEntry in);
 	short extractScore(PackedHashEntry in);
-	void SortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i16 *score);
-	void FetchBest(u32 *start, u32 *end, i16 *score);
-	void SortMoves(u32 * start, u32 * end, u32 bestMove, u16 * killerMoves);
-	//void calculateSortingValues(u32 * start, u32 * end, u32 bestMove, u16 * killerMoves,  i16 *sortValuesStart);
+	void sortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i16 *score);
+	void fetchBest(u32 *start, u32 *end, i16 *score);
 	u32 extractBestMove(PackedHashEntry in);
 	u64 extractKey(PackedHashEntry in);
 	u8 extractGeneration(PackedHashEntry in);
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
-	int QSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i16 *score);
+	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i16 *score);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 * moveSortValues);
 	int lazyEval();
 	int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);
-	vector<u32> bestMove(BitBoard *IBB, bool color, clock_t time, int maxDepth);
+	void resetTT();
+	vector<u32> bestMove(GameState &gameState);
+	vector<u32> search(GameState &gameState);
+	vector<u32> searchID(GameState &gameState);
+	vector<u32> searchIDSimpleTime(GameState &gameState);
+	vector<u32> searchIDComplexTime(GameState &gameState);
 
 };
 

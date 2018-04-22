@@ -23,22 +23,23 @@ string commandList =
 "disp			Display the board\n"
 "move	<MOVE>		Perform a move\n"
 "perft	<DEPTH>		Calculate the perft score for current position\n"
-"hperft <DEPTH>		Perft score with hasing\n"
-"mperft <DEPTH> <THREADS> Multithreaded perft using Lazy SMP\n"
+"hperft	<DEPTH>		Perft score with hasing\n"
+"mperft	<DEPTH>		Multithreaded perft using Lazy SMP\n"
 "divide	<DEPTH>		Divide the perft on first depth for debugging\n"
 "moves	<COLOR>		Display legal moves at current position\n"
-"sortmoves  <COLOR> Sorts the possible moves with movesorting\n"
+"sortmov <COLOR>	Sorts the possible moves with movesorting\n"
+"ttreset			Resets the transposition table\n"
 "setboard <FEN>		Set the board to FEN position\n"
 "fen			Output a fen string for current position\n"
-"uci			Enables uci-mode and gives control to a GUI\n\n";
+"uci			Enables uci-mode and gives control to a GUI\n"
+"testsuite <testsuite> Run a testsuite\n";
 
 using namespace std;
 
 static const int threadCount = 2;
 
-void perftTest(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize);
 void DebugWrite(wchar_t* msg);
-void runEngine(GameState* gameState);
+void runEngine(GameState* gameState, ABAI* engine);
 void guiInterface();
 
 void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
@@ -59,10 +60,13 @@ void guiInterface()
 	bool CONSOLEDEBUG = true;
 	//Create engine thread object
 	GameState* gameState = new GameState();
-
+	ABAI* engine = new ABAI();
+	
+	engine->resetTT();
 	gameState->idle = true;
 	gameState->run = true;
-	thread engineThread(runEngine, gameState);
+	gameState->maxTime = 4;
+	thread engineThread(runEngine, gameState, engine);
 
 
 	string recievedCommand;
@@ -201,6 +205,17 @@ void guiInterface()
 							to_string(sortingScores[i]) << endl;
 					}
 					delete[]start;
+				}
+			}
+			else if (splitCommand[0] == "ttreset" || splitCommand[0] == "resettt")
+			{
+				engine->resetTT();
+			}
+			else if ((splitCommand[0] == "testsuite" || splitCommand[0] == "ts") && splitCommand.size() == 2)
+			{
+				if (splitCommand[1] == "LCT2" || splitCommand[1] == "lct2")
+				{
+					Test::LCT2();
 				}
 			}
 			else if (splitCommand[0] == "fen")
@@ -356,10 +371,9 @@ void guiInterface()
 
 //The chess engine will run here. Everything that needs to be passed to the GUI is stored in GameState
 //More variables can be added to gamestate if necessary.
-void runEngine(GameState* gameState)
+void runEngine(GameState* gameState, ABAI *engine)
 {
 	//Engine engine = Engine();
-	ABAI *AI = new ABAI();
 	while (gameState->run)
 	{
 		this_thread::sleep_for(chrono::milliseconds(2));
@@ -367,15 +381,10 @@ void runEngine(GameState* gameState)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 4, gameState->maxDepth);
+			gameState->principalVariation = engine->searchID(*gameState);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			//cout << "mgnf: ";
 			gameState->idle = true;
 		}
 	}
-}
-
-void perftTest(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize, bool *done)
-{
-	Test::perftHash(depth, startDepth, bb, color, start, Hash, tableSize, done);
 }

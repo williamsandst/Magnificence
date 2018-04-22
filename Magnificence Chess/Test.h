@@ -47,6 +47,9 @@ public:
 	static u64 perft(int depth, BitBoard *bb, bool color, u32 *start);
 	static string perftDivide(int depth, BitBoard *bb, bool color, u32 *start);
 
+	//Testsuites
+	static int LCT2();
+
 	//Debugging BitBoard
 	//static bool tester(int depth, BitBoard *bb, bool color, int startDepth);
 	static void seePos(BitBoard *bb);
