@@ -58,6 +58,7 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 //Does a qSearch
 int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, i16 *score)
 {
+	nodes[0]++;
 	int nodeval;
 	if (color)
 		nodeval = lazyEval();
@@ -198,10 +199,9 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		scorePTR++;
 		bb->MakeMove(move);
 		int returned;
-		if (firstSearch || depth < 7)
+		if (firstSearch)
 		{
 			returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
-			firstSearch = false;
 		}
 		else
 		{
@@ -217,6 +217,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			{
 				changeAlpha = true;
 				alpha = returned;
+				//firstSearch = false;
 			}
 		}
 		bb->UnMakeMove(move);
@@ -242,6 +243,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 
 int ABAI::SelfPlay(int depth, int moves, GameState *GameState)
 {
+	double SumFactor = 0;
 	bool player = GameState->board->color;
 	int score;
 	u32 *MoveStart = MoveArray;
@@ -254,22 +256,46 @@ int ABAI::SelfPlay(int depth, int moves, GameState *GameState)
 		KillerMoves = new u16[200];
 		for (size_t i = 0; i < 100; i++)
 			nodes[i] = 0;
+		int alpha = -8192, beta = 8192;
 		for (size_t i = 1; i < depth; i++)
 		{
 			{
 				//Do search
-				score = negamax(-8192, 8192, i, i, player, MoveStart, KillerMoves, moveSortValues);
+				int windowSizeBeta = 25, windowSizeAlpha = 25;
+				score = negamax(alpha, beta, i, i, player, MoveStart, KillerMoves, moveSortValues);
+				while (score >= beta || score <= alpha)
+				{
+					cout << "Did research: Old alpha " << alpha << " old beta " << beta;
+					if (score >= beta)
+					{
+						beta += windowSizeBeta;
+						windowSizeBeta *= 2;
+						cout << " failed high: new beta " << beta;
+					}
+					if (score <= alpha)
+					{
+						alpha -= windowSizeAlpha;
+						windowSizeAlpha *= 2;
+						cout << " failed low: new alpha " << alpha;
+					}
+					cout << endl;
+					score = negamax(alpha, beta, i, i, player, MoveStart, KillerMoves, moveSortValues);
+				}
+				//alpha = score - 25, beta = score + 25;
+				//score = negamax(-8192, 8192, i, i, player, MoveStart, KillerMoves, moveSortValues);
 			}
 		}
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
 		if (!getFromTT(bb->zoobristKey, &potEntry))
 			std::cout << "ERROR! Non-PV Node: " << endl;
 		bb->MakeMove(potEntry.bestMove);
-		std::cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)depth) << " BestMove " << IO::convertMoveToAlg(potEntry.bestMove) << " score " << to_string(score) << " cp" << endl;
+		SumFactor += nodes[0];
+		std::cout << "Node Count: " << (nodes[0]) << " BestMove " << IO::convertMoveToAlg(potEntry.bestMove) << " score " << to_string(score) << " cp" << endl;
 		player = GameState->board->color;
 		delete[] KillerMoves;
 	}
-
+	std::cout << "Average Node Count (log 10): " << log10(SumFactor / moves) << endl;
+	std::cout << "Average Node Count: " << (SumFactor / moves) << endl;
 	return 0;
 }
 
