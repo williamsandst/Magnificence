@@ -39,14 +39,16 @@ int ABAI::insertTT(PackedHashEntry newEntry)
 bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 {
 	u32 index = (u32)(key & hashMask);
-	if (extractKey(ttDepthFirst[index]) == key)
+	PackedHashEntry entry = ttDepthFirst[index];
+	if (extractKey(entry) == key)
 	{
-		*in = UnpackedHashEntry(ttDepthFirst[index]);
+		*in = UnpackedHashEntry(entry);
 		return true;
 	}
-	else if (extractKey(ttAlwaysOverwrite[index]) == key)
+	entry = ttAlwaysOverwrite[index];
+	if (extractKey(entry) == key)
 	{
-		*in = UnpackedHashEntry(ttAlwaysOverwrite[index]);
+		*in = UnpackedHashEntry(entry);
 		return true;
 	}
 	else
@@ -106,6 +108,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 	return alpha;
 }
 
+
 //A nega max implementation of Alpha beta search
 int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 *moveSortValues)
 {
@@ -133,10 +136,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 					else
 						return beta;
 				}
-				else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
-					return beta;
-				else if (potEntry.typeOfNode == 2 && potEntry.score <= alpha)
-					return alpha;
+				//else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
+				//	return beta;
+				//else if (potEntry.typeOfNode == 2 && potEntry.score <= alpha)
+				//	return alpha;
 			}
 			bestMove = potEntry.bestMove;
 		}
@@ -172,64 +175,113 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		end = bb->WhiteLegalMoves(start);
 	else
 		end = bb->BlackLegalMoves(start);
-	if (*start == 1)
-		return -4095 + maxDepth - depth;
-	else if (*start == 0)
-		return 0;
 	mvcnt = end - start;
 	depth--;
 	color = !color;
 
+	if (*start == 1)
+		return -4095 + maxDepth - depth;
+	else if (*start == 0)
+		return 0;
+	
+	bool changeAlpha = false;
+	bool firstSearch = true;
+
 	//If a move is part of the principal variation, search that first!
 	sortMoves(start, end, bestMove, killerMoves, moveSortValues);
-	
-	if (*start == 0)
-		return 0;
-	else if (*start == 1)
-		return -4095 + maxDepth - depth;
+
 	//Go through the legal moves
 	while (start != end)
 	{
 		u32 move = *start;
 		start++;
 		scorePTR++;
-		if (move != 0 && move != 1)
+		bb->MakeMove(move);
+		int returned;
+		if (firstSearch || depth < 7)
 		{
-			bb->MakeMove(move);
-			int returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt + 1);
-			if (returned > bestScore)
-			{
-				bestScore = returned;
-				bestMove = move;
-			}
-			bb->UnMakeMove(move);
-			if (returned >= beta)
-			{
-				if ((*killerMoves) != ((u16)move & ToFromMask) && ((move >> 29) == 7))
-				{
-					*(killerMoves + 1) = *killerMoves;
-					*killerMoves = (u16)move & ToFromMask;
-				}
-				insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
-				return beta;
-			}
+			returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			firstSearch = false;
+		}
+		else
+		{
+			returned = -negamax(-alpha - 1, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			if (returned > alpha)
+				returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+		}
+		if (returned > bestScore)
+		{
+			bestScore = returned;
+			bestMove = move;
 			if (returned > alpha)
 			{
+				changeAlpha = true;
 				alpha = returned;
 			}
 		}
-		else if (move == 1) //If in check, return a very bad score
-			return -4095 + maxDepth - depth;
-		else
-			return 0; //If draw, return 0
+		bb->UnMakeMove(move);
+		if (returned >= beta)
+		{
+			if ((*killerMoves) != ((u16)move & ToFromMask) && ((move >> 29) == 7))
+			{
+				*(killerMoves + 1) = *killerMoves;
+				*killerMoves = (u16)move & ToFromMask;
+			}
+			insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+			return beta;
+		}
 		fetchBest(start, end, scorePTR);
 	}
 	//Create an entry for the transposition table
-	if (alpha == bestScore)
+	if (changeAlpha)
 		insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 	else
-		insertTT(UnpackedHashEntry(2, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+		insertTT(UnpackedHashEntry(2, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
 	return alpha;
+}
+
+int ABAI::SelfPlay(int depth, int moves, GameState *GameState)
+{
+	bool player = GameState->board->color;
+	int score;
+	u32 *MoveStart = MoveArray;
+	i16 *moveSortValues = sortArray;
+	u16 *KillerMoves;// = new u16[200];
+	this->bb = GameState->board;
+	for (int i2 = 0; i2 < moves; i2++)
+	{
+		generation = (generation + 1) & 0b111;
+		KillerMoves = new u16[200];
+		for (size_t i = 0; i < 100; i++)
+			nodes[i] = 0;
+		int alpha = -8192;
+		int beta = 8192;
+		for (size_t i = 1; i < depth; i++)
+		{
+			//Do search
+			score = negamax(alpha, beta, i, i, player, MoveStart, KillerMoves, moveSortValues);
+			if (score <= alpha || score >= beta) //If the search is out of bounds
+			{
+				//Another search is needed with a full window
+				if (DEBUG_OUTPUT)
+				{
+					cout << "Window re-search needed" << endl;
+				}
+				score = negamax(-8192, 8192, i, i, player, MoveStart, KillerMoves, moveSortValues);
+			}
+			alpha = score - ;
+			beta = score + 1;
+		}
+		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+		if (!getFromTT(bb->zoobristKey, &potEntry))
+			std::cout << "ERROR! Non-PV Node: " << endl;
+		bb->MakeMove(potEntry.bestMove);
+		std::cout << "Branching factor: " << pow(nodes[0], (float)1 / (float)depth) << " BestMove " << IO::convertMoveToAlg(potEntry.bestMove) << " score " << to_string(score) << " cp" << endl;
+		player = GameState->board->color;
+		delete[] KillerMoves;
+	}
+
+	return 0;
 }
 
 //Returns an aproximate score based on material
@@ -263,7 +315,9 @@ int ABAI::pieceSquareValues(const short * pieceSquareTable, u64 pieceSet)
 
 void ABAI::resetTT()
 {
-	int size = 24 + 1; //bits
+	delete[] ttAlwaysOverwrite;
+	delete[] ttDepthFirst;
+	int size = hashSizeBits + 1; //bits
 	int i = 1;
 	while ((size -= 1) && (i *= 2));
 	//cout << i << endl;
@@ -372,13 +426,13 @@ vector<u32> ABAI::searchID(GameState &gameState)
 	u32 pV[100];
 
 	cout << endl;
-	aspirationAlpha = -8192;
-	aspirationBeta = 8192;
+	int alpha = -8192;
+	int beta = 8192;
 	for (int i = 1; i < gameState.maxDepth + 1; i++)
 	{
 		//Do search
-		score = negamax(aspirationAlpha, aspirationBeta, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
-		if (score <= aspirationAlpha || score >= aspirationBeta) //If the search is out of bounds
+		score = negamax(alpha, beta, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
+		if (score <= alpha || score >= beta) //If the search is out of bounds
 		{
 			//Another search is needed with a full window
 			if (DEBUG_OUTPUT)
@@ -387,8 +441,8 @@ vector<u32> ABAI::searchID(GameState &gameState)
 			}
 			score = negamax(-8192, 8192, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
 		}
-		aspirationAlpha = score - 10;
-		aspirationBeta = score + 10;
+		alpha = score - 10;
+		beta = score + 10;
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
 		for (size_t i2 = 0; i2 < i; i2++)
 		{
@@ -760,10 +814,10 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 		if (move == bestMove)
 			*score = 32000;
 		else if (move == KM1 || move == KM2)
-			*score = 2;
+			*score = 1;
 		else if (((*start) >> 29) == 7)//bb->mailBox[move >> 6] == 14)
 			//	//((*start) >> 29) != 7)
-			*score = -1;
+			*score = -50;
 		else
 		{
 			*score = bb->SEEWrapper(*start);
@@ -803,20 +857,6 @@ void ABAI::fetchBest(u32 * start, u32 * end, i16 * score)
 	*(bestMove) = *ogStart;
 	*ogStart = temp;
 	*bestScore = ogScore;
-	/*
-	u32 * bestMove = start, *ogStart = start;
-	i16 bestScore = -32000, ogScore = *score, *scoreRef = score;
-	while (start != end)
-	{
-		if (bestScore < *score)
-		{
-			bestScore = *score;
-			scoreRef = score;
-			bestMove = start;
-		}
-		start++;
-		score++;
-	}*/
 }
 
 //extracts the bestmove from a packed hash entry

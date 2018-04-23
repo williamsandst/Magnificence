@@ -98,6 +98,10 @@ void guiInterface()
 		{
 			if (splitCommand[0] == "help" || splitCommand[0] == "commands")
 				cout << commandList;
+			else if (splitCommand[0] == "selfplay")
+			{
+				engine->SelfPlay(stoi(splitCommand[1]), stoi(splitCommand[2]), gameState);
+			}
 			else if (splitCommand[0] == "hperft" && splitCommand.size() == 2)
 			{
 				//tablesize should be power of 2 - 1;
