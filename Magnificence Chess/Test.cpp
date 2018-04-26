@@ -8,6 +8,8 @@
 #pragma once
 #include <random>
 #include <string>
+#include <fstream>
+#include "ABAI.h"
 
 //Static class used for testing purposes
 mt19937 rng;
@@ -209,9 +211,46 @@ string Test::perftDivide(int depth, BitBoard *bb, bool color, u32 *start)
 	return result;
 }
 
-int Test::LCT2()
+int Test::LCT2(GameState *gameState, bool timeSearch)
 {
 	//Load the test file
+	ifstream file("C:/Users/wilsan/Documents/Programming/Chess/Magnificence/x64/Release/lct2.txt");
+	string line;
+	int i = 0;
+	cout << "Running test suite LCT2... This may take a few hours" << endl;
+
+	ABAI engine = ABAI();
+	engine.resetTT();
+	while (file.good())
+	{
+		i++;
+		getline(file, line);
+		if (line == "break")
+			break;
+		vector<string> splitLine = split(line, ';');
+		string expandedFenString = splitLine[0];
+		vector<string> splitFen = split(line, ' ');
+		string fenString = splitFen[0] + " " + splitFen[1] + " " + splitFen[2] + " " + splitFen[3] + " 0 1";
+		cout << "Running LCT2 Position " << to_string(i) << endl;
+		cout << "Pos: " + fenString << endl;
+		cout << "Best move: " << splitFen[5] << endl;
+
+		gameState->color = (splitFen[1] == "w");
+		gameState->board->color = gameState->color;
+		//Run test suite position
+		gameState->board->SetState(fenString);
+		vector<u32> pV = engine.searchID(*gameState);
+		cout << endl;
+		cout << "Engine determined best move to be " << IO::convertMoveToAlg(pV[0]) << endl;
+		if (pV[0] & 0b111111111111 == IO::convertAlgToMove(splitFen[5]))
+			cout << "Moves match!" << endl;
+		else
+			cout << "No match! Bad engine!";
+		cout << endl;
+
+		cout << endl;
+		engine.resetTT();
+	}
 	return 0;
 }
 

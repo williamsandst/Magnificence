@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "BitBoard.h"
+#include "GameState.h"
 
 struct HashEntryPerft
 {
@@ -48,7 +49,7 @@ public:
 	static string perftDivide(int depth, BitBoard *bb, bool color, u32 *start);
 
 	//Testsuites
-	static int LCT2();
+	static int LCT2(GameState *gameState, bool timeSearch);
 
 	//Debugging BitBoard
 	//static bool tester(int depth, BitBoard *bb, bool color, int startDepth);

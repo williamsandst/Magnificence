@@ -215,11 +215,20 @@ void guiInterface()
 			{
 				engine->resetTT();
 			}
-			else if ((splitCommand[0] == "testsuite" || splitCommand[0] == "ts") && splitCommand.size() == 2)
+			else if ((splitCommand[0] == "testsuite" || splitCommand[0] == "ts") && splitCommand.size() >= 3)
 			{
 				if (splitCommand[1] == "LCT2" || splitCommand[1] == "lct2")
 				{
-					Test::LCT2();
+					if (splitCommand[2] == "t" || splitCommand[2] == "time")
+					{
+						gameState->maxTime = stoi(splitCommand[3]);
+						Test::LCT2(gameState, true);
+					}
+					else
+					{
+						gameState->maxDepth = stoi(splitCommand[2]);
+						Test::LCT2(gameState, false);
+					}
 				}
 			}
 			else if (splitCommand[0] == "fen")
