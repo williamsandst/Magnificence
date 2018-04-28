@@ -761,6 +761,34 @@ void BitBoard::CalculateZoobrist()
 	}
 }
 
+//Adds and entry to repetition hash
+//If this results in a draw it returns true
+//Otherwise it returns false
+bool BitBoard::addRH(u64 key)
+{
+	int index = key & 0xff;
+	RHEntry r(key, 1);
+	while (!(RepetitionHash + index)->addEntry(r))
+	{
+		index++;
+	}
+	if ((RepetitionHash + index)->draw(key) == 2)
+		return true;
+	return false;
+}
+
+//Decrements and entry in repetion hash
+//if there is no equal entry in hash it will crash
+void BitBoard::removeRH(u64 key)
+{
+	RHEntry r(key, 0);
+	RHEntryBucket * pos = RepetitionHash + (key & 0xff);
+	while (!pos->removeEntry(r))
+	{
+		pos++;
+	}
+}
+
 //Calculates precalculated states such as magics
 void BitBoard::SetUp()
 {
@@ -2645,7 +2673,9 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 }
 
 //makes the specified move
-int BitBoard::MakeMove(u32 move)
+//Returns true if the move does not cause a draw
+//Returns false if it casues a draw
+bool BitBoard::MakeMove(u32 move)
 {
 	zoobristKey ^= ElementArray[64 * 6 + 12];
 	color = !color;
@@ -2656,7 +2686,7 @@ int BitBoard::MakeMove(u32 move)
 	{
 		silent = 0;
 	}
-	else
+	else if (color)
 	{
 		silent++;
 	}
@@ -2784,12 +2814,15 @@ int BitBoard::MakeMove(u32 move)
 	default:
 		break;
 	}
+	if (addRH(zoobristKey) || silent >= 49)
+		return 0;
 	return 1;
 }
 
 //unmkes specified move
 void BitBoard::UnMakeMove(u32 move)
 {
+	removeRH(zoobristKey);
 	zoobristKey ^= ElementArray[64 * 6 + 12];
 	color = !color;
 	silent = 0b111111 & (move >> 12);
@@ -2900,4 +2933,5 @@ void BitBoard::UnMakeMove(u32 move)
 		}
 		break;
 	}
+
 }

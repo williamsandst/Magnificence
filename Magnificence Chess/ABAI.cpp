@@ -201,6 +201,22 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	else
 		end = bb->BlackLegalMoves(start);
 	mvcnt = end - start;
+	//for (size_t i = depth + 1; i <= maxDepth; i++)
+	//{
+	//	if (history[i] == bb->zoobristKey)
+	//	{
+	//		if (0 > alpha)
+	//		{
+	//			if (0 < beta)
+	//				return 0;
+	//			else
+	//				return beta;
+	//		}
+	//		else
+	//			return alpha;
+	//	}
+	//}
+	//history[depth] = bb->zoobristKey;
 	depth--;
 	color = !color;
 
@@ -214,6 +230,8 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 
 	//If a move is part of the principal variation, search that first!
 	sortMoves(start, end, bestMove, killerMoves, moveSortValues);
+	bool hashWrite = true;
+
 
 	//Go through the legal moves
 	while (start != end)
@@ -221,20 +239,28 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		u32 move = *start;
 		start++;
 		scorePTR++;
-		bb->MakeMove(move);
+		u8 draw = !bb->MakeMove(move);
 		int returned;
-		if (firstSearch || !PVSEnabled)
+		if (draw)
 		{
-			returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			returned = 0;
 		}
 		else
 		{
-			returned = -negamax(-alpha - 1, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
-			if (returned > alpha)
+			if (firstSearch || !PVSEnabled)
+			{
 				returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			}
+			else
+			{
+				returned = -negamax(-alpha - 1, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+				if (returned > alpha)
+					returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			}
 		}
 		if (returned > bestScore)
 		{
+			hashWrite = !draw;
 			bestScore = returned;
 			bestMove = move;
 			if (returned > alpha)
@@ -252,16 +278,22 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 				*(killerMoves + 1) = *killerMoves;
 				*killerMoves = (u16)move & ToFromMask;
 			}
-			insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+			if (!draw)
+			{
+				insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+			}
 			return beta;
 		}
 		fetchBest(start, end, scorePTR);
 	}
 	//Create an entry for the transposition table
-	if (changeAlpha)
-		insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
-	else
-		insertTT(UnpackedHashEntry(2, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
+	if (hashWrite)
+	{
+		if (changeAlpha)
+			insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+		else
+			insertTT(UnpackedHashEntry(2, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
+	}
 	return alpha;
 }
 

@@ -156,7 +156,7 @@ u64 Test::perft(int depth, BitBoard *bb, bool color, u32 *start)
 		while (start != end)
 		{
 			u32 move = *start;
-			bb->SEEWrapper(move);
+			//bb->SEEWrapper(move);
 			start++;
 			if (move != 0 && move != 1)
 			{
