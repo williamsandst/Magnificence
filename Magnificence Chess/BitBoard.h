@@ -8,10 +8,13 @@
 #include <random>
 
 typedef unsigned long long int u64;
+typedef signed long long int i64;
 typedef unsigned long int u32;
+typedef signed long int i32;
 typedef unsigned short int u16;
 typedef signed short int i16;
 typedef unsigned char u8;
+typedef signed char i8;
 
 using namespace std;
 
@@ -164,7 +167,7 @@ public:
 	}
 };
 
-class BitBoard : public Board
+class BitBoard
 {
 public:
 	// TTTUUUERRRRsssSSSSSSttttttFFFFFF

@@ -65,7 +65,7 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 }
 
 //Does a qSearch
-int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, i16 *score)
+int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, i32 *score)
 {
 	//nodes[0]++;
 	int nodeval;
@@ -99,7 +99,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 
 	//SortMoves(start, end, 0, killerMoves, score);
 	sortQMoves(start, end, killerMoves, score);
-	i16 *nextScore = score + (start - end);
+	i32 *nextScore = score + (start - end);
 	//SortMoves(start, end, 0, killerMoves);
 	u32 move;
 	color = !color;
@@ -136,11 +136,11 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 }
 
 //A nega max implementation of Alpha beta search
-int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 *moveSortValues)
+int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 *moveSortValues)
 {
 	u32 bestMove = 0;
 	nodes[depth]++;
-	i16 *scorePTR = moveSortValues;
+	i32 *scorePTR = moveSortValues;
 	//Check whether there is a transposition that can be used for this position
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -221,8 +221,6 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		end = bb->BlackLegalMoves(start);
 	mvcnt = end - start;
 	depth--;
-	color = !color;
-
 	if (*start == 1)
 		return -4095 + maxDepth - depth;
 	else if (*start == 0)
@@ -234,7 +232,8 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	bool draw;
 
 	//If a move is part of the principal variation, search that first!
-	sortMoves(start, end, bestMove, killerMoves, moveSortValues);
+	sortMoves(start, end, bestMove, killerMoves, moveSortValues, color);
+
 
 	//Go through the legal moves
 	while (start != end)
@@ -252,13 +251,13 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		{
 			if (firstSearch || !PVSEnabled)
 			{
-				returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+				returned = -negamax(-beta, -alpha, depth, maxDepth, !color, end, killerMoves + 2, moveSortValues + mvcnt);
 			}
 			else
 			{
-				returned = -negamax(-alpha - 1, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+				returned = -negamax(-alpha - 1, -alpha, depth, maxDepth, !color, end, killerMoves + 2, moveSortValues + mvcnt);
 				if (returned > alpha)
-					returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+					returned = -negamax(-beta, -alpha, depth, maxDepth, !color, end, killerMoves + 2, moveSortValues + mvcnt);
 			}
 		}
 		if (returned > bestScore)
@@ -278,6 +277,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		{
 			if ((*killerMoves) != ((u16)move & ToFromMask) && ((move >> 29) == 7))
 			{
+				history[color][bb->mailBox[extractFrom(move)]][extractTo(move)] +=depth * depth;
 				*(killerMoves + 1) = *killerMoves;
 				*killerMoves = (u16)move & ToFromMask;
 			}
@@ -306,11 +306,21 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 	bool player = GameState->board->color;
 	int score;
 	u32 *MoveStart = MoveArray;
-	i16 *moveSortValues = sortArray;
+	i32 *moveSortValues = sortArray;
 	u16 *KillerMoves;// = new u16[200];
 	this->bb = GameState->board;
 	for (int i2 = 0; i2 < moves; i2++)
 	{
+		for (size_t i1 = 0; i1 < 2; i1++)
+		{
+			for (size_t i2 = 0; i2 < 13; i2++)
+			{
+				for (size_t i3 = 0; i3 < 64; i3++)
+				{
+					history[i1][i2][i3] = 0;
+				}
+			}
+		}
 		generation = (generation + 1) & 0b111;
 		KillerMoves = new u16[200]{ 0 };
 		for (size_t i = 0; i < 100; i++)
@@ -419,9 +429,20 @@ vector<u32> ABAI::bestMove(GameState &gameState)
 	*/
 	generation = (generation + 1) & 0b111;
 
+	for (size_t i1 = 0; i1 < 2; i1++)
+	{
+		for (size_t i2 = 0; i2 < 13; i2++)
+		{
+			for (size_t i3 = 0; i3 < 64; i3++)
+			{
+				history[i1][i2][i3] = 0;
+			}
+		}
+	}
+
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = MoveArray;
-	i16 *moveSortValues = sortArray;
+	i32 *moveSortValues = sortArray;
 	u16 *KillerMoves = new u16[200];
 
 	this->bb = gameState.board;
@@ -623,7 +644,7 @@ vector<u32> ABAI::search(GameState &gameState)
 
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = MoveArray;
-	i16 *moveSortValues = sortArray;
+	i32 *moveSortValues = sortArray;
 	u16 *KillerMoves = new u16[200];
 
 	this->bb = gameState.board;
@@ -694,9 +715,20 @@ vector<u32> ABAI::searchID(GameState &gameState)
 	//Standard search
 	generation = (generation + 1) & 0b111;
 
+	for (size_t i1 = 0; i1 < 2; i1++)
+	{
+		for (size_t i2 = 0; i2 < 13; i2++)
+		{
+			for (size_t i3 = 0; i3 < 64; i3++)
+			{
+				history[i1][i2][i3] = 0;
+			}
+		}
+	}
+
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = MoveArray;
-	i16 *moveSortValues = sortArray;
+	i32 *moveSortValues = sortArray;
 	u16 *KillerMoves = new u16[200];
 
 	this->bb = gameState.board;
@@ -756,7 +788,20 @@ vector<u32> ABAI::searchID(GameState &gameState)
 	}
 
 	cout << endl;
+	u32 max = 0;
 
+	for (size_t i1 = 0; i1 < 2; i1++)
+	{
+		for (size_t i2 = 0; i2 < 13; i2++)
+		{
+			for (size_t i3 = 0; i3 < 64; i3++)
+			{
+				if (history[i1][i2][i3] > max)
+					max = history[i1][i2][i3];
+			}
+		}
+	}
+	cout << max << endl;
 	//Memory cleanup
 	delete[] KillerMoves;
 
@@ -770,7 +815,7 @@ vector<u32> ABAI::searchIDSimpleTime(GameState &gameState)
 
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = MoveArray;
-	i16 *moveSortValues = sortArray;
+	i32 *moveSortValues = sortArray;
 	u16 *KillerMoves = new u16[200];
 
 	this->bb = gameState.board;
@@ -862,7 +907,7 @@ vector<u32> ABAI::searchIDComplexTime(GameState &gameState)
 
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = MoveArray;
-	i16 *moveSortValues = sortArray;
+	i32 *moveSortValues = sortArray;
 	u16 *KillerMoves = new u16[200];
 
 	this->bb = gameState.board;
@@ -1092,7 +1137,7 @@ short ABAI::extractScore(PackedHashEntry in)
 }
 
 //Sorts the moves based on Killer moves and hash move
-void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16 *score)
+void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i32 *score, bool color)
 {
 	/*
 	Grab best move from hash
@@ -1119,23 +1164,28 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 	Quiet moves - History Heurestic
 */
 	u32 *OGstart = start, mem, *KMStart = start, *BestMove = start;
-	i16 BestScore = -32000, *OGScore = score, *bestScorePTR = score;
+	i32 BestScore = -32000, *OGScore = score, *bestScorePTR = score;
 	bestMove &= (ToFromMask);
 	u16 KM1 = *killerMoves, KM2 = *(killerMoves + 1);
 	while (start < end)
 	{
 		u16 move = (*start) & ToFromMask;
 		if (move == bestMove)
-			*score = 32000;
-		else if (move == KM1 || move == KM2)
-			*score = -25;
+			*score = (i32)((((u64)1) << 31) - 1);
 		else if (((*start) >> 29) == 7)//bb->mailBox[move >> 6] == 14)
 			//	//((*start) >> 29) != 7)
-			*score = -75;
+		{
+			if (move == KM1)
+				*score = -1048576 + 10000 + history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+			else if (move == KM2)
+				*score = -1048576 + 10000 + history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+			else
+				*score = -1048576 + 10; + history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+		}
 		else
 		{
 			//*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 3);
-			*score = bb->SEEWrapper(*start);
+			*score = ((u32)(bb->SEEWrapper(*start))) * 1048576;
 			//*score = 50;
 		}
 		if (*score > BestScore)
@@ -1153,10 +1203,10 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 	*bestScorePTR = *OGScore;
 }
 
-void ABAI::sortQMoves(u32 * start, u32 * end, u16 * killerMoves, i16 * score)
+void ABAI::sortQMoves(u32 * start, u32 * end, u16 * killerMoves, i32 * score)
 {
 	u32 *OGStart = start, *bestMove = start;
-	i16 *OGScore = score, *BestScore = score;
+	i32 *OGScore = score, *BestScore = score;
 	u16 km1 = (*killerMoves) & ToFromMask, km2 = (*(killerMoves + 1)) & ToFromMask, move;
 	while (start < end)
 	{
@@ -1179,11 +1229,11 @@ void ABAI::sortQMoves(u32 * start, u32 * end, u16 * killerMoves, i16 * score)
 	*OGStart = temp1;
 }
 
-void ABAI::fetchBest(u32 * start, u32 * end, i16 * score)
+void ABAI::fetchBest(u32 * start, u32 * end, i32 * score)
 {
 	//score++;
 	u32 *ogStart = start, *bestMove = start;
-	i16 ogScore = *score, *bestScore = score;
+	i32 ogScore = *score, *bestScore = score;
 	while (start != end)
 	{
 		if (*bestScore < *score)

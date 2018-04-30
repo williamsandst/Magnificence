@@ -31,7 +31,10 @@ private:
 	const int hashSizeBits = 24;
 	//Arrays for moves and stuff
 	u32 MoveArray[218 * 200];
-	i16 sortArray[218 * 200];
+	i32 sortArray[218 * 200];
+
+	u32 history[2][13][64];
+
 	//Material values
 	const int Bishop = 300, Rook = 500, Knight = 300, Queen = 900, Pawn = 100;
 	//Piece square tables
@@ -291,16 +294,16 @@ public:
 	short getPieceValue(u8 piece);
 	short extractDepth(PackedHashEntry in);
 	short extractScore(PackedHashEntry in);
-	void sortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i16 *score);
-	void sortQMoves(u32 *start, u32 *end, u16 *killerMoves, i16 *score);
-	void fetchBest(u32 *start, u32 *end, i16 *score);
+	void sortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i32 *score, bool color);
+	void sortQMoves(u32 *start, u32 *end, u16 *killerMoves, i32 *score);
+	void fetchBest(u32 *start, u32 *end, i32 *score);
 	u32 extractBestMove(PackedHashEntry in);
 	u64 extractKey(PackedHashEntry in);
 	u8 extractGeneration(PackedHashEntry in);
 	int insertTT(PackedHashEntry newEntry);
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
-	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i16 *score);
-	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 * moveSortValues);
+	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i32 *score);
+	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 * moveSortValues);
 	int selfPlay(int depth, int moves, GameState *game);
 
 	int lazyEval();

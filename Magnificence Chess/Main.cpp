@@ -106,7 +106,7 @@ void guiInterface()
 			{
 				//tablesize should be power of 2 - 1;
 				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
-				u32 tableSize = 16777215;//8388607;
+				u32 tableSize  = 0b111111111111111111111111;
 				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
 				timer = clock();
 				bool done = true;
@@ -380,7 +380,7 @@ void runEngine(GameState* gameState, ABAI *engine)
 	//Engine engine = Engine();
 	while (gameState->run)
 	{
-		this_thread::sleep_for(chrono::milliseconds(2));
+		this_thread::sleep_for(chrono::milliseconds(10));
 		while (!gameState->idle)
 		{
 			BitBoard localBB;
