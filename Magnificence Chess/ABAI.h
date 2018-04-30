@@ -278,7 +278,7 @@ private:
 		0, 10, 20, 30, 30, 20, 10,  0  };
 	
 	u64 nodes[100];
-	u64 history[100];
+	//u64 history[100];
 public:
 	BitBoard *bb;
 	const u16 ToFromMask = 0b111111111111;

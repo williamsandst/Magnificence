@@ -7,7 +7,7 @@
 
 
 const bool DEBUG_OUTPUT = true;
-const bool PVSEnabled = 1;
+const bool PVSEnabled = 0;
 using namespace std;
 
 u8 extractFrom(u32 move)
@@ -116,7 +116,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 			if (*killerMoves != ((u16)move & ToFromMask))
 			{
 				*(killerMoves + 1) = *killerMoves;
-				*killerMoves = (u16)move & ToFromMask;
+				*killerMoves = (u16)(move & ToFromMask);
 			}
 			return beta;
 		}
@@ -193,14 +193,8 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 
 	short bestScore = -8192;
 
-	u32 *end;
-	i16 mvcnt;
-	//Generate legal moves for this position
-	if (color)
-		end = bb->WhiteLegalMoves(start);
-	else
-		end = bb->BlackLegalMoves(start);
-	mvcnt = end - start;
+
+	//Returns 0s for nodes that have been previously visited. Does not work.
 	//for (size_t i = depth + 1; i <= maxDepth; i++)
 	//{
 	//	if (history[i] == bb->zoobristKey)
@@ -213,10 +207,19 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	//				return beta;
 	//		}
 	//		else
-	//			return alpha;
+	//		return beta;
 	//	}
 	//}
 	//history[depth] = bb->zoobristKey;
+
+	u32 *end;
+	i16 mvcnt;
+	//Generate legal moves for this position
+	if (color)
+		end = bb->WhiteLegalMoves(start);
+	else
+		end = bb->BlackLegalMoves(start);
+	mvcnt = end - start;
 	depth--;
 	color = !color;
 
@@ -227,11 +230,11 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	
 	bool changeAlpha = false;
 	bool firstSearch = true;
+	bool hashWrite = true;
+	bool draw;
 
 	//If a move is part of the principal variation, search that first!
 	sortMoves(start, end, bestMove, killerMoves, moveSortValues);
-	bool hashWrite = true;
-
 
 	//Go through the legal moves
 	while (start != end)
@@ -239,7 +242,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		u32 move = *start;
 		start++;
 		scorePTR++;
-		u8 draw = !bb->MakeMove(move);
+		draw = !bb->MakeMove(move);
 		int returned;
 		if (draw)
 		{
@@ -366,6 +369,7 @@ int ABAI::lazyEval()
 	score -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
 	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
 	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
+
 	if (bb->color) score += 40;
 	return score;
 }
@@ -406,9 +410,10 @@ vector<u32> ABAI::bestMove(GameState &gameState)
 	//0.	Q-search
 	//1.	Iterative Depening
 	2.	History Heurestic
-	3.	Move Sorting
+	//3.	Move Sorting
 	4.	Multithreading
-	6.	PV search
+	4.5 Creating a more efficient static exchange evaluation (read not using recursion)
+	//6.	PV search
 	7.	Lazy eval into make unmake move
 	8.	More heuristics
 	*/
@@ -1116,20 +1121,20 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 	u32 *OGstart = start, mem, *KMStart = start, *BestMove = start;
 	i16 BestScore = -32000, *OGScore = score, *bestScorePTR = score;
 	bestMove &= (ToFromMask);
-	u16 KM1 = *killerMoves & ToFromMask, KM2 = *(killerMoves + 1) & ToFromMask;
+	u16 KM1 = *killerMoves, KM2 = *(killerMoves + 1);
 	while (start < end)
 	{
 		u16 move = (*start) & ToFromMask;
 		if (move == bestMove)
 			*score = 32000;
 		else if (move == KM1 || move == KM2)
-			*score = 1;
+			*score = -25;
 		else if (((*start) >> 29) == 7)//bb->mailBox[move >> 6] == 14)
 			//	//((*start) >> 29) != 7)
-			*score = -50;
+			*score = -75;
 		else
 		{
-			//*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 2);
+			//*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 3);
 			*score = bb->SEEWrapper(*start);
 			//*score = 50;
 		}
@@ -1159,7 +1164,7 @@ void ABAI::sortQMoves(u32 * start, u32 * end, u16 * killerMoves, i16 * score)
 		if (move == km1 || move == km2)
 			*score = 32000;
 		else
-			*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 2);
+			*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 3);
 		if (*score > *BestScore)
 		{
 			bestMove = start;
