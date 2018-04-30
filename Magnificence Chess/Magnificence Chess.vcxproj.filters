@@ -16,9 +16,6 @@
     <Filter Include="Source Files\Board">
       <UniqueIdentifier>{b498a0dc-5f7d-4890-9baa-39a63ecc1f2d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Engine">
-      <UniqueIdentifier>{95d9f86f-f705-4a12-b6cf-c029b0aab91b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Interface">
       <UniqueIdentifier>{f4aa35e3-3699-4745-83ae-c073abad9030}</UniqueIdentifier>
     </Filter>
@@ -27,9 +24,6 @@
     </Filter>
     <Filter Include="Header Files\Board">
       <UniqueIdentifier>{6ae1c655-1e3c-438f-93b7-0b2ca8d218d9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Engine">
-      <UniqueIdentifier>{6f15f1f4-e2e6-4f3d-b967-22d6a020db07}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Inteface">
       <UniqueIdentifier>{84a7b4ed-e664-46b0-b07f-a18f810f3867}</UniqueIdentifier>
@@ -59,9 +53,6 @@
     </ClInclude>
     <ClInclude Include="BitBoard.h">
       <Filter>Header Files\Board</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine.h">
-      <Filter>Header Files\Engine</Filter>
     </ClInclude>
     <ClInclude Include="GameState.h">
       <Filter>Header Files\Inteface</Filter>
@@ -94,9 +85,6 @@
     </ClCompile>
     <ClCompile Include="BitBoard.cpp">
       <Filter>Source Files\Board</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine.cpp">
-      <Filter>Source Files\Engine</Filter>
     </ClCompile>
     <ClCompile Include="GameState.cpp">
       <Filter>Source Files\Interface</Filter>
