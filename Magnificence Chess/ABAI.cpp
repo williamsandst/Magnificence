@@ -7,7 +7,7 @@
 
 
 const bool DEBUG_OUTPUT = true;
-const bool PVSEnabled = 0;
+const bool PVSEnabled = 1;
 using namespace std;
 
 u8 extractFrom(u32 move)
