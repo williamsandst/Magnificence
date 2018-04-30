@@ -10,6 +10,8 @@ using namespace std;
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
 //Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
 // TTTUUURRRRssssSSSSSSttttttffffff
+// is silent if ((move >> 29) == 7)
+// is promotion if (((move >> 26) & 0b111) > 0)
 
 //useful masks,       TTTUUURRRRssssSSSSSSttttttffffff
 //metadata mask =	0b00000011111111111111000000000000
@@ -306,7 +308,7 @@ u32 BitBoard::LowestValuedAttacker(u64 square, u64 baseMove, bool side)
 }
 
 //Calls the static exchange evaluation correctly for you
-//Returns the aproximated change in material if the input
+//Returns the approximated change in material if the input
 //move is made
 int BitBoard::SEEWrapper(u32 move)
 {
@@ -315,7 +317,7 @@ int BitBoard::SEEWrapper(u32 move)
 	switch (move >> 29)
 	{
 	case 0:
-		value = 50000;
+		value = 10000;
 		break;
 	case 1:
 		value = 900;
@@ -759,6 +761,34 @@ void BitBoard::CalculateZoobrist()
 	}
 }
 
+//Adds and entry to repetition hash
+//If this results in a draw it returns true
+//Otherwise it returns false
+bool BitBoard::addRH(u64 key)
+{
+	int index = key & 0xff;
+	RHEntry r(key, 1);
+	while (!(RepetitionHash + index)->addEntry(r))
+	{
+		index++;
+	}
+	if ((RepetitionHash + index)->draw(key) == 2)
+		return true;
+	return false;
+}
+
+//Decrements and entry in repetion hash
+//if there is no equal entry in hash it will crash
+void BitBoard::removeRH(u64 key)
+{
+	RHEntry r(key, 0);
+	RHEntryBucket * pos = RepetitionHash + (key & 0xff);
+	while (!pos->removeEntry(r))
+	{
+		pos++;
+	}
+}
+
 //Calculates precalculated states such as magics
 void BitBoard::SetUp()
 {
@@ -1084,10 +1114,22 @@ void BitBoard::SetUp()
 		}
 	}
 	//3475028622465894905
-	mt19937_64 rng(12930851248845704758);
+	//12930851248842704758
+	//23046087689389672382
+	//9278947022305972352
+	mt19937_64 rng(9278947022305972352);
 	for (int i = 0; i < 960; i++)
 	{
 		ElementArray[i] = rng();
+	}
+	for (int i = 0; i < 960; i++)
+	{
+		u64 number = ElementArray[i];
+		for (int i2 = i + 1; i2 < 960; i2++)
+		{
+			if (number & 0xffff == ElementArray[i2] & 0xffff)
+				cout << "bad";
+		}
 	}
 }
 
@@ -2631,7 +2673,9 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 }
 
 //makes the specified move
-int BitBoard::MakeMove(u32 move)
+//Returns true if the move does not cause a draw
+//Returns false if it casues a draw
+bool BitBoard::MakeMove(u32 move)
 {
 	zoobristKey ^= ElementArray[64 * 6 + 12];
 	color = !color;
@@ -2642,7 +2686,7 @@ int BitBoard::MakeMove(u32 move)
 	{
 		silent = 0;
 	}
-	else
+	else if (color)
 	{
 		silent++;
 	}
@@ -2770,12 +2814,15 @@ int BitBoard::MakeMove(u32 move)
 	default:
 		break;
 	}
+	if (addRH(zoobristKey) || silent >= 49)
+		return 0;
 	return 1;
 }
 
 //unmkes specified move
 void BitBoard::UnMakeMove(u32 move)
 {
+	removeRH(zoobristKey);
 	zoobristKey ^= ElementArray[64 * 6 + 12];
 	color = !color;
 	silent = 0b111111 & (move >> 12);
@@ -2886,4 +2933,5 @@ void BitBoard::UnMakeMove(u32 move)
 		}
 		break;
 	}
+
 }

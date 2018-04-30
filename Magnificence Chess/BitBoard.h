@@ -10,9 +10,159 @@
 typedef unsigned long long int u64;
 typedef unsigned long int u32;
 typedef unsigned short int u16;
+typedef signed short int i16;
 typedef unsigned char u8;
 
 using namespace std;
+
+struct RHEntry
+{
+private:
+	u64 key;
+public:
+	RHEntry()
+	{
+		key = 0;
+	}
+	RHEntry(u64 key, u8 visits)
+	{
+		this->setKey(key);
+		this->setVisits(visits);
+	}
+	RHEntry(RHEntry *a)
+	{
+		key = a->key;
+	}
+	void setKey(u64 key)
+	{
+		this->key = (this->key & 0b1100000000000000000000000000000000000000000000000000000000000000) | (key & 0b0011111111111111111111111111111111111111111111111111111111111111);
+	}
+	void setVisits(u8 visists)
+	{
+		if (visists > 3)
+			visists = 3;
+		this->key = (((u64)visists) << 62) | (this->key & 0b0011111111111111111111111111111111111111111111111111111111111111);
+	}
+	bool operator ==(RHEntry a)
+	{
+		return ((this->key & 0b0011111111111111111111111111111111111111111111111111111111111111) == (a.key & 0b0011111111111111111111111111111111111111111111111111111111111111));
+	}
+	void operator =(RHEntry a)
+	{
+		this->key = a.key;
+	}
+	u8 fetchVisits()
+	{
+		return (u8)(this->key >> 62);
+	}
+	void operator ++()
+	{
+		if (this->fetchVisits() != 3)
+		{
+			this->key += 0b0100000000000000000000000000000000000000000000000000000000000000;
+		}
+		//return (RHEntry(this));
+	}
+	void operator --()
+	{
+		if (this->fetchVisits() != 0)
+		{
+			this->key -= 0b0100000000000000000000000000000000000000000000000000000000000000;
+		}
+		//return (RHEntry(this));
+	}
+};
+
+struct RHEntryBucket
+{
+private:
+	RHEntry Entry1, Entry2;
+public:
+	RHEntryBucket()
+	{
+		Entry1 = RHEntry();
+		Entry2 = RHEntry();
+	}
+	void operator =(RHEntryBucket a)
+	{
+		this->Entry1 = a.Entry1;
+		this->Entry2 = a.Entry2;
+	}
+	bool addEntry(RHEntry a)
+	{
+		if (Entry1 == a)
+		{
+			int a = Entry1.fetchVisits();
+			++Entry1;
+			return true;
+		}
+		else if (Entry2 == a)
+		{
+			int a = Entry2.fetchVisits();
+			++Entry2;
+			return true;
+		}
+		else if (Entry1.fetchVisits() == 0)
+		{
+			Entry1 = a;
+			return true;
+		}
+		else if (Entry2.fetchVisits() == 0)
+		{
+			Entry2 = a;
+			return true;
+		}
+		return false;
+	}
+	bool addEntry(u64 key)
+	{
+		RHEntry n(key, 1);
+		return addEntry(n);
+	}
+	bool removeEntry(RHEntry a)
+	{
+		if (Entry1 == a)
+		{
+			--Entry1;
+			return true;
+		}
+		else if (Entry2 == a)
+		{
+			--Entry2;
+			return true;
+		}
+		return false;
+	}
+	bool removeEntry(u64 key)
+	{
+		RHEntry a(key, 0);
+		return removeEntry(a);
+	}
+
+	//checks if it is a draw by repetition. If no bucket matches the input key it throws an exception
+	//0 is not matching key
+	//1 is not a draw
+	//2 is a draw
+	u8 draw(u64 key)
+	{
+		RHEntry test(key, 0);
+		if (Entry1 == test)
+		{
+			if (Entry1.fetchVisits() == 3)
+				return 2;
+		}
+		else if (Entry2 == test)
+		{
+			if (Entry2.fetchVisits() == 3)
+				return 2;
+		}
+		else
+		{
+			return 0;
+		}
+		return 1;
+	}
+};
 
 class BitBoard : public Board
 {
@@ -142,6 +292,8 @@ public:
 
 	//For function defenitions see the implementation file
 
+	bool addRH(u64 key);
+	void removeRH(u64 key);
 	void SetUp();
 	void SetState(string fen);
 	void CalculateZoobrist();
@@ -150,7 +302,7 @@ public:
 	u32* BlackLegalMoves(u32 *start);
 	u32* BlackQSearchMoves(u32 *start);
 	u32 getBaseMove();
-	int MakeMove(u32 move);
+	bool MakeMove(u32 move);
 	void UnMakeMove(u32 move);
 	inline u64 MagicRook(u64 piece, u64 occupancy);
 	inline u64 MagicBishop(u64 piece, u64 occupancy);
@@ -175,5 +327,9 @@ public:
 private:
 	//used for magic generation
 	void allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64> *out);
+
+	//Hash used to detect repetitions
+	//Only the 256 lowest numbers should be accessed directly
+	RHEntryBucket RepetitionHash[300];
 };
 

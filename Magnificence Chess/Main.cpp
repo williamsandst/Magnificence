@@ -23,16 +23,23 @@ string commandList =
 "disp			Display the board\n"
 "move	<MOVE>		Perform a move\n"
 "perft	<DEPTH>		Calculate the perft score for current position\n"
+"hperft	<DEPTH>		Perft score with hasing\n"
+"mperft	<DEPTH>		Multithreaded perft using Lazy SMP\n"
 "divide	<DEPTH>		Divide the perft on first depth for debugging\n"
 "moves	<COLOR>		Display legal moves at current position\n"
+"sortmov <COLOR>	Sorts the possible moves with movesorting\n"
+"ttreset			Resets the transposition table\n"
 "setboard <FEN>		Set the board to FEN position\n"
 "fen			Output a fen string for current position\n"
-"uci			Enables uci-mode and gives control to a GUI\n\n";
+"uci			Enables uci-mode and gives control to a GUI\n"
+"testsuite <testsuite> Run a testsuite\n";
 
 using namespace std;
 
+static const int threadCount = 2;
+
 void DebugWrite(wchar_t* msg);
-void runEngine(GameState* gameState);
+void runEngine(GameState* gameState, ABAI* engine);
 void guiInterface();
 
 void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
@@ -53,10 +60,13 @@ void guiInterface()
 	bool CONSOLEDEBUG = true;
 	//Create engine thread object
 	GameState* gameState = new GameState();
-
+	ABAI* engine = new ABAI();
+	
+	engine->resetTT();
 	gameState->idle = true;
 	gameState->run = true;
-	thread engineThread(runEngine, gameState);
+	gameState->maxTime = 4;
+	thread engineThread(runEngine, gameState, engine);
 
 
 	string recievedCommand;
@@ -74,6 +84,7 @@ void guiInterface()
 
 	cout << "Generating magic tables..." << endl;
 	BitBoard board = BitBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	
 	gameState->board = &board;
 	cout << "Magic tables complete." << endl << endl;
 	cout << "For help, type 'help'." << endl << endl;
@@ -87,18 +98,129 @@ void guiInterface()
 		{
 			if (splitCommand[0] == "help" || splitCommand[0] == "commands")
 				cout << commandList;
-			else if (splitCommand[0] == "perft" && splitCommand.size() == 2)
+			else if (splitCommand[0] == "selfplay")
+			{
+				engine->selfPlay(stoi(splitCommand[1]), stoi(splitCommand[2]), gameState);
+			}
+			else if (splitCommand[0] == "hperft" && splitCommand.size() == 2)
 			{
 				//tablesize should be power of 2 - 1;
 				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
 				u32 tableSize = 16777215;//8388607;
 				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
 				timer = clock();
-				u64 perftNumber = Test::perft(stoi(splitCommand[1]), stoi(splitCommand[1]), &board, color, start, Hash, tableSize);
+				bool done = true;
+				u64 perftNumber = Test::perftHash(stoi(splitCommand[1]), stoi(splitCommand[1]), &board, color, start, Hash, tableSize, &done);
+				HashEntryPerft *thisPos = (Hash + (((board.zoobristKey & tableSize) * 2)));
+				u64 perftNumber2 = thisPos->GetResult();
 				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
 				delete[] start;
 				delete[] Hash;
+			}
+			else if (splitCommand[0] == "perft" && splitCommand.size() == 2)
+			{
+				//tablesize should be power of 2 - 1;
+				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
+				timer = clock();
+				u64 perftNumber = Test::perft(stoi(splitCommand[1]), &board, color, start);
+				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
+				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
+				delete[] start;
+			}
+			else if (splitCommand[0] == "mperft" && splitCommand.size() >= 2)
+			{
+				u32 **starts = new u32*[threadCount];
+				for (int i = 0; i < threadCount; i++)
+				{
+					starts[i] = new u32[218 * (stoi(splitCommand[1]) + 1)];
+				}
+				u32 tableSize = 16777215;//8388607;
+				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
+				timer = clock();
+				BitBoard threadBoard[threadCount];
+				for (size_t i = 0; i < threadCount; i++)
+				{
+					threadBoard[i].Copy(&board);
+				}
+				thread perftThreads[threadCount-1];
+				bool done = true;
+				for (size_t i = 0; i < threadCount-1; i++)
+				{
+					perftThreads[i] = thread(Test::perftHash, stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[i], color, starts[i], Hash, tableSize, &done);
+					this_thread::sleep_for(0.001s);
+				}
+				Test::perftHash(stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[threadCount-1], color, starts[threadCount-1], Hash, tableSize, &done);
+				for (size_t i = 0; i < threadCount - 1; i++)
+				{
+					perftThreads[i].join();
+				}
+				HashEntryPerft *thisPos = (Hash + (((board.zoobristKey & tableSize) * 2)));
+				u64 perftNumber = thisPos->GetResult();
+				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
+				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
+				delete[] Hash;
+				for (int i = 0; i < threadCount; i++)
+				{
+					delete[] starts[i];
+				}
+				delete[] starts;
+			}
+			else if (splitCommand[0] == "movesort" && splitCommand.size() == 2)
+			{
+				if (splitCommand[1] == "white")
+				{
+					u32 *start = new u32[218];
+					i16 *sortingScores = new i16[218];
+					u32 *end = board.WhiteLegalMoves(start);
+
+					u16 killerMoves[2] = { 0,0 };
+
+					ABAI tempEngine = ABAI();
+					tempEngine.bb = &board;
+					//tempEngine.calculateSortingValues(start, end, 0, killerMoves, sortingScores);
+
+					for (size_t i = 0; i < (u32)(end - start); i++)
+					{
+						cout << IO::convertMoveToAlg(start[i]) << " [" <<
+							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << "] " << 
+							to_string(sortingScores[i]) << endl;
+					}
+					delete[]start;
+				}
+				else if (splitCommand[1] == "black")
+				{
+					u32 *start = new u32[218];
+					i16 *sortingScores = new i16[218];
+					u32 *end = board.BlackLegalMoves(start);
+
+					u16 killerMoves[2] = { 0,0 };
+
+					ABAI tempEngine = ABAI();
+					tempEngine.bb = &board;
+					//tempEngine.calculateSortingValues(start, end, 0, killerMoves, sortingScores);
+
+					for (size_t i = 0; i < (u32)(end - start); i++)
+					{
+						cout << IO::convertMoveToAlg(start[i]) << " [" <<
+							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << "] " <<
+							to_string(sortingScores[i]) << endl;
+					}
+					delete[]start;
+				}
+			}
+			else if (splitCommand[0] == "ttreset" || splitCommand[0] == "resettt")
+			{
+				engine->resetTT();
+			}
+			else if ((splitCommand[0] == "testsuite" || splitCommand[0] == "ts") && splitCommand.size() == 2)
+			{
+				if (splitCommand[1] == "LCT2" || splitCommand[1] == "lct2")
+				{
+					Test::LCT2();
+				}
 			}
 			else if (splitCommand[0] == "fen")
 				cout << IO::convertBoardToFEN(board, color) << endl;
@@ -128,8 +250,8 @@ void guiInterface()
 					for (size_t i = 0; i < (u32)(end - start); i++)
 					{
 						cout << IO::convertMoveToAlg(start[i]) << " [" <<
-							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << " to " <<
-							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << "]" << endl;
+							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << "]" << endl;
 					}
 					delete []start;
 				}
@@ -141,8 +263,8 @@ void guiInterface()
 					for (size_t i = 0; i < (u32)(end - moves); i++)
 					{
 						cout << IO::convertMoveToAlg(moves[i]) << " [" <<
-							Test::pieceToString(board.mailBox[Move::getFrom(moves[i])]) << " to " <<
-							Test::pieceToString(board.mailBox[Move::getTo(moves[i])]) << "]" << endl;
+							Test::pieceToString(board.mailBox[Move::getTo(moves[i])]) << " to " <<
+							Test::pieceToString(board.mailBox[Move::getFrom(moves[i])]) << "]" << endl;
 					}
 					delete[] moves;
 				}
@@ -253,10 +375,9 @@ void guiInterface()
 
 //The chess engine will run here. Everything that needs to be passed to the GUI is stored in GameState
 //More variables can be added to gamestate if necessary.
-void runEngine(GameState* gameState)
+void runEngine(GameState* gameState, ABAI *engine)
 {
 	//Engine engine = Engine();
-	ABAI *AI = new ABAI();
 	while (gameState->run)
 	{
 		this_thread::sleep_for(chrono::milliseconds(2));
@@ -264,11 +385,10 @@ void runEngine(GameState* gameState)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			gameState->principalVariation = AI->bestMove(&localBB, gameState->color, CLOCKS_PER_SEC * 1, gameState->maxDepth);
+			gameState->principalVariation = engine->searchID(*gameState);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
-			cout << "mgnf: ";
+			//cout << "mgnf: ";
 			gameState->idle = true;
 		}
 	}
 }
-
