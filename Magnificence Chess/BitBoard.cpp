@@ -8,7 +8,7 @@ using namespace std;
 
 //move definition
 //1 from taken, 1 from upgrade to, 1 rockad, 1 non silent, 1 upgrade
-//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 6;
+//Taken 3 = T ( << 29), upgradeTo [3] = U << 26, Bit rockad [4] = R << 22, EP state [4] = s << 18, Silent [6] = S << 12, To [6] t << 6, From[6] == F << 0;
 // TTTUUURRRRssssSSSSSSttttttffffff
 // is silent if ((move >> 29) == 7)
 // is promotion if (((move >> 26) & 0b111) > 0)
@@ -342,6 +342,11 @@ int BitBoard::SEEWrapper(u32 move)
 	value -= SEE(one << to);
 	UnMakeMove(move);
 	return value;
+}
+
+bool BitBoard::isInDraw()
+{
+	return draw;
 }
 
 //recursivly creates a SEE score
@@ -2815,13 +2820,18 @@ bool BitBoard::MakeMove(u32 move)
 		break;
 	}
 	if (addRH(zoobristKey) || silent >= 49)
+	{
+		draw = 1;
 		return 0;
+	}
+	draw = 0;
 	return 1;
 }
 
 //unmkes specified move
 void BitBoard::UnMakeMove(u32 move)
 {
+	draw = 0;
 	removeRH(zoobristKey);
 	zoobristKey ^= ElementArray[64 * 6 + 12];
 	color = !color;

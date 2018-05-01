@@ -138,6 +138,15 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 //A nega max implementation of Alpha beta search
 int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 *moveSortValues)
 {
+	if (bb->isInDraw())
+	{
+		if (0 <= alpha)
+			return alpha;
+		else if (0 >= beta)
+			return beta;
+		else
+			return 0;
+	}
 	u32 bestMove = 0;
 	nodes[depth]++;
 	i32 *scorePTR = moveSortValues;
@@ -277,7 +286,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		{
 			if ((*killerMoves) != ((u16)move & ToFromMask) && ((move >> 29) == 7))
 			{
-				history[color][bb->mailBox[extractFrom(move)]][extractTo(move)] +=depth * depth;
+				history[color][bb->mailBox[extractFrom(move)]][extractTo(move)] += depth * depth;
 				*(killerMoves + 1) = *killerMoves;
 				*killerMoves = (u16)move & ToFromMask;
 			}
@@ -311,6 +320,11 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 	this->bb = GameState->board;
 	for (int i2 = 0; i2 < moves; i2++)
 	{
+		for (size_t i = 0; i < hashMask + 1; i++)
+		{
+			ttAlwaysOverwrite[i] = PackedHashEntry();
+			ttAlwaysOverwrite[i] = PackedHashEntry();
+		}
 		for (size_t i1 = 0; i1 < 2; i1++)
 		{
 			for (size_t i2 = 0; i2 < 13; i2++)
@@ -1176,15 +1190,15 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i32
 			//	//((*start) >> 29) != 7)
 		{
 			if (move == KM1)
-				*score = -1048576 + 10000 + history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+				*score = -1048576 + 10000;// +history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
 			else if (move == KM2)
-				*score = -1048576 + 10000 + history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+				*score = -1048576 + 9999;// +history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
 			else
-				*score = -1048576 + 10; + history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+				*score = -1048576 + 10;// +history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
 		}
 		else
 		{
-			//*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 3);
+			//*score = (getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 3)) * 1048576;
 			*score = ((u32)(bb->SEEWrapper(*start))) * 1048576;
 			//*score = 50;
 		}

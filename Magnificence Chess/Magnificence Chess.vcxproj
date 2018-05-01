@@ -156,6 +156,7 @@
     <ClInclude Include="ABAI.h" />
     <ClInclude Include="BitBoard.h" />
     <ClInclude Include="Board.h" />
+    <ClInclude Include="Datastructures.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="IO.h" />
     <ClInclude Include="Move.h" />
@@ -168,6 +169,7 @@
     <ClCompile Include="ABAI.cpp" />
     <ClCompile Include="BitBoard.cpp" />
     <ClCompile Include="Board.cpp" />
+    <ClCompile Include="Datastructures.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="IO.cpp" />
     <ClCompile Include="Main.cpp" />

@@ -17,6 +17,7 @@
 #include "Move.h"
 #include "Test.h"
 #include "Engine.h"
+#include "Datastructures.h"
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"

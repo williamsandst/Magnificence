@@ -317,6 +317,7 @@ public:
 	u32 LowestValuedAttacker(u64 square, u64 baseMove, bool side);
 	int SEE(u64 square);
 	int SEEWrapper(u32 move);
+	bool isInDraw();
 
 	//a wrapper for population count
 	u8 pc(u64 valeu)
@@ -330,7 +331,7 @@ public:
 private:
 	//used for magic generation
 	void allVariations(u64 mask, vector<u32> positions, int index, int maxindex, vector<u64> *out);
-
+	bool draw;
 	//Hash used to detect repetitions
 	//Only the 256 lowest numbers should be accessed directly
 	RHEntryBucket RepetitionHash[300];
