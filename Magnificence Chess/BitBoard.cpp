@@ -2648,6 +2648,8 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 int BitBoard::MakeMove(u32 move)
 {
 	zoobristKey ^= ElementArray[64 * 6 + 12];
+	//Increment moveHistoryIndex
+	moveHistoryIndex++;
 	color = !color;
 	u8 oldEP = EP;
 	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
@@ -2655,9 +2657,11 @@ int BitBoard::MakeMove(u32 move)
 	if (moved == 5 || moved == 12 || mailBox[to] != 14)
 	{
 		silent = 0;
+		moveHistory[moveHistoryIndex] = MoveHistory{ zoobristKey, false};
 	}
 	else
 	{
+		moveHistory[moveHistoryIndex] = MoveHistory{ zoobristKey, true };
 		silent++;
 	}
 	if (oldEP)
@@ -2784,12 +2788,15 @@ int BitBoard::MakeMove(u32 move)
 	default:
 		break;
 	}
+	moveHistory[moveHistoryIndex].zobristKey = zoobristKey;
 	return 1;
 }
 
 //unmkes specified move
 void BitBoard::UnMakeMove(u32 move)
 {
+	//Decrement moveHistoryIndex
+	moveHistoryIndex--;
 	zoobristKey ^= ElementArray[64 * 6 + 12];
 	color = !color;
 	silent = 0b111111 & (move >> 12);

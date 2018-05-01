@@ -293,9 +293,11 @@ public:
 	ABAI();
 	~ABAI();
 	u8 extractNodeType(PackedHashEntry in);
+	short getPieceValue(u8 piece);
 	short extractDepth(PackedHashEntry in);
 	short extractScore(PackedHashEntry in);
 	void sortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i16 *score);
+	void sortQMoves(u32 *start, u32 *end, u16 *killerMoves, i16 *score);
 	void fetchBest(u32 *start, u32 *end, i16 *score);
 	u32 extractBestMove(PackedHashEntry in);
 	u64 extractKey(PackedHashEntry in);
@@ -304,7 +306,7 @@ public:
 	bool getFromTT(u64 key, UnpackedHashEntry *in);
 	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i16 *score);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 * moveSortValues);
-	int SelfPlay(int depth, int moves, GameState *game);
+	int selfPlay(int depth, int moves, GameState *game);
 
 	int lazyEval();
 	int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);

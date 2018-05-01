@@ -65,7 +65,7 @@ void guiInterface()
 	engine->resetTT();
 	gameState->idle = true;
 	gameState->run = true;
-	gameState->maxTime = 4;
+	gameState->maxTime = 20;
 	thread engineThread(runEngine, gameState, engine);
 
 
@@ -100,7 +100,7 @@ void guiInterface()
 				cout << commandList;
 			else if (splitCommand[0] == "selfplay")
 			{
-				engine->SelfPlay(stoi(splitCommand[1]), stoi(splitCommand[2]), gameState);
+				engine->selfPlay(stoi(splitCommand[1]), stoi(splitCommand[2]), gameState);
 			}
 			else if (splitCommand[0] == "hperft" && splitCommand.size() == 2)
 			{

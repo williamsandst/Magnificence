@@ -7,8 +7,17 @@
 
 
 const bool DEBUG_OUTPUT = true;
-
+const bool PVSEnabled = 1;
 using namespace std;
+
+u8 extractFrom(u32 move)
+{
+	return (u8)(move & 0b111111);
+}
+u8 extractTo(u32 move)
+{
+	return (u8)((move >> 6) & 0b111111);
+}
 
 ABAI::ABAI()
 {
@@ -58,7 +67,7 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 //Does a qSearch
 int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, i16 *score)
 {
-	nodes[0]++;
+	//nodes[0]++;
 	int nodeval;
 	if (color)
 		nodeval = lazyEval();
@@ -67,21 +76,30 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 	if (nodeval > alpha)
 	{
 		alpha = nodeval;
-		if (nodeval > beta)
+		if (nodeval >= beta)
 		{
 			return beta;
 		}
 	}
+
 	u32 *end;
 	//Generate legal QSearch moves for this position
 	if (color)
 		end = bb->WhiteQSearchMoves(start);
 	else
 		end = bb->BlackQSearchMoves(start);
-	//SortMoves(start, end, 0, killerMoves, score);
-	i16 *nextScore = score + (start - end);
 	if (*start == 1 || *start == 0)
+	{
+		if (nodeval <= alpha)
+			return alpha;
+		else if (nodeval >= beta)
+			return beta;
 		return nodeval;
+	}
+
+	//SortMoves(start, end, 0, killerMoves, score);
+	sortQMoves(start, end, killerMoves, score);
+	i16 *nextScore = score + (start - end);
 	//SortMoves(start, end, 0, killerMoves);
 	u32 move;
 	color = !color;
@@ -103,12 +121,19 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 			return beta;
 		}
 		if (scoreE > alpha)
+		{
 			alpha = scoreE;
-		//FetchBest(start, end, score);
+			//if (*killerMoves != move & ToFromMask)
+			//{
+			//	*(killerMoves + 1) = *killerMoves;
+			//	*killerMoves = move & ToFromMask;
+			//}
+
+		}
+		fetchBest(start, end, score);
 	}
 	return alpha;
 }
-
 
 //A nega max implementation of Alpha beta search
 int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i16 *moveSortValues)
@@ -137,10 +162,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 					else
 						return beta;
 				}
-				//else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
-				//	return beta;
-				//else if (potEntry.typeOfNode == 2 && potEntry.score <= alpha)
-				//	return alpha;
+				else if (potEntry.typeOfNode == 0 && potEntry.score >= beta)
+					return beta;
+				else if (potEntry.typeOfNode == 2 && potEntry.score <= alpha)
+					return alpha;
 			}
 			bestMove = potEntry.bestMove;
 		}
@@ -164,7 +189,6 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			insertTT(UnpackedHashEntry(2, depth, beta, bestMove, bb->zoobristKey, generation));
 			return alpha;
 		}
-		return value;
 	}
 
 	short bestScore = -8192;
@@ -192,14 +216,27 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	sortMoves(start, end, bestMove, killerMoves, moveSortValues);
 
 	//Go through the legal moves
+	int moveHistoryCounter;
 	while (start != end)
 	{
 		u32 move = *start;
 		start++;
 		scorePTR++;
 		bb->MakeMove(move);
+		//Check for threefold repetition
+		moveHistoryCounter = bb->moveHistoryIndex-1;
+		while (moveHistoryCounter > 0 && bb->moveHistory[moveHistoryCounter].reversible)
+		{
+			//Found repetition. Return draw
+			if (bb->moveHistory[moveHistoryCounter].zobristKey == bb->zoobristKey)
+			{
+				bb->UnMakeMove(move);
+				return 0;
+			}
+			moveHistoryCounter--;
+		}
 		int returned;
-		if (firstSearch)
+		if (firstSearch || !PVSEnabled)
 		{
 			returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
 		}
@@ -217,7 +254,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			{
 				changeAlpha = true;
 				alpha = returned;
-				//firstSearch = false;
+				firstSearch = false;
 			}
 		}
 		bb->UnMakeMove(move);
@@ -241,7 +278,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	return alpha;
 }
 
-int ABAI::SelfPlay(int depth, int moves, GameState *GameState)
+int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 {
 	double SumFactor = 0;
 	bool player = GameState->board->color;
@@ -253,7 +290,7 @@ int ABAI::SelfPlay(int depth, int moves, GameState *GameState)
 	for (int i2 = 0; i2 < moves; i2++)
 	{
 		generation = (generation + 1) & 0b111;
-		KillerMoves = new u16[200];
+		KillerMoves = new u16[200]{ 0 };
 		for (size_t i = 0; i < 100; i++)
 			nodes[i] = 0;
 		int alpha = -8192, beta = 8192;
@@ -279,6 +316,8 @@ int ABAI::SelfPlay(int depth, int moves, GameState *GameState)
 				}
 				cout << endl;
 				score = negamax(alpha, beta, i, i, player, MoveStart, KillerMoves, moveSortValues);
+				//alpha = score - 30, beta = score + 30;
+				//score = negamax(-8192, 8192, i, i, player, MoveStart, KillerMoves, moveSortValues);
 			}
 			//alpha = score - 25, beta = score + 25;
 			//score = negamax(-8192, 8192, i, i, player, MoveStart, KillerMoves, moveSortValues);
@@ -293,7 +332,7 @@ int ABAI::SelfPlay(int depth, int moves, GameState *GameState)
 		delete[] KillerMoves;
 	}
 	std::cout << "Average Node Count (log 10): " << log10(SumFactor / moves) << endl;
-	std::cout << "Average Node Count: " << (SumFactor / moves) << endl;
+	std::cout << "Average Node Count: " << ((u64)(SumFactor / moves)) << endl;
 	return 0;
 }
 
@@ -454,8 +493,8 @@ vector<u32> ABAI::searchID(GameState &gameState)
 			}
 			score = negamax(-8192, 8192, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
 		}
-		alpha = score - 10;
-		beta = score + 10;
+		//alpha = score - 10;
+		//beta = score + 10;
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
 		for (size_t i2 = 0; i2 < i; i2++)
 		{
@@ -778,6 +817,44 @@ u8 ABAI::extractNodeType(PackedHashEntry in)
 	return (u8)(((u8)0b11) & (in.data >> 48));
 }
 
+short ABAI::getPieceValue(u8 piece)
+{
+	switch (piece)
+	{
+	case 14:
+		return 0;
+		break;
+	case 7:
+	case 0:
+		return 32000;
+		break;
+	case 1:
+	case 8:
+		return Queen;
+		break;
+	case 2:
+	case 9:
+		return Bishop;
+		break;
+	case 3:
+	case 10:
+		return Rook;
+		break;
+	case 4:
+	case 11:
+		return Knight;
+		break;
+	case 5:
+	case 12:
+		return Pawn;
+		break;
+	default:
+		return 0;
+		break;
+	}
+	return 0;
+}
+
 //Extracts the depth from a packed hash entry
 short ABAI::extractDepth(PackedHashEntry in)
 {
@@ -833,6 +910,7 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 			*score = -50;
 		else
 		{
+			//*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 2);
 			*score = bb->SEEWrapper(*start);
 			//*score = 50;
 		}
@@ -849,6 +927,32 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i16
 	*OGstart = *BestMove;
 	*BestMove = temp;
 	*bestScorePTR = *OGScore;
+}
+
+void ABAI::sortQMoves(u32 * start, u32 * end, u16 * killerMoves, i16 * score)
+{
+	u32 *OGStart = start, *bestMove = start;
+	i16 *OGScore = score, *BestScore = score;
+	u16 km1 = (*killerMoves) & ToFromMask, km2 = (*(killerMoves + 1)) & ToFromMask, move;
+	while (start < end)
+	{
+		move = (*start) & ToFromMask;
+		if (move == km1 || move == km2)
+			*score = 32000;
+		else
+			*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 2);
+		if (*score > *BestScore)
+		{
+			bestMove = start;
+			BestScore = score;
+		}
+		start++;
+		score++;
+	}
+	u32 temp1 = *bestMove;
+	*BestScore = *OGScore;
+	*bestMove = *OGStart;
+	*OGStart = temp1;
 }
 
 void ABAI::fetchBest(u32 * start, u32 * end, i16 * score)

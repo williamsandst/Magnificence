@@ -54,9 +54,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Board.h">
-      <Filter>Header Files\Board</Filter>
-    </ClInclude>
     <ClInclude Include="BitBoard.h">
       <Filter>Header Files\Board</Filter>
     </ClInclude>

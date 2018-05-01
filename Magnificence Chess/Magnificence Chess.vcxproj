@@ -155,7 +155,6 @@
   <ItemGroup>
     <ClInclude Include="ABAI.h" />
     <ClInclude Include="BitBoard.h" />
-    <ClInclude Include="Board.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="IO.h" />
     <ClInclude Include="MCAI.h" />

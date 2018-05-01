@@ -25,6 +25,12 @@ public:
 		u64 mask;
 		u64 *table;
 	};
+	struct MoveHistory 
+	{
+	public:
+		u64 zobristKey;
+		bool reversible;
+	};
 	BitBoard();
 	~BitBoard();
 	inline void RemovePiece(u8 pos);
@@ -36,6 +42,10 @@ public:
 
 	//The universal set, used to simplify code, = ~((u64)0)
 	const u64 universal = 0xffffffffffffffff;
+
+	//Move History array
+	MoveHistory moveHistory[200];
+	int moveHistoryIndex = -1;
 
 	//Magics used for rooks
 	//size = 64
