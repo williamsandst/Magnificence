@@ -8,9 +8,11 @@
 #pragma once
 #include <random>
 #include <string>
+#include <mutex>
 
 //Static class used for testing purposes
-mt19937 rng;
+mt19937 rng(10452340898239045478);
+mutex beforeRandom;
 
 string Test::displayBoard(BitBoard board)
 {
@@ -43,17 +45,19 @@ u64 Test::perftHash(int depth, int startDepth, BitBoard *bb, bool color, u32 *st
 		end = bb->WhiteLegalMoves(start);
 	else
 		end = bb->BlackLegalMoves(start);
-	if (depth == startDepth)
+	if (depth >= startDepth - 1)
 	{
+		beforeRandom.lock();
 		u32 *copy = start;
 		while (copy != end - 1)
 		{
-			u32 OVRD = rand() % (end - start);
+			u32 OVRD = rng() % (end - start);
 			u32 c = *copy;
 			*(copy) = *(start + OVRD);
 			*(start + OVRD) = c;
 			copy++;
 		}
+		beforeRandom.unlock();
 	}
 	if (depth == 1)
 	{

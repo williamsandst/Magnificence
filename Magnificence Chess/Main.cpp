@@ -36,7 +36,9 @@ string commandList =
 
 using namespace std;
 
-static const int threadCount = 2;
+static const int threadCount = 12;
+
+const u8 tableBitLengthPerft = 26;
 
 void DebugWrite(wchar_t* msg);
 void runEngine(GameState* gameState, ABAI* engine);
@@ -106,7 +108,7 @@ void guiInterface()
 			{
 				//tablesize should be power of 2 - 1;
 				u32 *start = new u32[218 * (stoi(splitCommand[1]) + 1)];
-				u32 tableSize  = 0b111111111111111111111111;
+				u32 tableSize  = (((u64)1) << (tableBitLengthPerft)) - 1;
 				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
 				timer = clock();
 				bool done = true;
@@ -135,7 +137,7 @@ void guiInterface()
 				{
 					starts[i] = new u32[218 * (stoi(splitCommand[1]) + 1)];
 				}
-				u32 tableSize = 16777215;//8388607;
+				u32 tableSize = (((u64)1) << (tableBitLengthPerft)) - 1;//16777215;//8388607;
 				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
 				timer = clock();
 				BitBoard threadBoard[threadCount];
@@ -148,7 +150,7 @@ void guiInterface()
 				for (size_t i = 0; i < threadCount-1; i++)
 				{
 					perftThreads[i] = thread(Test::perftHash, stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[i], color, starts[i], Hash, tableSize, &done);
-					this_thread::sleep_for(0.001s);
+					this_thread::sleep_for(0.01s);
 				}
 				Test::perftHash(stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[threadCount-1], color, starts[threadCount-1], Hash, tableSize, &done);
 				for (size_t i = 0; i < threadCount - 1; i++)
