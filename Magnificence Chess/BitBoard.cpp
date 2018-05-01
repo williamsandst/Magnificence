@@ -344,6 +344,21 @@ int BitBoard::SEEWrapper(u32 move)
 	return value;
 }
 
+int BitBoard::updateSearch()
+{
+	int moveHistoryCounter = moveHistoryIndex - 1;
+	while (moveHistoryCounter > 0 && moveHistory[moveHistoryCounter].reversible)
+	{
+		//Found repetition. Return draw
+		if (moveHistory[moveHistoryCounter].zobristKey == zoobristKey)
+		{
+			return 0;
+		}
+		moveHistoryCounter--;
+	}
+	return 1;
+}
+
 //recursivly creates a SEE score
 //square: the square being looked at
 //important to note that move being evaluated must habe been made before it can be evaluated!!!
@@ -2657,11 +2672,11 @@ int BitBoard::MakeMove(u32 move)
 	if (moved == 5 || moved == 12 || mailBox[to] != 14)
 	{
 		silent = 0;
-		moveHistory[moveHistoryIndex] = MoveHistory{ zoobristKey, false};
+		moveHistory[moveHistoryIndex].reversible = false;
 	}
 	else
 	{
-		moveHistory[moveHistoryIndex] = MoveHistory{ zoobristKey, true };
+		moveHistory[moveHistoryIndex].reversible = true;
 		silent++;
 	}
 	if (oldEP)
@@ -2789,7 +2804,7 @@ int BitBoard::MakeMove(u32 move)
 		break;
 	}
 	moveHistory[moveHistoryIndex].zobristKey = zoobristKey;
-	return 1;
+	return updateSearch();
 }
 
 //unmkes specified move

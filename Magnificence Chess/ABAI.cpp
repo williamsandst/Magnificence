@@ -224,27 +224,32 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		scorePTR++;
 		bb->MakeMove(move);
 		//Check for threefold repetition
+		int returned = 0;
+		bool search = true;
 		moveHistoryCounter = bb->moveHistoryIndex-1;
 		while (moveHistoryCounter > 0 && bb->moveHistory[moveHistoryCounter].reversible)
 		{
 			//Found repetition. Return draw
 			if (bb->moveHistory[moveHistoryCounter].zobristKey == bb->zoobristKey)
 			{
-				bb->UnMakeMove(move);
-				return 0;
+				returned = 0;
+				search = false;
+				break;
 			}
 			moveHistoryCounter--;
 		}
-		int returned;
-		if (firstSearch || !PVSEnabled)
+		if (search)
 		{
-			returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
-		}
-		else
-		{
-			returned = -negamax(-alpha - 1, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
-			if (returned > alpha)
+			if (firstSearch || !PVSEnabled)
+			{
 				returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			}
+			else
+			{
+				returned = -negamax(-alpha - 1, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+				if (returned > alpha)
+					returned = -negamax(-beta, -alpha, depth, maxDepth, color, end, killerMoves + 2, moveSortValues + mvcnt);
+			}
 		}
 		if (returned > bestScore)
 		{
@@ -289,6 +294,11 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 	this->bb = GameState->board;
 	for (int i2 = 0; i2 < moves; i2++)
 	{
+		for (size_t i = 0; i < hashMask + 1; i++)
+		{
+			ttAlwaysOverwrite[i] = PackedHashEntry();
+			ttDepthFirst[i] = PackedHashEntry();
+		}
 		generation = (generation + 1) & 0b111;
 		KillerMoves = new u16[200]{ 0 };
 		for (size_t i = 0; i < 100; i++)
