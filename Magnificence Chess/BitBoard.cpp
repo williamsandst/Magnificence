@@ -344,21 +344,6 @@ int BitBoard::SEEWrapper(u32 move)
 	return value;
 }
 
-int BitBoard::updateSearch()
-{
-	int moveHistoryCounter = moveHistoryIndex - 1;
-	while (moveHistoryCounter > 0 && moveHistory[moveHistoryCounter].reversible)
-	{
-		//Found repetition. Return draw
-		if (moveHistory[moveHistoryCounter].zobristKey == zoobristKey)
-		{
-			return 0;
-		}
-		moveHistoryCounter--;
-	}
-	return 1;
-}
-
 //recursivly creates a SEE score
 //square: the square being looked at
 //important to note that move being evaluated must habe been made before it can be evaluated!!!
@@ -2677,7 +2662,10 @@ int BitBoard::MakeMove(u32 move)
 	else
 	{
 		moveHistory[moveHistoryIndex].reversible = true;
-		silent++;
+		if (color)
+		{
+			silent++;
+		}
 	}
 	if (oldEP)
 	{
@@ -2804,7 +2792,7 @@ int BitBoard::MakeMove(u32 move)
 		break;
 	}
 	moveHistory[moveHistoryIndex].zobristKey = zoobristKey;
-	return updateSearch();
+	return 1;
 }
 
 //unmkes specified move

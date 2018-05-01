@@ -10,9 +10,11 @@
 #include <string>
 #include <fstream>
 #include "ABAI.h"
+#include <mutex>
 
 //Static class used for testing purposes
-mt19937 rng;
+mt19937 rng(10452340898239045478);
+mutex beforeRandom;
 
 string Test::displayBoard(BitBoard board)
 {
@@ -35,7 +37,7 @@ string Test::displayBoard(BitBoard board)
 u64 Test::perftHash(int depth, int startDepth, BitBoard *bb, bool color, u32 *start, HashEntryPerft *Hash, u32 tableSize, bool *output)
 {
 	//if (depth == 0)
-		//return 1;
+	//return 1;
 	if (!(*output))
 	{
 		return 0;
@@ -45,17 +47,19 @@ u64 Test::perftHash(int depth, int startDepth, BitBoard *bb, bool color, u32 *st
 		end = bb->WhiteLegalMoves(start);
 	else
 		end = bb->BlackLegalMoves(start);
-	if (depth == startDepth)
+	if (depth >= startDepth - 1)
 	{
+		beforeRandom.lock();
 		u32 *copy = start;
 		while (copy != end - 1)
 		{
-			u32 OVRD = rand() % (end - start);
+			u32 OVRD = (rng()) % (end - start);
 			u32 c = *copy;
 			*(copy) = *(start + OVRD);
 			*(start + OVRD) = c;
 			copy++;
 		}
+		beforeRandom.unlock();
 	}
 	if (depth == 1)
 	{
@@ -127,6 +131,7 @@ u64 Test::perftHash(int depth, int startDepth, BitBoard *bb, bool color, u32 *st
 		return res;
 	}
 }
+
 
 u64 Test::perft(int depth, BitBoard *bb, bool color, u32 *start)
 {

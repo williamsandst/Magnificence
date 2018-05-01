@@ -36,7 +36,7 @@ string commandList =
 
 using namespace std;
 
-static const int threadCount = 2;
+static const int threadCount = 4;
 
 void DebugWrite(wchar_t* msg);
 void runEngine(GameState* gameState, ABAI* engine);

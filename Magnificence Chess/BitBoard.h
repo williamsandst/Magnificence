@@ -8,10 +8,13 @@
 #include <random>
 
 typedef unsigned long long int u64;
+typedef signed long long int i64;
 typedef unsigned long int u32;
+typedef signed long int i32;
 typedef unsigned short int u16;
 typedef signed short int i16;
 typedef unsigned char u8;
+typedef signed char i8;
 
 using namespace std;
 
@@ -173,7 +176,6 @@ public:
 	u32 LowestValuedAttacker(u64 square, u64 baseMove, bool side);
 	int SEE(u64 square);
 	int SEEWrapper(u32 move);
-	int updateSearch();
 
 	//a wrapper for population count
 	u8 pc(u64 valeu)
