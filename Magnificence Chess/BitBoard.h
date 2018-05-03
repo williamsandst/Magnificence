@@ -30,9 +30,37 @@ public:
 	};
 	struct MoveHistory 
 	{
-	public:
+	private:
 		u64 zobristKey;
-		bool reversible;
+	public:
+		MoveHistory()
+		{
+			zobristKey = 0;
+		}
+		MoveHistory(u64 key, bool reversible)
+		{
+			zobristKey = (key & (~((u64)1))) | reversible;
+		}
+		void setKey(u64 key)
+		{
+			zobristKey = (key & (~((u64)1))) | (zobristKey & (1));
+		}
+		void setRevesible(bool reversible)
+		{
+			zobristKey = (zobristKey & (~((u64)1))) | reversible;
+		}
+		bool isReversible()
+		{
+			return (bool)(1 & zobristKey);
+		}
+		bool operator ==(u64 key)
+		{
+			return ((key & (~((u64)1))) == (zobristKey & (~((u64)1))));
+		}
+		bool operator ==(MoveHistory key)
+		{
+			return ((key.zobristKey & (~((u64)1))) == (zobristKey & (~((u64)1))));
+		}
 	};
 	BitBoard();
 	~BitBoard();
@@ -47,7 +75,7 @@ public:
 	const u64 universal = 0xffffffffffffffff;
 
 	//Move History array
-	MoveHistory moveHistory[200];
+	MoveHistory moveHistory[512];
 	int moveHistoryIndex = -1;
 
 	//Magics used for rooks

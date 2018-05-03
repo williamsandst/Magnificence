@@ -6,6 +6,9 @@
 #include "GameState.h"
 
 
+unsigned int maxQsearchDepth = 0, currentDepth = 0;
+
+
 const bool DEBUG_OUTPUT = true;
 const bool PVSEnabled = 1;
 using namespace std;
@@ -67,6 +70,9 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 //Does a qSearch
 int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, i32 *score)
 {
+	currentDepth++;
+	if (currentDepth > maxQsearchDepth)
+		maxQsearchDepth = currentDepth;
 	//nodes[0]++;
 	int nodeval;
 	if (color)
@@ -78,6 +84,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		alpha = nodeval;
 		if (nodeval >= beta)
 		{
+			currentDepth--;
 			return beta;
 		}
 	}
@@ -90,6 +97,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		end = bb->BlackQSearchMoves(start);
 	if (*start == 1 || *start == 0)
 	{
+		currentDepth--;
 		if (nodeval <= alpha)
 			return alpha;
 		else if (nodeval >= beta)
@@ -113,6 +121,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		bb->UnMakeMove(move);
 		if (scoreE >= beta)
 		{
+			currentDepth--;
 			if (*killerMoves != ((u16)move & ToFromMask))
 			{
 				*(killerMoves + 1) = *killerMoves;
@@ -132,6 +141,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		}
 		fetchBest(start, end, score);
 	}
+	currentDepth--;
 	return alpha;
 }
 
@@ -227,10 +237,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		//Check for threefold repetition
 		int returned = 0;
 		moveHistoryCounter = bb->moveHistoryIndex-1;
-		while (moveHistoryCounter > 0 && bb->moveHistory[moveHistoryCounter].reversible)
+		while (moveHistoryCounter > 0 && bb->moveHistory[moveHistoryCounter].isReversible())
 		{
 			//Found repetition. Return draw
-			if (bb->moveHistory[moveHistoryCounter].zobristKey == bb->zoobristKey)
+			if (bb->moveHistory[moveHistoryCounter] == bb->zoobristKey)
 			{
 				returned = 0;
 				search = false;
@@ -298,12 +308,8 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 	this->bb = GameState->board;
 	for (int i2 = 0; i2 < moves; i2++)
 	{
-		for (size_t i = 0; i < hashMask + 1; i++)
-		{
-			ttAlwaysOverwrite[i] = PackedHashEntry();
-			ttDepthFirst[i] = PackedHashEntry();
-		}
 		generation = (generation + 1) & 0b111;
+		maxQsearchDepth = 0;
 		KillerMoves = new u16[200]{ 0 };
 		for (size_t i = 0; i < 100; i++)
 			nodes[i] = 0;
@@ -343,6 +349,7 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 		SumFactor += nodes[0];
 		std::cout << "Node Count: " << (nodes[0]) << " BestMove " << IO::convertMoveToAlg(potEntry.bestMove) << " score " << to_string(score) << " cp" << endl;
 		player = GameState->board->color;
+		cout << "Maxdepth " << maxQsearchDepth << endl;
 		delete[] KillerMoves;
 	}
 	std::cout << "Average Node Count (log 10): " << log10(SumFactor / moves) << endl;

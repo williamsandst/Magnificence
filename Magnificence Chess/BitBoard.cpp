@@ -2657,11 +2657,11 @@ int BitBoard::MakeMove(u32 move)
 	if (moved == 5 || moved == 12 || mailBox[to] != 14)
 	{
 		silent = 0;
-		moveHistory[moveHistoryIndex].reversible = false;
+		moveHistory[moveHistoryIndex].setRevesible(false);
 	}
 	else
 	{
-		moveHistory[moveHistoryIndex].reversible = true;
+		moveHistory[moveHistoryIndex].setRevesible(true);
 		if (color)
 		{
 			silent++;
@@ -2791,7 +2791,7 @@ int BitBoard::MakeMove(u32 move)
 	default:
 		break;
 	}
-	moveHistory[moveHistoryIndex].zobristKey = zoobristKey;
+	moveHistory[moveHistoryIndex].setKey(zoobristKey);
 	return 1;
 }
 
