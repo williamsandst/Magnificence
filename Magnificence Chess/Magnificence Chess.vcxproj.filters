@@ -66,9 +66,6 @@
     <ClInclude Include="Move.h">
       <Filter>Header Files\Logic</Filter>
     </ClInclude>
-    <ClInclude Include="MoveLogic.h">
-      <Filter>Header Files\Logic</Filter>
-    </ClInclude>
     <ClInclude Include="Test.h">
       <Filter>Header Files\Testing</Filter>
     </ClInclude>
@@ -83,9 +80,6 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Board.cpp">
-      <Filter>Source Files\Board</Filter>
-    </ClCompile>
     <ClCompile Include="BitBoard.cpp">
       <Filter>Source Files\Board</Filter>
     </ClCompile>
@@ -99,9 +93,6 @@
       <Filter>Source Files\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Move.cpp">
-      <Filter>Source Files\Logic</Filter>
-    </ClCompile>
-    <ClCompile Include="MoveLogic.cpp">
       <Filter>Source Files\Logic</Filter>
     </ClCompile>
     <ClCompile Include="Test.cpp">

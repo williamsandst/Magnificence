@@ -6,7 +6,7 @@
 #include "GameState.h"
 
 
-const bool DEBUG_OUTPUT = true;
+const bool DEBUG_OUTPUT = false;
 const bool PVSEnabled = 1;
 using namespace std;
 
@@ -298,11 +298,7 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 	this->bb = GameState->board;
 	for (int i2 = 0; i2 < moves; i2++)
 	{
-		for (size_t i = 0; i < hashMask + 1; i++)
-		{
-			ttAlwaysOverwrite[i] = PackedHashEntry();
-			ttDepthFirst[i] = PackedHashEntry();
-		}
+		//resetTT();
 		generation = (generation + 1) & 0b111;
 		KillerMoves = new u16[200]{ 0 };
 		for (size_t i = 0; i < 100; i++)
@@ -556,6 +552,7 @@ vector<u32> ABAI::searchID(GameState &gameState)
 vector<u32> ABAI::searchIDSimpleTime(GameState &gameState)
 {
 	//Standard search
+	resetTT();
 	generation = (generation + 1) & 0b111;
 
 	//Create the static array used for storing legal moves

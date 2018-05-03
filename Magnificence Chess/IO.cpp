@@ -219,6 +219,7 @@ string IO::convertBoardToFEN(BitBoard board, bool color)
 	//White: king 0, queen 1, bishop 2, rook  3, knight  4, pawn 5
 	//Black: king 7, queen 8, bishop 9, rook 10, knight 11, pawn 12
 }*/
+
 //Returns a string representing the board in a cool format, used for debugging
 string IO::displayBoard(BitBoard board)
 {

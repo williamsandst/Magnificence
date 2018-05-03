@@ -10,7 +10,6 @@
 #include "ABAI.h"
 #include <atomic>
 #include <ctime>
-#include "Board.h"
 #include "GameState.h"
 #include "BitBoard.h"
 #include "IO.h"
@@ -56,7 +55,6 @@ int main()
 //This function recieves input from a separate GUI in the form of UCI commands.
 void guiInterface()
 {
-	cout << sizeof(BitBoard::MoveHistory) << endl;
 	//Settings
 	bool CONSOLEDEBUG = true;
 	//Create engine thread object
@@ -395,7 +393,7 @@ void runEngine(GameState* gameState, ABAI *engine)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			gameState->principalVariation = engine->searchID(*gameState);
+			gameState->principalVariation = engine->searchIDSimpleTime(*gameState);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			//cout << "mgnf: ";
 			gameState->idle = true;

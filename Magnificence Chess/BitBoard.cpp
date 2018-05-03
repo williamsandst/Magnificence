@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "BitBoard.h"
-#include "Board.h"
 #include <iostream>
 #include <string>
 

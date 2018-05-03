@@ -1,6 +1,4 @@
 #pragma once
-
-#include "Board.h"
 #include <cstdlib>
 #include <intrin.h>
 #include <iostream>
@@ -18,7 +16,7 @@ typedef signed char i8;
 
 using namespace std;
 
-class BitBoard : public Board
+class BitBoard
 {
 public:
 	// TTTUUUERRRRsssSSSSSSttttttFFFFFF
