@@ -24,7 +24,8 @@ u8 extractTo(u32 move)
 
 ABAI::ABAI()
 {
-	
+	cont = new bool;
+	*cont = true;
 }
 
 ABAI::ABAI(TranspositionTable * tt)
@@ -115,6 +116,8 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 //A nega max implementation of Alpha beta search
 int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 *moveSortValues)
 {
+	if (!*cont)
+		return 0;
 	u32 bestMove = 0;
 	nodes[depth]++;
 	i32 *scorePTR = moveSortValues;

@@ -108,6 +108,7 @@ void guiInterface()
 				cout << commandList;
 			else if (splitCommand[0] == "selfplay")
 			{
+				engine->tt = tt;
 				engine->selfPlay(stoi(splitCommand[1]), stoi(splitCommand[2]), gameState);
 			}
 			else if (splitCommand[0] == "hperft" && splitCommand.size() == 2)
