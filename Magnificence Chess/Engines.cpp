@@ -207,17 +207,17 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	int highestDepth;
 	while (runSearch && *killer)
 	{
-		cout << to_string(gameState.color) << endl;
 		//Do search
 		PV.clear();
-		cout << Test::displayBoard(*gameState.board);
 		score = search.search(i, generation, gameState.tt, gameState.board, gameState.color);
-		cout << Test::displayBoard(*gameState.board);
 		clock_t timerEnd = clock();
 		totalTime = (timerEnd - start) / double CLOCKS_PER_SEC;
 		branchingFactor = pow(search.nodes[0], 1 / (double)i);
-		if (totalTime * branchingFactor > gameState.maxTime)
-			runSearch = false;
+		if (search.nodes[2] != 0)
+		{
+			if (totalTime * search.nodes[1] / search.nodes[2] > gameState.maxTime)
+				runSearch = false;
+		}
 		//Information generation
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
 		//Find pV
