@@ -247,7 +247,7 @@ void guiInterface()
 			else if (splitCommand[0] == "move" && splitCommand.size() == 2)
 			{
 				color = !color;
-				board.MakeMoveLazyEval(IO::convertAlgToMove(splitCommand[1]));
+				board.MakeMove(IO::convertAlgToMove(splitCommand[1]));
 			}
 			else if ((splitCommand[0] == "moves" || splitCommand[0] == "lmov") && splitCommand.size() == 2)
 			{

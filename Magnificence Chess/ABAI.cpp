@@ -1,6 +1,6 @@
+#pragma once
 #include "stdafx.h"
 #include "ABAI.h"
-#pragma once
 #include "IO.h"
 #include <cmath>
 #include "GameState.h"
@@ -24,47 +24,12 @@ u8 extractTo(u32 move)
 
 ABAI::ABAI()
 {
-
+	tt.setHashSizeBits(22);
 }
 
 
 ABAI::~ABAI()
 {
-}
-
-//adds a board position to the transposition table
-int ABAI::insertTT(PackedHashEntry newEntry)
-{
-	u32 index = (u32)(extractKey(newEntry) & hashMask);
-	//if both type 0 and generation different or depth lower or 
-	if ((extractNodeType(ttDepthFirst[index]) != 1 || extractNodeType(newEntry) == 1 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
-		(extractDepth(ttDepthFirst[index]) <= extractDepth(newEntry) || extractGeneration(ttDepthFirst[index]) != extractGeneration(newEntry)))
-	{
-		ttDepthFirst[index] = newEntry;
-	}
-	else
-		ttAlwaysOverwrite[index] = newEntry;
-	return extractDepth(newEntry);
-}
-
-//Checks if a board position is in the transposition table
-bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
-{
-	u32 index = (u32)(key & hashMask);
-	PackedHashEntry entry = ttDepthFirst[index];
-	if (extractKey(entry) == key)
-	{
-		*in = UnpackedHashEntry(entry);
-		return true;
-	}
-	entry = ttAlwaysOverwrite[index];
-	if (extractKey(entry) == key)
-	{
-		*in = UnpackedHashEntry(entry);
-		return true;
-	}
-	else
-		return false;
 }
 
 //Does a qSearch
@@ -151,12 +116,12 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	//Check whether there is a transposition that can be used for this position
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-		if (getFromTT(bb->zoobristKey, &potEntry))
+		if (tt.getFromTT(bb->zoobristKey, &potEntry))
 		{
 			if (potEntry.generation != generation)
 			{
 				potEntry.generation = generation;
-				insertTT(potEntry);
+				tt.insertTT(potEntry);
 			}
 			if (potEntry.depth >= depth)
 			{
@@ -183,17 +148,17 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		int value = qSearch(alpha, beta, color, killerMoves, start, moveSortValues);
 		if (value >= beta)
 		{
-			insertTT(UnpackedHashEntry(0, depth, beta, bestMove, bb->zoobristKey, generation));
+			tt.insertTT(UnpackedHashEntry(0, depth, beta, bestMove, bb->zoobristKey, generation));
 			return beta;
 		}
 		else if (value > alpha)
 		{
-			insertTT(UnpackedHashEntry(1, depth, beta, bestMove, bb->zoobristKey, generation));
+			tt.insertTT(UnpackedHashEntry(1, depth, beta, bestMove, bb->zoobristKey, generation));
 			return value;
 		}
 		else
 		{
-			insertTT(UnpackedHashEntry(2, depth, beta, bestMove, bb->zoobristKey, generation));
+			tt.insertTT(UnpackedHashEntry(2, depth, beta, bestMove, bb->zoobristKey, generation));
 			return alpha;
 		}
 	}
@@ -281,16 +246,16 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			{
 				history[color][bb->mailBox[extractFrom(move)]][extractTo(move)] += depth * depth;
 			}
-			insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+			tt.insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 			return beta;
 		}
 		fetchBest(start, end, scorePTR);
 	}
 	//Create an entry for the transposition table
 	if (changeAlpha)
-		insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
+		tt.insertTT(UnpackedHashEntry(1, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 	else
-		insertTT(UnpackedHashEntry(2, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
+		tt.insertTT(UnpackedHashEntry(2, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
 	return alpha;
 }
 
@@ -341,7 +306,7 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 			//score = negamax(-8192, 8192, i, i, player, MoveStart, KillerMoves, moveSortValues);
 		}
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-		if (!getFromTT(bb->zoobristKey, &potEntry))
+		if (!tt.getFromTT(bb->zoobristKey, &potEntry))
 			std::cout << "ERROR! Non-PV Node: " << endl;
 		bb->MakeMove(potEntry.bestMove);
 		SumFactor += nodes[0];
@@ -361,15 +326,7 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 
 void ABAI::resetTT()
 {
-	delete[] ttAlwaysOverwrite;
-	delete[] ttDepthFirst;
-	int size = hashSizeBits + 1; //bits
-	int i = 1;
-	while ((size -= 1) && (i *= 2));
-	//cout << i << endl;
-	ttAlwaysOverwrite = new PackedHashEntry[i];
-	ttDepthFirst = new PackedHashEntry[i];
-	hashMask = i - 1;
+	tt.resetTT();
 }
 
 //Returns a vector of PV from current position. Under development
@@ -409,7 +366,7 @@ vector<u32> ABAI::search(GameState &gameState)
 	for (size_t i = 0; i < gameState.maxDepth; i++)
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-		if (!getFromTT(bb->zoobristKey, &potEntry))
+		if (!tt.getFromTT(bb->zoobristKey, &potEntry))
 			cout << "ERROR! Non-PV Node: " << endl;
 		pV[i] = potEntry.bestMove;
 		PV.push_back(pV[i]);
@@ -493,7 +450,7 @@ vector<u32> ABAI::searchID(GameState &gameState)
 		for (size_t i2 = 0; i2 < i; i2++)
 		{
 			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!getFromTT(bb->zoobristKey, &potEntry))
+			if (!tt.getFromTT(bb->zoobristKey, &potEntry))
 				cout << "ERROR! Non-PV Node: " << endl;
 			pV[i2] = potEntry.bestMove;
 			PV.push_back(pV[i2]);
@@ -582,7 +539,7 @@ vector<u32> ABAI::searchIDSimpleTime(GameState &gameState)
 		for (size_t i2 = 0; i2 < i; i2++)
 		{
 			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!getFromTT(bb->zoobristKey, &potEntry))
+			if (!tt.getFromTT(bb->zoobristKey, &potEntry))
 				cout << "ERROR! Non-PV Node: " << endl;
 			pV[i2] = potEntry.bestMove;
 			PV.push_back(pV[i2]);
@@ -655,13 +612,13 @@ vector<u32> ABAI::searchIDComplexTime(GameState &gameState)
 	UnpackedHashEntry q(0, 0, 0, 0, 0, 0);
 	int depth = 0;
 	u32 bestMove = 0;
-	if (getFromTT(bb->zoobristKey, &q))
+	if (tt.getFromTT(bb->zoobristKey, &q))
 	{
 		depth = q.depth;
 		gameState.maxDepth = depth;
 		score = q.score;
 		q.generation = generation;
-		insertTT(q);
+		tt.insertTT(q);
 	}
 	u32 *startM = MoveStart, *endM;
 	if (gameState.color)
@@ -698,7 +655,7 @@ vector<u32> ABAI::searchIDComplexTime(GameState &gameState)
 		}
 		if (clock() - start < gameState.maxTime)
 		{
-			insertTT(UnpackedHashEntry(1, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
+			tt.insertTT(UnpackedHashEntry(1, depth + 1, alpha, bestMove, bb->zoobristKey, generation));
 			score = alpha;
 			gameState.maxDepth = depth + 1;
 		}
@@ -706,7 +663,7 @@ vector<u32> ABAI::searchIDComplexTime(GameState &gameState)
 		for (size_t i2 = 0; i2 < depth; i2++)
 		{
 			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!getFromTT(bb->zoobristKey, &potEntry))
+			if (!tt.getFromTT(bb->zoobristKey, &potEntry))
 				cout << "ERROR! Non-PV Node: " << endl;
 			pV[i2] = potEntry.bestMove;
 			PV.push_back(pV[i2]);
@@ -751,78 +708,6 @@ vector<u32> ABAI::searchIDComplexTime(GameState &gameState)
 	return PV;
 }
 
-//Generates a packed hash entry from an unpacked hash entry
-PackedHashEntry::PackedHashEntry(UnpackedHashEntry start)
-{
-	//data needs to store the best move, the score of the node, 
-	//the type of node (lowest value possible value, highest possible value, exact value)
-	//depth searched
-	//score is in centipawns, the highest possible score is 3900 only counting piece score, it is signed. That represents 13 bits (+- 2^12 - 1 = +-4095)
-	//therefore 16 bits will be assigned to score because that is a short (+-(2^ 15 - 1) = +- 32767) to allow for something unexpected
-	//64 - 16 = 48;
-	//type of node takes exactly 3 bits. 48 - 3 = 45;
-	//The move is 32 bit and can be stored as such. 47 - 32 = 12;
-	//generation is the point when the node was created. It is updated by generation = (generation + 1) & 0b111
-	//generation is 2 bits. 12 - 3 = 9;
-	//10 ^ 2 - 1 = 1023 which is more than sufficient for the depht.
-	data = ((u64)((u16)start.score)) | (((u64)start.bestMove) << 16) | (((u64)start.typeOfNode) << 48) | (((u64)start.generation) << 51) | (((u64)start.depth) << 54);
-	key = start.key ^ data;
-}
-
-//generates an empty packed hash entry
-PackedHashEntry::PackedHashEntry()
-{
-	key = 0;
-	data = 0;
-}
-
-//generates an unpacked hash entry
-//type of node: The type of node 0 is a minimum value, 1 is an exact value, 2 is a maximum value
-//Depth: the depth it was searched at
-//Score: The score returned
-//Bestmove: The move causing the highest score
-//Key: The zoobrist hash of position
-//Generation: A variable showing roughly when it was searched
-UnpackedHashEntry::UnpackedHashEntry(u8 typeOfNode, u16 depth, short score, u32 bestMove, u64 key, u8 generation)
-{
-	this->typeOfNode = typeOfNode; //(0 is minimum value, 1 is exact, 2 is maximum value)
-	this->depth = depth;
-	this->score = score;
-	this->bestMove = bestMove;
-	this->key = key;
-	this->generation = generation;
-}
-
-
-//Decodes a packed hash entry into a unpacked hash entry
-UnpackedHashEntry::UnpackedHashEntry(PackedHashEntry in)
-{
-	score = (short)(0xffff & in.data);
-	bestMove = (u32)(0xffffffff & (in.data >> 16));
-	typeOfNode = (u8)(((u8)0b11) & (in.data >> 48));
-	generation = (u8)(((u8)0b111) & in.data >> 51);
-	depth = (short)(in.data >> 54);
-	key = in.key ^ in.data;
-}
-
-//extracts the type of node from a packed hash entrt
-//0 is minimum value, 1 is exact value and 2 is maximum value
-u8 ABAI::extractNodeType(PackedHashEntry in)
-{
-	return (u8)(((u8)0b11) & (in.data >> 48));
-}
-
-//Extracts the depth from a packed hash entry
-short ABAI::extractDepth(PackedHashEntry in)
-{
-	return (short)(in.data >> 54);
-}
-
-//Extracts the score from a packed hash entry
-short ABAI::extractScore(PackedHashEntry in)
-{
-	return (short)(0xffff & in.data);
-}
 
 //Sorts the moves based on Killer moves and hash move
 void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i32 *score, bool color)
@@ -936,22 +821,4 @@ void ABAI::fetchBest(u32 * start, u32 * end, i32 * score)
 	*(bestMove) = *ogStart;
 	*ogStart = temp;
 	*bestScore = ogScore;
-}
-
-//extracts the bestmove from a packed hash entry
-u32 ABAI::extractBestMove(PackedHashEntry in)
-{
-	return (u32)(0xffffffff & (in.data >> 16));
-}
-
-//extracts the zoobrist hash from a packed hash entry
-u64 ABAI::extractKey(PackedHashEntry in)
-{
-	return in.key ^ in.data;
-}
-
-//extracts generation from a packed hash entry
-u8 ABAI::extractGeneration(PackedHashEntry in)
-{
-	return (u8)(((u8)0b111) & in.data >> 51);
 }
