@@ -6,6 +6,7 @@ class Evaluation
 {
 public:
 	static int lazyEval(BitBoard * bb);
+	static int getPhase(BitBoard * bb);
 	static int pieceSquareValues(const short * pieceSquareTable, u64 pieceSet);
 	static short getPieceValue(u8 piece);
 

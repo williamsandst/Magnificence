@@ -6,6 +6,8 @@
 int Evaluation::lazyEval(BitBoard *bb)
 {
 	//nodes[0]++;
+	int phase = getPhase(bb);
+
 	short materialScore = 0;
 	short earlyPSTScore = 0;
 	short latePSTScore = 0;
@@ -34,24 +36,56 @@ int Evaluation::lazyEval(BitBoard *bb)
 	latePSTScore += pieceSquareValues(whitePawnLatePST, bb->Pieces[5]);
 	latePSTScore -= pieceSquareValues(blackPawnLatePST, bb->Pieces[12]);
 
-	//latePSTScore += pieceSquareValues(whiteKnightLatePST, bb->Pieces[4]);
-	//latePSTScore -= pieceSquareValues(blackKnightLatePST, bb->Pieces[11]);
+	latePSTScore += pieceSquareValues(whiteKnightLatePST, bb->Pieces[4]);
+	latePSTScore -= pieceSquareValues(blackKnightLatePST, bb->Pieces[11]);
 
-	//latePSTScore += pieceSquareValues(whiteBishopLatePST, bb->Pieces[2]);
-	//latePSTScore -= pieceSquareValues(blackBishopLatePST, bb->Pieces[9]);
+	latePSTScore += pieceSquareValues(whiteBishopLatePST, bb->Pieces[2]);
+	latePSTScore -= pieceSquareValues(blackBishopLatePST, bb->Pieces[9]);
 
-	//latePSTScore += pieceSquareValues(whiteRookLatePST, bb->Pieces[3]);
-	//latePSTScore -= pieceSquareValues(blackRookLatePST, bb->Pieces[10]);
+	latePSTScore += pieceSquareValues(whiteRookLatePST, bb->Pieces[3]);
+	latePSTScore -= pieceSquareValues(blackRookLatePST, bb->Pieces[10]);
 
-	//latePSTScore += pieceSquareValues(whiteQueenLatePST, bb->Pieces[1]);
-	//latePSTScore -= pieceSquareValues(blackQueenLatePST, bb->Pieces[8]);
+	latePSTScore += pieceSquareValues(whiteQueenLatePST, bb->Pieces[1]);
+	latePSTScore -= pieceSquareValues(blackQueenLatePST, bb->Pieces[8]);
 
-	//latePSTScore += pieceSquareValues(whiteKingLatePST, bb->Pieces[0]);
-	//latePSTScore -= pieceSquareValues(blackKingLatePST, bb->Pieces[7]);
+	latePSTScore += pieceSquareValues(whiteKingLatePST, bb->Pieces[0]);
+	latePSTScore -= pieceSquareValues(blackKingLatePST, bb->Pieces[7]);
 
-	
+	//0 = earlyPSTScore
+	//256 = latePSTScore
+	//0 - 256
+	int phaseScore = ((256 - phase)*earlyPSTScore + phase * latePSTScore) / 256;
 	if (bb->color) materialScore += 20;
-	return materialScore + earlyPSTScore;
+	return materialScore + phaseScore;
+}
+
+int Evaluation::getPhase(BitBoard *bb)
+{
+	const int pawnPhase = 0;
+	const int knightPhase = 1;
+	const int bishopPhase = 1;
+	const int rookPhase = 2;
+	const int queenPhase = 4;
+	int totalPhase = pawnPhase * 16 + knightPhase * 4 + bishopPhase * 4 + rookPhase * 4 + queenPhase * 2;
+
+	int phase = totalPhase;
+
+	//White pieces
+	phase -= bb->pc(bb->Pieces[5]) * pawnPhase;
+	phase -= bb->pc(bb->Pieces[4]) * knightPhase;
+	phase -= bb->pc(bb->Pieces[2]) * bishopPhase;
+	phase -= bb->pc(bb->Pieces[3]) * rookPhase;
+	phase -= bb->pc(bb->Pieces[1]) * queenPhase;
+
+	//Black pieces
+	phase -= bb->pc(bb->Pieces[12]) * pawnPhase;
+	phase -= bb->pc(bb->Pieces[11]) * knightPhase;
+	phase -= bb->pc(bb->Pieces[9]) * bishopPhase;
+	phase -= bb->pc(bb->Pieces[10]) * rookPhase;
+	phase -= bb->pc(bb->Pieces[8]) * queenPhase;
+
+	phase = (phase * 256 + (totalPhase / 2)) / totalPhase;
+	return phase;
 }
 
 //Used in eval to extract values from the piece square tables for positional awareness 
