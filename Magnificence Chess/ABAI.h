@@ -3,27 +3,7 @@
 #include "BitBoard.h"
 #include <memory>
 #include "GameState.h"
-struct UnpackedHashEntry;
-struct PackedHashEntry;
-
-struct UnpackedHashEntry
-{
-	u8 typeOfNode;//(0 is minimum value, 1 is exact, 2 is maximum value)
-	u8 generation;
-	unsigned short depth;
-	short score;
-	u32 bestMove;
-	u64 key;
-	UnpackedHashEntry(u8 typeOfNode, u16 depth, short score, u32 bestM, u64 key, u8 generation);
-	UnpackedHashEntry(PackedHashEntry in);
-};
-
-struct PackedHashEntry
-{
-	u64 key, data;
-	PackedHashEntry(UnpackedHashEntry start);
-	PackedHashEntry();
-};
+#include "TranspositionTable.h"
 
 class ABAI
 {
@@ -286,25 +266,17 @@ private:
 	
 	u64 nodes[100];
 public:
+	TranspositionTable tt;
 	BitBoard *bb;
 	const u16 ToFromMask = 0b111111111111;
-	PackedHashEntry *ttDepthFirst, *ttAlwaysOverwrite;
 	u8 generation;
 	u64 hashMask;
 	ABAI();
 	~ABAI();
-	u8 extractNodeType(PackedHashEntry in);
 	short getPieceValue(u8 piece);
-	short extractDepth(PackedHashEntry in);
-	short extractScore(PackedHashEntry in);
 	void sortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i32 *score, bool color);
 	void sortQMoves(u32 *start, u32 *end, u16 *killerMoves, i32 *score);
 	void fetchBest(u32 *start, u32 *end, i32 *score);
-	u32 extractBestMove(PackedHashEntry in);
-	u64 extractKey(PackedHashEntry in);
-	u8 extractGeneration(PackedHashEntry in);
-	int insertTT(PackedHashEntry newEntry);
-	bool getFromTT(u64 key, UnpackedHashEntry *in);
 	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i32 *score);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 * moveSortValues);
 	int selfPlay(int depth, int moves, GameState *game);

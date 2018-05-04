@@ -56,7 +56,6 @@ int main()
 //This function recieves input from a separate GUI in the form of UCI commands.
 void guiInterface()
 {
-	cout << sizeof(BitBoard::MoveHistory) << endl;
 	//Settings
 	bool CONSOLEDEBUG = true;
 	//Create engine thread object
