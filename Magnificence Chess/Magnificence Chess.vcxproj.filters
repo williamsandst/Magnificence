@@ -75,14 +75,16 @@
     <ClInclude Include="MCAI.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="TranspositionTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Evaluation.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="Engines.h">
       <Filter>Header Files</Filter>
+=======
+    <ClInclude Include="TranspositionTable.h">
+      <Filter>Header Files\Engine</Filter>
+>>>>>>> 9229e89f58022033c030f033acd3bc3801bc4196
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -113,14 +115,16 @@
     <ClCompile Include="MCAI.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="TranspositionTable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Evaluation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="Engines.cpp">
       <Filter>Source Files</Filter>
+=======
+    <ClCompile Include="TranspositionTable.cpp">
+      <Filter>Source Files\Engine</Filter>
+>>>>>>> 9229e89f58022033c030f033acd3bc3801bc4196
     </ClCompile>
   </ItemGroup>
 </Project>

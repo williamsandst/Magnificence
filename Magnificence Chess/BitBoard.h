@@ -71,7 +71,10 @@ public:
 
 
 	//Current lazy evaluation score
-	int internalScore;
+	int materialScore;
+	int earlyGamePSTScore;
+	int lateGamePSTScore;
+	int totalScore;
 	//The const 64 bit 1 used to avoid unpredicatable behaviour when leftshifting 1
 	const u64 one = 1;
 
