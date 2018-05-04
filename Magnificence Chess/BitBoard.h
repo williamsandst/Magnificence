@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <random>
+//#include "Evaluation.h"
 
 typedef unsigned long long int u64;
 typedef signed long long int i64;
@@ -28,16 +29,49 @@ public:
 	};
 	struct MoveHistory 
 	{
-	public:
+	private:
 		u64 zobristKey;
-		bool reversible;
+	public:
+		MoveHistory()
+		{
+			zobristKey = 0;
+		}
+		MoveHistory(u64 key, bool reversible)
+		{
+			zobristKey = (key & (~((u64)1))) | reversible;
+		}
+		void setKey(u64 key)
+		{
+			zobristKey = (key & (~((u64)1))) | (zobristKey & (1));
+		}
+		void setRevesible(bool reversible)
+		{
+			zobristKey = (zobristKey & (~((u64)1))) | reversible;
+		}
+		bool isReversible()
+		{
+			return (bool)(1 & zobristKey);
+		}
+		bool operator ==(u64 key)
+		{
+			return ((key & (~((u64)1))) == (zobristKey & (~((u64)1))));
+		}
+		bool operator ==(MoveHistory key)
+		{
+			return ((key.zobristKey & (~((u64)1))) == (zobristKey & (~((u64)1))));
+		}
 	};
 	BitBoard();
 	~BitBoard();
 	inline void RemovePiece(u8 pos);
 	inline void AddPiece(u8 pos, u8 piece);
+	void RemovePieceLazyEval(u8 pos);
+	void AddPieceLazyEval(u8 pos, u8 piece);
 	BitBoard(string fen);
 
+
+	//Current lazy evaluation score
+	int internalScore;
 	//The const 64 bit 1 used to avoid unpredicatable behaviour when leftshifting 1
 	const u64 one = 1;
 
@@ -45,7 +79,7 @@ public:
 	const u64 universal = 0xffffffffffffffff;
 
 	//Move History array
-	MoveHistory moveHistory[200];
+	MoveHistory moveHistory[512];
 	int moveHistoryIndex = -1;
 
 	//Magics used for rooks
@@ -163,7 +197,9 @@ public:
 	u32* BlackQSearchMoves(u32 *start);
 	u32 getBaseMove();
 	int MakeMove(u32 move);
+	int MakeMoveLazyEval(u32 move);
 	void UnMakeMove(u32 move);
+	void UnMakeMoveLazyEval(u32 move);
 	inline u64 MagicRook(u64 piece, u64 occupancy);
 	inline u64 MagicBishop(u64 piece, u64 occupancy);
 	inline u32* extractWhiteMoves(u64 moves, u32 baseMove, u32 start, u32 *movesOut);

@@ -10,6 +10,7 @@
 #include "ABAI.h"
 #include <atomic>
 #include <ctime>
+#include "Evaluation.h"
 #include "GameState.h"
 #include "BitBoard.h"
 #include "IO.h"
@@ -246,7 +247,7 @@ void guiInterface()
 			else if (splitCommand[0] == "move" && splitCommand.size() == 2)
 			{
 				color = !color;
-				board.MakeMove(IO::convertAlgToMove(splitCommand[1]));
+				board.MakeMoveLazyEval(IO::convertAlgToMove(splitCommand[1]));
 			}
 			else if ((splitCommand[0] == "moves" || splitCommand[0] == "lmov") && splitCommand.size() == 2)
 			{
@@ -368,6 +369,11 @@ void guiInterface()
 		else if (recievedCommand == "stop")
 		{
 			//Stop the engine
+		}
+		else if (splitCommand[0] == "eval")
+		{
+				cout << "LazyEval: " << Evaluation::lazyEval(&board) << endl;
+				cout << "Interal board eval: " << board.internalScore << endl;
 		}
 		else if (unknownCommand)
 			cout << "Unknown command. Type 'help' for a list of commands." << endl;

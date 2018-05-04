@@ -4,10 +4,13 @@
 #include "IO.h"
 #include <cmath>
 #include "GameState.h"
+#include "Evaluation.h"
 
 
-const bool DEBUG_OUTPUT = false;
+const bool DEBUG_OUTPUT = true;
+unsigned int maxQsearchDepth = 0, currentDepth = 0;
 const bool PVSEnabled = 1;
+
 using namespace std;
 
 u8 extractFrom(u32 move)
@@ -67,17 +70,18 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 //Does a qSearch
 int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start, i32 *score)
 {
+	//currentDepth++;
+	//if (currentDepth > maxQsearchDepth)
+		//maxQsearchDepth = currentDepth;
 	//nodes[0]++;
 	int nodeval;
-	if (color)
-		nodeval = lazyEval();
-	else
-		nodeval = -lazyEval();
+	nodeval = color ? Evaluation::lazyEval(bb) : -Evaluation::lazyEval(bb);
 	if (nodeval > alpha)
 	{
 		alpha = nodeval;
 		if (nodeval >= beta)
 		{
+			//currentDepth--;
 			return beta;
 		}
 	}
@@ -90,6 +94,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		end = bb->BlackQSearchMoves(start);
 	if (*start == 1 || *start == 0)
 	{
+		//currentDepth--;
 		if (nodeval <= alpha)
 			return alpha;
 		else if (nodeval >= beta)
@@ -113,6 +118,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		bb->UnMakeMove(move);
 		if (scoreE >= beta)
 		{
+			//currentDepth--;
 			if (*killerMoves != ((u16)move & ToFromMask))
 			{
 				*(killerMoves + 1) = *killerMoves;
@@ -132,6 +138,7 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 		}
 		fetchBest(start, end, score);
 	}
+	//currentDepth--;
 	return alpha;
 }
 
@@ -227,10 +234,10 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 		//Check for threefold repetition
 		int returned = 0;
 		moveHistoryCounter = bb->moveHistoryIndex-1;
-		while (moveHistoryCounter > 0 && bb->moveHistory[moveHistoryCounter].reversible)
+		while (moveHistoryCounter > 0 && bb->moveHistory[moveHistoryCounter].isReversible())
 		{
 			//Found repetition. Return draw
-			if (bb->moveHistory[moveHistoryCounter].zobristKey == bb->zoobristKey)
+			if (bb->moveHistory[moveHistoryCounter] == bb->zoobristKey)
 			{
 				returned = 0;
 				search = false;
@@ -300,6 +307,7 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 	{
 		//resetTT();
 		generation = (generation + 1) & 0b111;
+		maxQsearchDepth = 0;
 		KillerMoves = new u16[200]{ 0 };
 		for (size_t i = 0; i < 100; i++)
 			nodes[i] = 0;
@@ -339,6 +347,7 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 		SumFactor += nodes[0];
 		std::cout << "Node Count: " << (nodes[0]) << " BestMove " << IO::convertMoveToAlg(potEntry.bestMove) << " score " << to_string(score) << " cp" << endl;
 		player = GameState->board->color;
+		cout << "Maxdepth " << maxQsearchDepth << endl;
 		delete[] KillerMoves;
 	}
 	std::cout << "Average Node Count (log 10): " << log10(SumFactor / moves) << endl;
@@ -347,33 +356,8 @@ int ABAI::selfPlay(int depth, int moves, GameState *GameState)
 }
 
 //Returns an aproximate score based on material
-int ABAI::lazyEval()
-{
-	//nodes[0]++;
-	short score = 0;
-	score += bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
-		- bb->pc(bb->Pieces[12]) * Pawn - bb->pc(bb->Pieces[11]) * Knight - bb->pc(bb->Pieces[10]) * Rook - bb->pc(bb->Pieces[9]) * Bishop - bb->pc(bb->Pieces[8]) * Queen;
-	score += pieceSquareValues(whitePawnEarlyPST, bb->Pieces[5]);
-	score -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
-	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
-	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
-	if (bb->color) score += 40;
-	return score;
-}
 
 //Used in eval to extract values from the piece square tables for positional awareness 
-int ABAI::pieceSquareValues(const short * pieceSquareTable, u64 pieceSet)
-{
-	u32 index;
-	short sum = 0;
-	while (pieceSet)
-	{
-		_BitScanForward64(&index, pieceSet);
-		pieceSet &= pieceSet - 1;
-		sum += pieceSquareTable[index];
-	}
-	return sum;
-}
 
 void ABAI::resetTT()
 {
@@ -552,7 +536,7 @@ vector<u32> ABAI::searchID(GameState &gameState)
 vector<u32> ABAI::searchIDSimpleTime(GameState &gameState)
 {
 	//Standard search
-	resetTT();
+	//resetTT();
 	generation = (generation + 1) & 0b111;
 
 	//Create the static array used for storing legal moves
@@ -828,44 +812,6 @@ u8 ABAI::extractNodeType(PackedHashEntry in)
 	return (u8)(((u8)0b11) & (in.data >> 48));
 }
 
-short ABAI::getPieceValue(u8 piece)
-{
-	switch (piece)
-	{
-	case 14:
-		return 0;
-		break;
-	case 7:
-	case 0:
-		return 32000;
-		break;
-	case 1:
-	case 8:
-		return Queen;
-		break;
-	case 2:
-	case 9:
-		return Bishop;
-		break;
-	case 3:
-	case 10:
-		return Rook;
-		break;
-	case 4:
-	case 11:
-		return Knight;
-		break;
-	case 5:
-	case 12:
-		return Pawn;
-		break;
-	default:
-		return 0;
-		break;
-	}
-	return 0;
-}
-
 //Extracts the depth from a packed hash entry
 short ABAI::extractDepth(PackedHashEntry in)
 {
@@ -956,7 +902,7 @@ void ABAI::sortQMoves(u32 * start, u32 * end, u16 * killerMoves, i32 * score)
 		if (move == km1 || move == km2)
 			*score = 32000;
 		else
-			*score = getPieceValue(bb->mailBox[extractTo(move)]) - (getPieceValue(bb->mailBox[extractFrom(move)]) >> 2);
+			*score = Evaluation::getPieceValue(bb->mailBox[extractTo(move)]) - (Evaluation::getPieceValue(bb->mailBox[extractFrom(move)]) >> 2);
 		if (*score > *BestScore)
 		{
 			bestMove = start;

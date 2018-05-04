@@ -2,6 +2,8 @@
 #include "BitBoard.h"
 #include <iostream>
 #include <string>
+#pragma once
+#include "Evaluation.h"	
 
 using namespace std;
 
@@ -30,6 +32,7 @@ BitBoard::~BitBoard()
 //removes a piece from the board and updates Zoobrist hash
 inline void BitBoard::RemovePiece(u8 pos)
 {
+	//Piece that will be removed
 	u8 removed = mailBox[pos];
 	mailBox[pos] = 14;
 	Pieces[removed] &= (~(one << pos));
@@ -422,6 +425,11 @@ inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, 
 //Copies the state of bb onto this bitboard
 void BitBoard::Copy(BitBoard *bb)
 {
+	for (size_t i = 0; i < 500; i++)
+	{
+		moveHistory[i] = bb->moveHistory[i];
+	}
+	moveHistoryIndex = bb -> moveHistoryIndex;
 	for (int i = 0; i < 64; i++)
 	{
 		mailBox[i] = bb->mailBox[i];
@@ -477,6 +485,7 @@ BitBoard::BitBoard(string fen)
 //Sets bitboard state to mimick given fen string
 void BitBoard::SetState(string fen)
 {
+	moveHistoryIndex = -1;
 	int i = 0;
 	int pos = 0;
 	//pieces
@@ -731,6 +740,7 @@ void BitBoard::SetState(string fen)
 		Pieces[13] |= Pieces[i];
 	}
 	CalculateZoobrist();
+	internalScore = Evaluation::lazyEval(this);
 }
 
 //Calculates zoobrist for given position
@@ -2656,11 +2666,11 @@ int BitBoard::MakeMove(u32 move)
 	if (moved == 5 || moved == 12 || mailBox[to] != 14)
 	{
 		silent = 0;
-		moveHistory[moveHistoryIndex].reversible = false;
+		moveHistory[moveHistoryIndex].setRevesible(false);
 	}
 	else
 	{
-		moveHistory[moveHistoryIndex].reversible = true;
+		moveHistory[moveHistoryIndex].setRevesible(true);
 		if (color)
 		{
 			silent++;
@@ -2790,7 +2800,7 @@ int BitBoard::MakeMove(u32 move)
 	default:
 		break;
 	}
-	moveHistory[moveHistoryIndex].zobristKey = zoobristKey;
+	moveHistory[moveHistoryIndex].setKey(zoobristKey);
 	return 1;
 }
 
@@ -2909,4 +2919,322 @@ void BitBoard::UnMakeMove(u32 move)
 		}
 		break;
 	}
+}
+
+//MakeMove for lazy evaluation
+
+int BitBoard::MakeMoveLazyEval(u32 move)
+{
+	zoobristKey ^= ElementArray[64 * 6 + 12];
+	//Increment moveHistoryIndex
+	moveHistoryIndex++;
+	color = !color;
+	u8 oldEP = EP;
+	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
+	u8 moved = mailBox[from];
+	if (moved == 5 || moved == 12 || mailBox[to] != 14)
+	{
+		silent = 0;
+		moveHistory[moveHistoryIndex].setRevesible(false);
+	}
+	else
+	{
+		moveHistory[moveHistoryIndex].setRevesible(true);
+		if (color)
+		{
+			silent++;
+		}
+	}
+	if (oldEP)
+	{
+		u32 index;
+		_BitScanForward(&index, oldEP);
+		zoobristKey ^= ElementArray[64 * 6 + index];
+	}
+	RemovePieceLazyEval(from);
+	EP = 0;
+	if (rockad & 0b1000 && (from == 0 || to == 0))
+	{
+		rockad &= (0b0111);
+		zoobristKey ^= ElementArray[64 * 6 + 3 + 8];
+	}
+	if (rockad & 0b0100 && (from == 7 || to == 7))
+	{
+		rockad &= (0b1011);
+		zoobristKey ^= ElementArray[64 * 6 + 2 + 8];
+	}
+	if (rockad & 0b0001 && (from == 63 || to == 63))
+	{
+		rockad &= (0b1110);
+		zoobristKey ^= ElementArray[64 * 6 + 0 + 8];
+	}
+	if (rockad & 0b0010 && (from == 56 || to == 56))
+	{
+		rockad &= (0b1101);
+		zoobristKey ^= ElementArray[64 * 6 + 1 + 8];
+	}
+	AddPieceLazyEval(to, moved);
+	u64 pos;
+	u8 mem;
+	switch (moved)
+	{
+	case 5://white pawn
+		pos = one << to;
+		if (move & (0b111 << 26))//upgrade
+		{
+			u8 promoteTo = (move >> 26) & 0b111;
+			AddPiece(to, promoteTo);
+		}
+		else if ((pos >> 40) & oldEP)//EP
+		{
+			RemovePieceLazyEval(to - 8);
+		}
+		else if (to - from > 9 && (mailBox[to - 1] == 12 || mailBox[to + 1] == 12))
+		{
+			EP = (u8)one << (from & 0b111);
+			zoobristKey ^= ElementArray[64 * 6 + (from & 0b111)];
+		}
+		break;
+	case 12://black pawn
+		pos = one << to;
+		if (move & (0b111 << 26))
+		{
+			u8 upgradeTo = ((move >> 26) & 0b111) + 7;
+			AddPiece(to, upgradeTo);
+		}
+		else if ((pos >> 16) & oldEP)
+		{
+			RemovePieceLazyEval(to + 8);
+		}
+		if (from - to > 9 && (mailBox[to + 1] == 5 || mailBox[to - 1] == 5))
+		{
+			EP = (u8)one << (from & 0b111);
+			zoobristKey ^= ElementArray[64 * 6 + (from & 0b111)];
+		}
+		break;
+	case 0://white king
+		mem = rockad & 0b1100;
+		while (mem)
+		{
+			u32 index;
+			_BitScanForward(&index, mem);
+			zoobristKey ^= ElementArray[64 * 6 + 8 + index];
+			mem &= mem - 1;
+		}
+		rockad &= 0b11;
+		if (from - to == 2 || to - from == 2)
+		{
+			switch (to)
+			{
+			case 1:	//white kingside
+				RemovePieceLazyEval(0);
+				AddPieceLazyEval(2, 3);
+				break;
+			case 5:	//White Queen side
+				RemovePieceLazyEval(7);
+				AddPiece(4, 3);
+				break;
+			default:
+				break;
+			}
+		}
+		break;
+	case 7://black king
+		mem = rockad & 0b0011;
+		while (mem)
+		{
+			u32 index;
+			_BitScanForward(&index, mem);
+			zoobristKey ^= ElementArray[64 * 6 + 8 + index];
+			mem &= mem - 1;
+		}
+		rockad &= 0b1100;
+		if (from - to == 2 || to - from == 2)
+		{
+			switch (to)
+			{
+			case 57://Black king sides
+				RemovePieceLazyEval(56);
+				AddPieceLazyEval(58, 10);
+				break;
+			case 61://Black Queen side
+				RemovePieceLazyEval(63);
+				AddPieceLazyEval(60, 10);
+				break;
+			default:
+				break;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+	moveHistory[moveHistoryIndex].setKey(zoobristKey);
+	return 1;
+}
+
+void BitBoard::UnMakeMoveLazyEval(u32 move)
+{
+	//Decrement moveHistoryIndex
+	moveHistoryIndex--;
+	zoobristKey ^= ElementArray[64 * 6 + 12];
+	color = !color;
+	silent = 0b111111 & (move >> 12);
+	u32 index;
+	if (EP)
+	{
+		_BitScanForward(&index, EP);
+		zoobristKey ^= ElementArray[64 * 6 + index];
+	}
+	EP = (u8)one << (0b1111 & (move >> 18));
+	if (EP)
+	{
+		_BitScanForward(&index, EP);
+		zoobristKey ^= ElementArray[64 * 6 + index];
+	}
+	u8 oldRockad = rockad;
+	rockad = (u8)0b1111 & (move >> 22);
+	oldRockad = rockad ^ oldRockad;
+	while (oldRockad)
+	{
+		_BitScanForward(&index, oldRockad);
+		zoobristKey ^= ElementArray[64 * 6 + 8 + index];
+		oldRockad &= oldRockad - 1;
+	}
+	u8 from = (0b111111 & move), to = 0b111111 & (move >> 6);
+	u8 moved = mailBox[to];
+	u8 taken = move >> 29;
+	if (moved < 6 || taken == 7)
+	{
+		taken += 7;
+	}
+	u64 pos;
+	switch (moved)
+	{
+	case 5://white pawn
+		pos = one << to;
+		if ((pos >> 40) & EP)	//EP
+		{
+			AddPiece(from, 5);
+			RemovePiece(to);
+			AddPiece(to - 8, 12);
+		}
+		else
+		{
+			AddPiece(from, 5);
+			AddPiece(to, taken);
+		}
+		break;
+	case 12://black pawn
+		pos = one << to;
+		if ((pos >> 16) & EP)
+		{
+			AddPiece(from, 12);
+			RemovePiece(to);
+			AddPiece(to + 8, 5);
+		}
+		else
+		{
+			AddPiece(from, 12);
+			AddPiece(to, taken);
+		}
+		break;
+	default:
+		//std
+		if (move & (0b111 << 26))
+		{
+			u8 pawn;
+			if (moved < 6)
+			{
+				pawn = 5;
+			}
+			else
+			{
+				pawn = 12;
+			}
+			AddPiece(from, pawn);
+			AddPiece(to, taken);
+		}
+		else
+		{
+			AddPiece(from, moved);
+			AddPiece(to, taken);
+		}
+		//rockad
+		if (((to - from == 2) || (from - to == 2)) && (moved == 0 || moved == 7))
+		{
+			switch (to)
+			{
+			case 1:	//white kingside
+				AddPiece(0, 3);
+				RemovePiece(2);
+				break;
+			case 5:	//White Queen side
+				AddPiece(7, 3);
+				RemovePiece(4);
+				break;
+			case 57://Black king sides
+				AddPiece(56, 10);
+				RemovePiece(58);
+				break;
+			case 61://Black Queen side
+				AddPiece(63, 10);
+				RemovePiece(60);
+				break;
+			default:
+				break;
+			}
+		}
+		break;
+	}
+}
+
+inline void BitBoard::RemovePieceLazyEval(u8 pos)
+{
+	//Piece that will be removed
+	u8 removed = mailBox[pos];
+	mailBox[pos] = 14;
+	Pieces[removed] &= (~(one << pos));
+	zoobristKey ^= ElementArray[removed * 64 + pos];
+	zoobristKey ^= ElementArray[14 * 64 + pos];
+	if (removed < 6)
+	{
+		Pieces[6] &= (~(one << pos));
+	}
+	else if (removed < 13)
+	{
+		Pieces[13] &= (~(one << pos));
+	}
+	//Material value removed
+	internalScore -= Evaluation::getPieceValueColor(removed);
+
+}
+
+//Adds a piece to the board and updates ZoobristHash
+inline void BitBoard::AddPieceLazyEval(u8 pos, u8 piece)
+{
+	u8 removed = mailBox[pos];
+	mailBox[pos] = piece;
+	Pieces[removed] &= (~(one << pos));
+	zoobristKey ^= ElementArray[piece * 64 + pos];
+	zoobristKey ^= ElementArray[removed * 64 + pos];
+	if (removed < 6)
+	{
+		Pieces[6] &= (~(one << pos));
+	}
+	else if (removed < 13)
+	{
+		Pieces[13] &= (~(one << pos));
+	}
+	Pieces[piece] |= (one << pos);
+	if (piece < 6)
+	{
+		Pieces[6] |= (one << pos);
+	}
+	else if (piece < 13)
+	{
+		Pieces[13] |= (one << pos);
+	}
+	internalScore -= Evaluation::getPieceValueColor(removed);
+	internalScore += Evaluation::getPieceValueColor(piece);
 }
