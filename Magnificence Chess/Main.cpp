@@ -373,7 +373,7 @@ void guiInterface()
 		else if (splitCommand[0] == "eval")
 		{
 				cout << "LazyEval: " << Evaluation::lazyEval(&board) << endl;
-				cout << "Interal board eval: " << board.internalScore << endl;
+				cout << "Interal board eval: " << board.materialScore << endl;
 		}
 		else if (unknownCommand)
 			cout << "Unknown command. Type 'help' for a list of commands." << endl;

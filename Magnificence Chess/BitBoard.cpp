@@ -740,7 +740,7 @@ void BitBoard::SetState(string fen)
 		Pieces[13] |= Pieces[i];
 	}
 	CalculateZoobrist();
-	internalScore = Evaluation::lazyEval(this);
+	materialScore = Evaluation::lazyEval(this);
 }
 
 //Calculates zoobrist for given position
@@ -3206,7 +3206,7 @@ inline void BitBoard::RemovePieceLazyEval(u8 pos)
 		Pieces[13] &= (~(one << pos));
 	}
 	//Material value removed
-	internalScore -= Evaluation::getPieceValueColor(removed);
+	materialScore -= Evaluation::getPieceValueColor(removed);
 
 }
 
@@ -3235,6 +3235,6 @@ inline void BitBoard::AddPieceLazyEval(u8 pos, u8 piece)
 	{
 		Pieces[13] |= (one << pos);
 	}
-	internalScore -= Evaluation::getPieceValueColor(removed);
-	internalScore += Evaluation::getPieceValueColor(piece);
+	materialScore -= Evaluation::getPieceValueColor(removed);
+	materialScore += Evaluation::getPieceValueColor(piece);
 }

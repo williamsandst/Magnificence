@@ -75,10 +75,10 @@
     <ClInclude Include="MCAI.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="TranspositionTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Evaluation.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="TranspositionTable.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
   </ItemGroup>
@@ -110,11 +110,11 @@
     <ClCompile Include="MCAI.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="TranspositionTable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Evaluation.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TranspositionTable.cpp">
+      <Filter>Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
