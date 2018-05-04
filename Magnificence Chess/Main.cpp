@@ -412,7 +412,7 @@ void runEngine(GameState* gameState, ABAI *engine)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			gameState->principalVariation = Engine::searchID(*gameState);
+			gameState->principalVariation = Engine::searchIDSimpleTime(*gameState);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			//cout << "mgnf: ";
 			gameState->idle = true;

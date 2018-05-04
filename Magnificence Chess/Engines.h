@@ -5,6 +5,7 @@
 #include "ABAI.h"
 #include "IO.h"
 #include <thread>
+#include "Test.h"
 #include <mutex>
 
 class Engine
