@@ -6,29 +6,52 @@
 int Evaluation::lazyEval(BitBoard *bb)
 {
 	//nodes[0]++;
-	short score = 0;
-	score += bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
+	short materialScore = 0;
+	short earlyPSTScore = 0;
+	short latePSTScore = 0;
+	materialScore += bb->pc(bb->Pieces[5]) * Pawn + bb->pc(bb->Pieces[4]) * Knight + bb->pc(bb->Pieces[3]) * Rook + bb->pc(bb->Pieces[2]) * Bishop + bb->pc(bb->Pieces[1]) * Queen
 		- bb->pc(bb->Pieces[12]) * Pawn - bb->pc(bb->Pieces[11]) * Knight - bb->pc(bb->Pieces[10]) * Rook - bb->pc(bb->Pieces[9]) * Bishop - bb->pc(bb->Pieces[8]) * Queen;
-	score += pieceSquareValues(whitePawnEarlyPST, bb->Pieces[5]);
-	score -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
-
-	score += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
-	score -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
-
-	score += pieceSquareValues(whiteBishopEarlyPST, bb->Pieces[2]);
-	score -= pieceSquareValues(blackBishopEarlyPST, bb->Pieces[9]);
-
-	score += pieceSquareValues(whiteRookEarlyPST, bb->Pieces[3]);
-	score -= pieceSquareValues(blackRookEarlyPST, bb->Pieces[10]);
-
-	score += pieceSquareValues(whiteQueenEarlyPST, bb->Pieces[1]);
-	score -= pieceSquareValues(blackQueenEarlyPST, bb->Pieces[8]);
-
-	score += pieceSquareValues(whiteKingEarlyPST, bb->Pieces[0]);
-	score -= pieceSquareValues(blackKingEarlyPST, bb->Pieces[7]);
 	
-	if (bb->color) score += 40;
-	return score;
+	earlyPSTScore += pieceSquareValues(whitePawnEarlyPST, bb->Pieces[5]);
+	earlyPSTScore -= pieceSquareValues(blackPawnEarlyPST, bb->Pieces[12]);
+
+	earlyPSTScore += pieceSquareValues(whiteKnightEarlyPST, bb->Pieces[4]);
+	earlyPSTScore -= pieceSquareValues(blackKnightEarlyPST, bb->Pieces[11]);
+
+	earlyPSTScore += pieceSquareValues(whiteBishopEarlyPST, bb->Pieces[2]);
+	earlyPSTScore -= pieceSquareValues(blackBishopEarlyPST, bb->Pieces[9]);
+
+	earlyPSTScore += pieceSquareValues(whiteRookEarlyPST, bb->Pieces[3]);
+	earlyPSTScore -= pieceSquareValues(blackRookEarlyPST, bb->Pieces[10]);
+
+	earlyPSTScore += pieceSquareValues(whiteQueenEarlyPST, bb->Pieces[1]);
+	earlyPSTScore -= pieceSquareValues(blackQueenEarlyPST, bb->Pieces[8]);
+
+	earlyPSTScore += pieceSquareValues(whiteKingEarlyPST, bb->Pieces[0]);
+	earlyPSTScore -= pieceSquareValues(blackKingEarlyPST, bb->Pieces[7]);
+
+	//End scores
+	latePSTScore += pieceSquareValues(whitePawnLatePST, bb->Pieces[5]);
+	latePSTScore -= pieceSquareValues(blackPawnLatePST, bb->Pieces[12]);
+
+	//latePSTScore += pieceSquareValues(whiteKnightLatePST, bb->Pieces[4]);
+	//latePSTScore -= pieceSquareValues(blackKnightLatePST, bb->Pieces[11]);
+
+	//latePSTScore += pieceSquareValues(whiteBishopLatePST, bb->Pieces[2]);
+	//latePSTScore -= pieceSquareValues(blackBishopLatePST, bb->Pieces[9]);
+
+	//latePSTScore += pieceSquareValues(whiteRookLatePST, bb->Pieces[3]);
+	//latePSTScore -= pieceSquareValues(blackRookLatePST, bb->Pieces[10]);
+
+	//latePSTScore += pieceSquareValues(whiteQueenLatePST, bb->Pieces[1]);
+	//latePSTScore -= pieceSquareValues(blackQueenLatePST, bb->Pieces[8]);
+
+	//latePSTScore += pieceSquareValues(whiteKingLatePST, bb->Pieces[0]);
+	//latePSTScore -= pieceSquareValues(blackKingLatePST, bb->Pieces[7]);
+
+	
+	if (bb->color) materialScore += 20;
+	return materialScore + earlyPSTScore;
 }
 
 //Used in eval to extract values from the piece square tables for positional awareness 
