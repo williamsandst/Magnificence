@@ -25,6 +25,7 @@ private:
 
 	
 public:
+	bool *cont;
 	u64 nodes[100];
 	TranspositionTable *tt;
 	BitBoard *bb;
