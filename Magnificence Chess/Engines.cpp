@@ -1,7 +1,10 @@
 #include "stdafx.h"
 #include "Engines.h"
 
+using namespace std;
+
 const bool DEBUG_OUTPUT = true;
+const u32 THRD_CNT = 2;
 
 Engine::Engine()
 {
@@ -10,6 +13,21 @@ Engine::Engine()
 
 Engine::~Engine()
 {
+}
+
+void Engine::SearchThreaded(GameState & gameState, mutex beforeWork, atomic<u8>* depth, atomic<u8>* update)
+{
+}
+
+void Engine::Killer(bool * killer, double time, atomic<bool> *change)
+{
+	double start = clock();
+	while (((double)clock() - start) < time * CLOCKS_PER_SEC && *change)
+	{
+		this_thread::sleep_for(chrono::milliseconds(5));
+	}
+	if (*change)
+		*killer = false;
 }
 
 vector<u32> Engine::search(GameState &gameState)
@@ -114,7 +132,7 @@ vector<u32> Engine::searchID(GameState &gameState)
 				cout << "ERROR! Non-PV Node: " << endl;
 				break;
 			}
-			highestFound++;
+			highestFound = i2;
 			pV[i2] = potEntry.bestMove;
 			if (i == gameState.maxDepth)
 			{
@@ -124,9 +142,9 @@ vector<u32> Engine::searchID(GameState &gameState)
 			gameState.board->MakeMove(pV[i2]);
 		}
 		//Unmake pV
-		for (size_t i2 = 1; i2 < highestFound + 1; i2++)
+		for (int i2 = highestFound; i2 >= 0; i2 -= 1)
 		{
-			gameState.board->UnMakeMove(pV[i - i2]);
+			gameState.board->UnMakeMove(pV[i2]);
 		}
 		cout << endl;
 	}
@@ -157,16 +175,18 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 {
 	//Standard search
 	//resetTT();
+
 	gameState.UpdateGeneration();
 	u8 generation = gameState.fetchGeneration();
-
+	atomic<bool> *change = new atomic<bool>;
+	*change = true;
 	//Create the static array used for storing legal moves
-
 	BitBoard *bb = gameState.board;
 	vector<u32> PV;
 
 	ABAI search;
-
+	bool *killer = search.cont;
+	thread thrd(Engine::Killer, killer, gameState.maxTime, change);
 	//Reset the debug node counter
 	search.resetNodes();
 
@@ -185,7 +205,8 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	bool runSearch = true;
 	cout << endl;
 	int i = 1;
-	while (runSearch)
+	int highestDepth;
+	while (runSearch && *killer)
 	{
 		//Do search
 		PV.clear();
@@ -199,29 +220,54 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
 		//Find pV
 		int highestDepth = 0;
-		for (size_t i2 = 0; i2 < i; i2++)
+		if (*killer)
 		{
-			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!gameState.tt->getFromTT(bb->zoobristKey, &potEntry))
+			for (size_t i2 = 0; i2 < i; i2++)
 			{
-				cout << "ERROR! Non-PV Node: " << endl;
-				break;
+				UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+				if (!gameState.tt->getFromTT(bb->zoobristKey, &potEntry))
+				{
+					cout << "ERROR! Non-PV Node: " << endl;
+					break;
+				}
+				highestDepth++;
+				pV[i2] = potEntry.bestMove;
+				PV.push_back(pV[i2]);
+				cout << IO::convertMoveToAlg(pV[i2]) << " ";
+				bb->MakeMove(pV[i2]);
 			}
-			highestDepth++;
-			pV[i2] = potEntry.bestMove;
-			PV.push_back(pV[i2]);
-			cout << IO::convertMoveToAlg(pV[i2]) << " ";
-			bb->MakeMove(pV[i2]);
-		}
-		//Unmake pV
-		for (size_t i2 = 1; i2 < highestDepth + 1; i2++)
-		{
-			bb->UnMakeMove(pV[i - i2]);
+			//Unmake pV
+			for (size_t i2 = 1; i2 < highestDepth + 1; i2++)
+			{
+				bb->UnMakeMove(pV[i - i2]);
+			}
 		}
 		cout << endl;
 		i++;
 	}
-
+	*change = false;
+	if (!*killer)
+		i--;
+	highestDepth = 0;
+	for (size_t i2 = 0; i2 < i; i2++)
+	{
+		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+		if (!gameState.tt->getFromTT(bb->zoobristKey, &potEntry))
+		{
+			cout << "ERROR! Non-PV Node: " << endl;
+			break;
+		}
+		highestDepth++;
+		pV[i2] = potEntry.bestMove;
+		PV.push_back(pV[i2]);
+		cout << IO::convertMoveToAlg(pV[i2]) << " ";
+		bb->MakeMove(pV[i2]);
+	}
+	//Unmake pV
+	for (size_t i2 = 1; i2 < highestDepth + 1; i2++)
+	{
+		bb->UnMakeMove(pV[i - i2]);
+	}
 	int maxDepth = i - 1;
 
 	clock_t end = clock();
@@ -241,8 +287,12 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 				<< ", ";
 		}
 	}
-
 	cout << endl;
-
+	thrd.join();
 	return PV;
+}
+
+vector<u32> Engine::multiThreadedSearch(GameState & gameState)
+{
+	return vector<u32>();
 }
