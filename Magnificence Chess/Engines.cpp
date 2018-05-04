@@ -174,14 +174,13 @@ vector<u32> Engine::searchID(GameState &gameState)
 vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 {
 	//Standard search
-	//resetTT();
+	//gameState.tt->resetTT();
 
 	gameState.UpdateGeneration();
 	u8 generation = gameState.fetchGeneration();
 	atomic<bool> *change = new atomic<bool>;
 	*change = true;
 	//Create the static array used for storing legal moves
-	BitBoard *bb = gameState.board;
 	vector<u32> PV;
 
 	ABAI search;
@@ -208,9 +207,12 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	int highestDepth;
 	while (runSearch && *killer)
 	{
+		cout << to_string(gameState.color) << endl;
 		//Do search
 		PV.clear();
+		cout << Test::displayBoard(*gameState.board);
 		score = search.search(i, generation, gameState.tt, gameState.board, gameState.color);
+		cout << Test::displayBoard(*gameState.board);
 		clock_t timerEnd = clock();
 		totalTime = (timerEnd - start) / double CLOCKS_PER_SEC;
 		branchingFactor = pow(search.nodes[0], 1 / (double)i);
@@ -225,21 +227,21 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 			for (size_t i2 = 0; i2 < i; i2++)
 			{
 				UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-				if (!gameState.tt->getFromTT(bb->zoobristKey, &potEntry))
+				if (!gameState.tt->getFromTT(gameState.board->zoobristKey, &potEntry))
 				{
 					cout << "ERROR! Non-PV Node: " << endl;
 					break;
 				}
-				highestDepth++;
+				highestDepth = i2;
 				pV[i2] = potEntry.bestMove;
 				PV.push_back(pV[i2]);
 				cout << IO::convertMoveToAlg(pV[i2]) << " ";
-				bb->MakeMove(pV[i2]);
+				gameState.board->MakeMove(pV[i2]);
 			}
 			//Unmake pV
-			for (size_t i2 = 1; i2 < highestDepth + 1; i2++)
+			for (int i2 = highestDepth; i2 >= 0; i2 -= 1)
 			{
-				bb->UnMakeMove(pV[i - i2]);
+				gameState.board->UnMakeMove(pV[i2]);
 			}
 		}
 		cout << endl;
@@ -248,27 +250,28 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	*change = false;
 	if (!*killer)
 		i--;
+	i--;
+	thrd.join();
 	highestDepth = 0;
 	for (size_t i2 = 0; i2 < i; i2++)
 	{
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-		if (!gameState.tt->getFromTT(bb->zoobristKey, &potEntry))
+		if (!gameState.tt->getFromTT(gameState.board->zoobristKey, &potEntry))
 		{
 			cout << "ERROR! Non-PV Node: " << endl;
 			break;
 		}
-		highestDepth++;
+		highestDepth = i2;
 		pV[i2] = potEntry.bestMove;
 		PV.push_back(pV[i2]);
-		cout << IO::convertMoveToAlg(pV[i2]) << " ";
-		bb->MakeMove(pV[i2]);
+		gameState.board->MakeMove(pV[i2]);
 	}
 	//Unmake pV
-	for (size_t i2 = 1; i2 < highestDepth + 1; i2++)
+	for (int i2 = highestDepth; i2 >= 0; i2--)
 	{
-		bb->UnMakeMove(pV[i - i2]);
+		gameState.board->UnMakeMove(pV[i2]);
 	}
-	int maxDepth = i - 1;
+	int maxDepth = i;
 
 	clock_t end = clock();
 
@@ -288,7 +291,6 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 		}
 	}
 	cout << endl;
-	thrd.join();
 	return PV;
 }
 
