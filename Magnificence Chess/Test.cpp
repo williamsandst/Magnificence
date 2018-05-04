@@ -243,7 +243,7 @@ int Test::LCT2(GameState *gameState, bool timeSearch)
 		gameState->board->color = gameState->color;
 		//Run test suite position
 		gameState->board->SetState(fenString);
-		vector<u32> pV = engine.searchID(*gameState);
+		vector<u32> pV = Engine::searchID(*gameState);
 		cout << endl;
 		cout << "Engine determined best move to be " << IO::convertMoveToAlg(pV[0]) << endl;
 		if (pV[0] & 0b111111111111 == IO::convertAlgToMove(splitFen[5]))

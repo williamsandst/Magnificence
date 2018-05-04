@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClInclude Include="ABAI.h" />
     <ClInclude Include="BitBoard.h" />
+    <ClInclude Include="Engines.h" />
     <ClInclude Include="Evaluation.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="IO.h" />
@@ -168,6 +169,7 @@
   <ItemGroup>
     <ClCompile Include="ABAI.cpp" />
     <ClCompile Include="BitBoard.cpp" />
+    <ClCompile Include="Engines.cpp" />
     <ClCompile Include="Evaluation.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="IO.cpp" />

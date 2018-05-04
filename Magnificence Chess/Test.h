@@ -2,6 +2,7 @@
 #include <string>
 #include "BitBoard.h"
 #include "GameState.h"
+#include "Engines.h"
 
 struct HashEntryPerft
 {

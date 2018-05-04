@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thread>
 #include <windows.h>
+#include "Engines.h"
 #include <sstream>
 #include <chrono>
 #include "ABAI.h"
@@ -16,7 +17,8 @@
 #include "IO.h"
 #include "Move.h"
 #include "Test.h"
-#include "Engine.h"
+#pragma once
+#include "TranspositionTable.h"
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
@@ -42,6 +44,8 @@ void DebugWrite(wchar_t* msg);
 void runEngine(GameState* gameState, ABAI* engine);
 void guiInterface();
 
+//TranspositionTable *ttM;
+
 void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
 //Sample for Debug: DebugWrite(L"Hello World!")
 
@@ -59,7 +63,11 @@ void guiInterface()
 	//Settings
 	bool CONSOLEDEBUG = true;
 	//Create engine thread object
+	TranspositionTable *tt = new TranspositionTable();
+	tt->setHashSizeBits(22);
+	tt->resetTT();
 	GameState* gameState = new GameState();
+	gameState->tt = tt;
 	ABAI* engine = new ABAI();
 	
 	engine->resetTT();
@@ -399,7 +407,7 @@ void runEngine(GameState* gameState, ABAI *engine)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			gameState->principalVariation = engine->searchIDSimpleTime(*gameState);
+			gameState->principalVariation = Engine::searchIDSimpleTime(*gameState);
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			//cout << "mgnf: ";
 			gameState->idle = true;

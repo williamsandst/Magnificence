@@ -425,7 +425,7 @@ inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, 
 //Copies the state of bb onto this bitboard
 void BitBoard::Copy(BitBoard *bb)
 {
-	for (size_t i = 0; i < 500; i++)
+	for (size_t i = 0; i < 512; i++)
 	{
 		moveHistory[i] = bb->moveHistory[i];
 	}

@@ -21,15 +21,18 @@ private:
 	//Arrays for moves and stuff
 	u32 MoveArray[218 * 200];
 	i32 sortArray[218 * 200];
+	u16 killerMoves[200];
 
-	u64 nodes[100];
+	
 public:
-	TranspositionTable tt;
+	u64 nodes[100];
+	TranspositionTable *tt;
 	BitBoard *bb;
 	const u16 ToFromMask = 0b111111111111;
 	u8 generation;
 	u64 hashMask;
 	ABAI();
+	ABAI(TranspositionTable *tt);
 	~ABAI();
 
 	void sortMoves(u32 *start, u32 *end, u32 bestMove, u16 *killerMoves, i32 *score, bool color);
@@ -38,12 +41,9 @@ public:
 	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i32 *score);
 	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 * moveSortValues);
 	int selfPlay(int depth, int moves, GameState *game);
-
+	void resetNodes();
 	void resetTT();
-	vector<u32> search(GameState &gameState);
-	vector<u32> searchID(GameState &gameState);
-	vector<u32> searchIDSimpleTime(GameState &gameState);
-	vector<u32> searchIDComplexTime(GameState &gameState);
+	int search(u8 depth, u8 generation, TranspositionTable *tt, BitBoard *bb, bool color);
 
 };
 
