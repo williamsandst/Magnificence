@@ -234,9 +234,9 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 					returned = -negamax(-beta, -alpha, depth, maxDepth, !color, end, killerMoves + 2, moveSortValues + mvcnt);
 			}
 		}
+		bb->UnMakeMove(move);
 		if (!*cont)
 			return 0;
-		bb->UnMakeMove(move);
 		if (returned > bestScore)
 		{
 			bestScore = returned;
