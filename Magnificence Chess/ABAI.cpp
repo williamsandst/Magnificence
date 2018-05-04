@@ -31,11 +31,14 @@ ABAI::ABAI()
 ABAI::ABAI(TranspositionTable * tt)
 {
 	this->tt = tt;
+	cont = new bool;
+	*cont = true;
 }
 
 
 ABAI::~ABAI()
 {
+	delete cont;
 }
 
 //Does a qSearch
@@ -231,6 +234,9 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 					returned = -negamax(-beta, -alpha, depth, maxDepth, !color, end, killerMoves + 2, moveSortValues + mvcnt);
 			}
 		}
+		if (!*cont)
+			return 0;
+		bb->UnMakeMove(move);
 		if (returned > bestScore)
 		{
 			bestScore = returned;
@@ -242,7 +248,6 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 				firstSearch = false;
 			}
 		}
-		bb->UnMakeMove(move);
 		if (returned >= beta)
 		{
 			if ((*killerMoves) != ((u16)move & ToFromMask) && ((move >> 29) == 7))

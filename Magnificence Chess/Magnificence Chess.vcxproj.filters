@@ -31,9 +31,6 @@
     <Filter Include="Header Files\Engine">
       <UniqueIdentifier>{6f15f1f4-e2e6-4f3d-b967-22d6a020db07}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Inteface">
-      <UniqueIdentifier>{84a7b4ed-e664-46b0-b07f-a18f810f3867}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Logic">
       <UniqueIdentifier>{362db2cb-71a1-45af-9eb9-0b7b4c1c5dc1}</UniqueIdentifier>
     </Filter>
@@ -42,6 +39,9 @@
     </Filter>
     <Filter Include="Header Files\Testing">
       <UniqueIdentifier>{f2984164-7ca5-4040-bb09-9585052c4118}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Inteface">
+      <UniqueIdentifier>{84a7b4ed-e664-46b0-b07f-a18f810f3867}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +81,9 @@
     <ClInclude Include="TranspositionTable.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Engines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -115,6 +118,9 @@
     </ClCompile>
     <ClCompile Include="TranspositionTable.cpp">
       <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engines.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
