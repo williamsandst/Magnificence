@@ -73,7 +73,7 @@ void guiInterface()
 	engine->resetTT();
 	gameState->idle = true;
 	gameState->run = true;
-	gameState->maxTime = 10;
+	gameState->maxTime = 40;
 	thread engineThread(runEngine, gameState, engine);
 
 
