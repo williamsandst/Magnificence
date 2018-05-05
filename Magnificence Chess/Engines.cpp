@@ -208,7 +208,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	cout << endl;
 	int i = 1;
 	int highestDepth;
-	clock_t oldSearch = 10000000000;
+	clock_t oldSearch = (gameState.maxTime * CLOCKS_PER_SEC) / 16;
 	while (runSearch && *killer)
 	{
 		//Do search
@@ -220,7 +220,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 		totalTime = (timerEnd - start) / double CLOCKS_PER_SEC;
 		clock_t thisSearch = timerEnd - bSearch;
 		if (thisSearch < 1)
-			thisSearch = 10000000000;
+			thisSearch = oldSearch;
 		branchingFactor = pow(search.nodes[0], 1 / (double)i);
 		if (search.nodes[2] != 0)
 		{
