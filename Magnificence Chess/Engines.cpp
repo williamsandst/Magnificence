@@ -185,7 +185,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 
 	ABAI search;
 	bool *killer = search.cont;
-	thread thrd(Engine::Killer, killer, gameState.maxTime, change);
+	//thread thrd(Engine::Killer, killer, gameState.maxTime, change);
 	//Reset the debug node counter
 	search.resetNodes();
 
@@ -258,7 +258,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	if (!*killer)
 		i--;
 	i--;
-	thrd.join();
+	//thrd.join();
 	highestDepth = 0;
 	for (size_t i2 = 0; i2 < i; i2++)
 	{
