@@ -119,8 +119,8 @@ int ABAI::qSearch(int alpha, int beta, bool color, u16 * killerMoves, u32* start
 //A nega max implementation of Alpha beta search
 int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 *moveSortValues)
 {
-	if (!*cont)
-		return 0;
+	//if (!*cont)
+	//	return 0;
 	u32 bestMove = 0;
 	nodes[depth]++;
 	i32 *scorePTR = moveSortValues;
@@ -235,8 +235,8 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			}
 		}
 		bb->UnMakeMove(move);
-		if (!*cont)
-			return 0;
+		//if (!*cont)
+		//	return 0;
 		if (returned > bestScore)
 		{
 			bestScore = returned;
