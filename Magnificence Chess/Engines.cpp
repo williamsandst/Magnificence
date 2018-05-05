@@ -218,10 +218,10 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 		branchingFactor = pow(search.nodes[0], 1 / (double)i);
 		if (search.nodes[2] != 0)
 		{
-			if (thisSearch * 2 + totalTime * CLOCKS_PER_SEC > gameState.maxTime * CLOCKS_PER_SEC)
+			if (thisSearch * pow(search.nodes[0], 1 / (double)i) + totalTime * CLOCKS_PER_SEC > gameState.maxTime * CLOCKS_PER_SEC)
 			{
 				runSearch = false;
-				cout << "Time data: Taken Time " << to_string(thisSearch) << " Ratio searched " << to_string((double)search.nodes[1] / (double)search.nodes[2]) << " expected next time " << to_string(totalTime * search.nodes[1] / (double)search.nodes[2]) << endl;
+				cout << "Time data: Taken Time " << to_string(thisSearch) << " Ratio searched " << to_string(pow(search.nodes[0], 1 / (double)i)) << " expected next time " << to_string(totalTime * search.nodes[1] / (double)search.nodes[2]) << endl;
 			}
 		
 		}
@@ -231,10 +231,12 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 		int highestDepth = 0;
 		if (*killer)
 		{
+			BitBoard bb;
+			bb.Copy(gameState.board);
 			for (size_t i2 = 0; i2 < i; i2++)
 			{
 				UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-				if (!gameState.tt->getFromTT(gameState.board->zoobristKey, &potEntry))
+				if (!gameState.tt->getFromTT(bb.zoobristKey, &potEntry))
 				{
 					cout << "ERROR! Non-PV Node: " << endl;
 					break;
@@ -243,12 +245,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 				pV[i2] = potEntry.bestMove;
 				PV.push_back(pV[i2]);
 				cout << IO::convertMoveToAlg(pV[i2]) << " ";
-				gameState.board->MakeMove(pV[i2]);
-			}
-			//Unmake pV
-			for (int i2 = highestDepth; i2 >= 0; i2 -= 1)
-			{
-				gameState.board->UnMakeMove(pV[i2]);
+				bb.MakeMove(pV[i2]);
 			}
 		}
 		cout << endl;
@@ -262,8 +259,10 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	highestDepth = 0;
 	for (size_t i2 = 0; i2 < i; i2++)
 	{
+		BitBoard bb;
+		bb.Copy(gameState.board);
 		UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-		if (!gameState.tt->getFromTT(gameState.board->zoobristKey, &potEntry))
+		if (!gameState.tt->getFromTT(bb.zoobristKey, &potEntry))
 		{
 			cout << "ERROR! Non-PV Node: " << endl;
 			break;
@@ -271,12 +270,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 		highestDepth = i2;
 		pV[i2] = potEntry.bestMove;
 		PV.push_back(pV[i2]);
-		gameState.board->MakeMove(pV[i2]);
-	}
-	//Unmake pV
-	for (int i2 = highestDepth; i2 >= 0; i2--)
-	{
-		gameState.board->UnMakeMove(pV[i2]);
+		bb.MakeMove(pV[i2]);
 	}
 	int maxDepth = i;
 
