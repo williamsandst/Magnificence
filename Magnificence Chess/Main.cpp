@@ -64,7 +64,7 @@ void guiInterface()
 	bool CONSOLEDEBUG = true;
 	//Create engine thread object
 	TranspositionTable *tt = new TranspositionTable();
-	tt->setHashSizeBits(22);
+	tt->setHashSizeBits(23);
 	tt->resetTT();
 	GameState* gameState = new GameState();
 	gameState->tt = tt;
@@ -73,7 +73,7 @@ void guiInterface()
 	engine->resetTT();
 	gameState->idle = true;
 	gameState->run = true;
-	gameState->maxTime = 20;
+	gameState->maxTime = 10;
 	thread engineThread(runEngine, gameState, engine);
 
 
