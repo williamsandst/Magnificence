@@ -45,7 +45,7 @@ void Engine::SearchThreaded(threadedSearchData tsd)
 		searchDepth = *tsd.depth;
 		tsd.update[0]--;
 		tsd.beforeWork->unlock();
-		searcher.search(searchDepth, tsd.gameState->fetchGeneration(), tsd.gameState->tt, &bb, tsd.gameState->color);
+		int score = searcher.search(searchDepth, tsd.gameState->fetchGeneration(), tsd.gameState->tt, &bb, tsd.gameState->color);
 		if (say && (*tsd.cont))
 		{
 			if (timeCheck)
@@ -58,7 +58,21 @@ void Engine::SearchThreaded(threadedSearchData tsd)
 					*tsd.depth = searchDepth;
 				}
 			}
-			cout << "Searched depth " << to_string(searchDepth) << " in " << to_string(clock() - start) << "ms" << endl;
+			BitBoard bbs;
+			bbs.Copy(&bb);
+			cout << "info depth " << to_string(searchDepth) << " score cp " << to_string(score) << " pv ";
+			for (size_t i2 = 0; i2 < searchDepth; i2++)
+			{
+				UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
+				if (!tsd.gameState->tt->getFromTT(bbs.zoobristKey, &potEntry))
+				{
+					cout << "ERROR! Non-PV Node: " << endl;
+					break;
+				}
+				cout << IO::convertMoveToAlg(potEntry.bestMove) << " ";
+				bbs.MakeMove(potEntry.bestMove);
+			}
+			cout << endl;
 		}
 	}
 	searcher.cont = new bool;
@@ -350,9 +364,9 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	return PV;
 }
 
-
 vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 {
+	gameState->maxTime = Engine::calculateTimeForMove(*gameState);
 	timeCheck = true;
 	maxTime = (u64)(gameState->maxTime * CLOCKS_PER_SEC);
 	for (size_t i = 0; i < 120; i++)
@@ -406,6 +420,7 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 	delete m;
 	delete[] thrds;
 	delete[] pV;
+	cout << endl;
 	return PV;
 }
 
@@ -455,6 +470,7 @@ vector<u32> Engine::multiThreadedSearchDepth(GameState * gameState)
 	delete m;
 	delete[] thrds;
 	delete[] pV;
+	cout << endl;
 	return PV;
 }
 
