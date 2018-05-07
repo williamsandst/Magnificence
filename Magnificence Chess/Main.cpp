@@ -256,6 +256,7 @@ void guiInterface()
 			else if (splitCommand[0] == "move" && splitCommand.size() == 2)
 			{
 				color = !color;
+				gameState->ply++;
 				board.MakeMove(IO::convertAlgToMove(splitCommand[1]));
 			}
 			else if ((splitCommand[0] == "moves" || splitCommand[0] == "lmov") && splitCommand.size() == 2)
@@ -328,12 +329,14 @@ void guiInterface()
 		else if (splitCommand[0] == "position" && splitCommand[1] == "startpos")
 		{
 			board.SetState("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+			gameState->ply = 0;
 			color = true;
 			if (splitCommand.size() > 2 && splitCommand[2] == "moves")
 			{
 				for (size_t i = 3; i < splitCommand.size(); i++)
 				{
 					board.MakeMove(IO::convertAlgToMove(splitCommand[i]));
+					gameState->ply++;
 					color = !color;
 				}
 			}
@@ -343,11 +346,13 @@ void guiInterface()
 			string fen = splitCommand[1] + " " + splitCommand[2] + " " + splitCommand[3]
 				+ " " + splitCommand[4] + " " + splitCommand[5] + " " + splitCommand[6];
 			board.SetState(fen);
+			gameState->ply = 0;
 			if (splitCommand[7] == "moves")
 			{
 				for (size_t i = 8; i < splitCommand.size(); i++)
 				{
 					color = !color;
+					gameState->ply++;
 					board.MakeMove(IO::convertAlgToMove(splitCommand[i]));
 				}
 			}
@@ -364,9 +369,21 @@ void guiInterface()
 		else if (splitCommand[0] == "go") {
 			// Received command in this format: "go wtime 300000 btime 300000 winc 0 binc 0"
 			//Output format: "bestmove h7h5"
-			gameState->color = color;
-			if (splitCommand.size() > 1 && (isdigit(splitCommand[1][0]) != 0))
+			//Check for time input
+			if (splitCommand.size() > 2)
+			{
+				if (splitCommand[1] == "wtime")
+					gameState->whiteTime = stoi(splitCommand[2]);
+				if (splitCommand[3] == "btime")
+					gameState->blackTime = stoi(splitCommand[4]);
+				if (splitCommand[1] == "depth")
+					gameState->maxDepth = stoi(splitCommand[2]);
+			}
+			else if (splitCommand.size() == 2 && (isdigit(splitCommand[1][0]) != 0))
 				gameState->maxDepth = stoi(splitCommand[1]);
+			else
+				gameState->maxDepth = 0;
+			gameState->color = color;
 			BitBoard * boardPtr = &board;
 			gameState->board = boardPtr;
 			gameState->idle = !(gameState->idle);
@@ -383,6 +400,10 @@ void guiInterface()
 		{
 				cout << "LazyEval: " << Evaluation::lazyEval(&board) << endl;
 				cout << "Interal board eval: " << board.materialScore << endl;
+		}
+		else if (splitCommand[0] == "phase")
+		{
+			cout << "Current phase: " << to_string(Evaluation::getPhase(&board)) << endl;
 		}
 		else if (unknownCommand)
 			cout << "Unknown command. Type 'help' for a list of commands." << endl;
@@ -409,7 +430,17 @@ void runEngine(GameState* gameState, ABAI *engine)
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
 			gameState->tt->resetTT();
-			gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
+			//gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
+			if (gameState->maxDepth == 0)
+			{
+				//gameState->principalVariation = Engine::searchIDSimpleTime(*gameState);
+				gameState->principalVariation = Engine::multiThreadedSearch(gameState);
+			}
+			else
+			{
+				//gameState->principalVariation = Engine::searchID(*gameState);
+				gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
+			}
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			//cout << "mgnf: ";
 			gameState->idle = true;

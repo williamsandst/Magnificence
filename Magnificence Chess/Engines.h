@@ -37,7 +37,11 @@ public:
 	static vector<u32> search(GameState &gameState);
 	static vector<u32> searchID(GameState &gameState);
 	static vector<u32> searchIDSimpleTime(GameState &gameState);
+
 	static vector<u32> multiThreadedSearch(GameState *gameState);
 	static vector<u32> multiThreadedSearchDepth(GameState *gameState);
+
+	static double calculateTimeForMove(GameState & gameState);
+
 };
 

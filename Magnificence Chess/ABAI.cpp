@@ -36,21 +36,21 @@ ABAI::ABAI()
 	}
 	generation = 0;
 
-	//cont = new bool;
-	//*cont = true;
+	cont = new bool;
+	*cont = true;
 }
 
 ABAI::ABAI(TranspositionTable * tt)
 {
 	this->tt = tt;
-	//cont = new bool;
-	//*cont = true;
+	cont = new bool;
+	*cont = true;
 }
 
 
 ABAI::~ABAI()
 {
-	//delete cont;
+	delete cont;
 }
 
 //Does a qSearch
