@@ -33,7 +33,7 @@ private:
 		u8 maxDepth;
 	};
 public:
-	static void SearchThreaded(threadedSearchData tsd);
+	static int SearchThreaded(threadedSearchData tsd);
 	static vector<u32> search(GameState &gameState);
 	static vector<u32> searchID(GameState &gameState);
 	static vector<u32> searchIDSimpleTime(GameState &gameState);
