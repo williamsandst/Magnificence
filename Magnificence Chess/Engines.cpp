@@ -175,7 +175,8 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 {
 	//Standard search
 	//gameState.tt->resetTT();
-
+	
+	gameState.maxTime = calculateTimeForMove(gameState);
 	gameState.UpdateGeneration();
 	u8 generation = gameState.fetchGeneration();
 	atomic<bool> *change = new atomic<bool>;
@@ -227,12 +228,11 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 			if ((thisSearch * thisSearch) / oldSearch > gameState.maxTime * CLOCKS_PER_SEC * 1.0 && ((totalTime * CLOCKS_PER_SEC) / ((double)gameState.maxTime * CLOCKS_PER_SEC) > 0.25))
 			{
 				runSearch = false;
-				cout << "Time data: Taken Time " << to_string(thisSearch) << " Ratio searched " << to_string((double) thisSearch / (double)oldSearch) << " expected next time " << to_string((thisSearch * thisSearch) / oldSearch) << endl;
-				cout << "Total time taken: " << to_string(totalTime * CLOCKS_PER_SEC) << endl;
+				//cout << "Time data: Taken Time " << to_string(thisSearch) << " Ratio searched " << to_string((double) thisSearch / (double)oldSearch) << " expected next time " << to_string((thisSearch * thisSearch) / oldSearch) << endl;
+				//cout << "Total time taken: " << to_string(totalTime * CLOCKS_PER_SEC) << endl;
 			}
 		
 		}
-		cout << to_string((double)thisSearch / (double)oldSearch) << endl;
 		oldSearch = thisSearch;
 					//Information generation
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
@@ -288,7 +288,8 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	if (DEBUG_OUTPUT)
 	{
 		cout << endl << "Score: " << to_string(score) << " at depth " << to_string(maxDepth) << endl;
-		cout << to_string(search.nodes[0]) << " search.nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s [" <<
+		cout << to_string(search.nodes[0]) << " nodes in " << to_string((((end - start) / double CLOCKS_PER_SEC))) << " s (" 
+			<< to_string(gameState.maxTime) << " s max) [" <<
 			to_string(search.nodes[0] / (((end - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
 		cout << "Branching factor: " << pow(search.nodes[0], (float)1 / (float)maxDepth) << endl;
 
@@ -307,4 +308,15 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 vector<u32> Engine::multiThreadedSearch(GameState & gameState)
 {
 	return vector<u32>();
+}
+
+double Engine::calculateTimeForMove(GameState &gameState)
+{
+	//An average game takes 40 moves. Thus, the first 30 moves are calculated as
+	//timeLeft / currentMove
+	//If only 10 moves remain, assume 10 moves always remain and divide up.
+	double timeLeft = gameState.color ? gameState.whiteTime : gameState.blackTime;
+	double avgMovesLeft = (59.3 + (72830 - 2330 * gameState.ply) / (2644 + gameState.ply*(10 + gameState.ply))) / 2;
+	double calculationTime = timeLeft / avgMovesLeft;
+	return (calculationTime / 1000);
 }
