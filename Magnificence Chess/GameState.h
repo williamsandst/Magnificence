@@ -19,7 +19,7 @@ public:
 	vector<u32> principalVariation;
 	bool color = true;
 	int maxDepth = 9;
-	int threadCount = 1;
+	int threadCount = 4;
 	double maxTime;
 	GameState();
 	void UpdateGeneration();
