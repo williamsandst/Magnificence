@@ -24,21 +24,33 @@ u8 extractTo(u32 move)
 
 ABAI::ABAI()
 {
-	cont = new bool;
-	*cont = true;
+	for (size_t i1 = 0; i1 < 1; i1++)
+	{
+		for (size_t i2 = 0; i2 < 13; i2++)
+		{
+			for (size_t i3 = 0; i3 < 64; i3++)
+			{
+				history[i1][i2][i3] = 0;
+			}
+		}
+	}
+	generation = 0;
+
+	//cont = new bool;
+	//*cont = true;
 }
 
 ABAI::ABAI(TranspositionTable * tt)
 {
 	this->tt = tt;
-	cont = new bool;
-	*cont = true;
+	//cont = new bool;
+	//*cont = true;
 }
 
 
 ABAI::~ABAI()
 {
-	delete cont;
+	//delete cont;
 }
 
 //Does a qSearch
@@ -353,7 +365,7 @@ int ABAI::search(u8 depth, u8 generation, TranspositionTable *tt, BitBoard *bb, 
 {
 	this->tt = tt;
 	//Standard search
-	generation = (generation + 1) & 0b111;
+	this->generation = generation;
 
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = MoveArray;

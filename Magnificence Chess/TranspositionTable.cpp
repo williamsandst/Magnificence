@@ -132,6 +132,11 @@ void TranspositionTable::resetTT()
 	//cout << i << endl;
 	ttAlwaysOverwrite = new PackedHashEntry[i];
 	ttDepthFirst = new PackedHashEntry[i];
+	for (size_t i = 0; i < i; i++)
+	{
+		ttAlwaysOverwrite[i] = PackedHashEntry();
+		ttDepthFirst[i] = PackedHashEntry();
+	}
 	hashMask = i - 1;
 }
 
@@ -144,9 +149,16 @@ int TranspositionTable::insertTT(PackedHashEntry newEntry)
 		(extractDepth(ttDepthFirst[index]) <= extractDepth(newEntry) || extractGeneration(ttDepthFirst[index]) != extractGeneration(newEntry)))
 	{
 		ttDepthFirst[index] = newEntry;
+		if (extractKey(newEntry) == extractKey(ttAlwaysOverwrite[index]))
+			ttAlwaysOverwrite[index] = PackedHashEntry();
 	}
 	else
-		ttAlwaysOverwrite[index] = newEntry;
+	{
+		if (extractKey(ttDepthFirst[index]) != extractKey(ttAlwaysOverwrite[index]))
+		{
+			ttAlwaysOverwrite[index] = newEntry;
+		}
+	}
 	return extractDepth(newEntry);
 }
 
