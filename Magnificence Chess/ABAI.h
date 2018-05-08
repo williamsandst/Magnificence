@@ -45,6 +45,6 @@ public:
 	void resetNodes();
 	void resetTT();
 	int search(u8 depth, u8 generation, TranspositionTable *tt, BitBoard *bb, bool color);
-
+	void divideHistory(int d);
 };
 
