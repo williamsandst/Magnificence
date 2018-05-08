@@ -35,7 +35,7 @@ u32 IO::convertAlgToMove(string alg)
 	int a = (alg[1] - '0' - 1) * 8 + (7-(alg[0] - 'a'));
 	int b = ((alg[3] - '0' - 1) * 8 + (7-(alg[2] - 'a'))) << 6;
 	u32 move = a | b;
-	if (alg.length > 4) //Promotion
+	if (alg.length() > 4) //Promotion
 	{
 		if (alg[4] == 'q')
 			move |= (1 << 26);
