@@ -18,8 +18,9 @@ Engine::~Engine()
 {
 }
 
-void Engine::SearchThreaded(threadedSearchData tsd)
+int Engine::SearchThreaded(threadedSearchData tsd)
 {
+	int score;
 	clock_t start = clock();
 	ABAI searcher;
 	BitBoard bb;
@@ -45,7 +46,7 @@ void Engine::SearchThreaded(threadedSearchData tsd)
 		searchDepth = *tsd.depth;
 		tsd.update[0]--;
 		tsd.beforeWork->unlock();
-		int score = searcher.search(searchDepth, tsd.gameState->fetchGeneration(), tsd.gameState->tt, &bb, tsd.gameState->color);
+		score = searcher.search(searchDepth, tsd.gameState->fetchGeneration(), tsd.gameState->tt, &bb, tsd.gameState->color);
 		if (say && (*tsd.cont))
 		{
 			if (timeCheck)
@@ -77,6 +78,7 @@ void Engine::SearchThreaded(threadedSearchData tsd)
 	}
 	searcher.cont = new bool;
 	tsd.beforeWork->unlock();
+	return score;
 }
 
 void Engine::Killer(bool * killer, double time, atomic<bool> *change)
@@ -390,7 +392,7 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 		thrds[i] = thread(Engine::SearchThreaded, tsd);
 	}
 	u8 depthM = gameState->maxDepth;
-	SearchThreaded(tsd);
+	int score = SearchThreaded(tsd);
 	for (size_t i = 0; i < gameState->threadCount - 1; i++)
 	{
 		thrds[i].join();
@@ -409,7 +411,26 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 			break;
 		}
 		else if (i2 == 0)
-			cout << endl << "Score " << to_string(potEntry.score) << "  " << " Time taken " << to_string((clock() - start) *1.0/CLOCKS_PER_SEC) << "  ";
+		{
+			if (DEBUG_OUTPUT)
+			{
+				cout << endl << "Score: " << to_string(score) << " at depth " << "0 " << endl;
+				cout << to_string(0) << " nodes in " << to_string((((clock() - start) / double CLOCKS_PER_SEC))) << " s";/*[" <<
+					to_string(searcher / (((clock() - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
+				cout << "Branching factor: " << pow(search.nodes[0], (float)1 / (float)gameState.maxDepth) << endl;
+
+				cout << "Branching factors: ";
+				for (size_t i = 0; i < gameState.maxDepth - 1; i++)
+				{
+					cout << endl << to_string(search.nodes[i]) << " / " << to_string(search.nodes[i + 1]) << " = ";
+					cout << to_string(gameState.maxDepth - i) << "/" << to_string(gameState.maxDepth - i - 1) << ": " << to_string((float)search.nodes[i] / (float)search.nodes[i + 1])
+						<< ", ";
+				}*/
+				cout << endl;
+			}
+			//cout << endl << "Score " << to_string(potEntry.score) << "  " << " Time taken " << to_string((clock() - start) *1.0 / CLOCKS_PER_SEC) << "  ";
+		}
+			
 		pV[i2] = potEntry.bestMove;
 		PV.push_back(pV[i2]);
 		bb.MakeMove(pV[i2]);
@@ -426,6 +447,7 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 
 vector<u32> Engine::multiThreadedSearchDepth(GameState * gameState)
 {
+	gameState->maxTime = calculateTimeForMove(*gameState);
 	timeCheck = false;
 	clock_t start = clock();
 	atomic<u8> *depth = new atomic<u8>, *update = new atomic<u8>;
@@ -441,13 +463,14 @@ vector<u32> Engine::multiThreadedSearchDepth(GameState * gameState)
 		thrds[i] = thread(Engine::SearchThreaded, tsd);
 	}
 	u8 depthM = gameState->maxDepth;
-	SearchThreaded(tsd);
+	int score = SearchThreaded(tsd);
 	for (size_t i = 0; i < gameState->threadCount - 1; i++)
 	{
 		thrds[i].join();
 	}
 	u32 *pV = new u32[*depth];
 	vector<u32> PV;
+	cout << "info depth " << to_string(*depth) << " score cp " << to_string(score) << " pv ";
 	for (size_t i2 = 0; i2 < *depth; i2++)
 	{
 		BitBoard bb;
@@ -459,7 +482,11 @@ vector<u32> Engine::multiThreadedSearchDepth(GameState * gameState)
 			break;
 		}
 		else if (i2 == 0)
-			cout << endl << "Score " << to_string(potEntry.score) << "  " << " Time taken " << to_string(clock() - start) << "  ";
+		{
+			cout << endl << "Score: " << to_string(score) << " at depth " << to_string(gameState->maxDepth) << endl;
+			cout << to_string(0) << " nodes in " << to_string((((clock() - start) / double CLOCKS_PER_SEC))) << " s";
+		}
+			//cout << endl << "Score " << to_string(potEntry.score) << "  " << " Time taken " << to_string(clock() - start) << "  ";
 		pV[i2] = potEntry.bestMove;
 		PV.push_back(pV[i2]);
 		bb.MakeMove(pV[i2]);
