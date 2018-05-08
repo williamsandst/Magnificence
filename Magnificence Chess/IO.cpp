@@ -15,6 +15,18 @@ string IO::convertMoveToAlg(u32 move)
 	alg += 8 - output2 / 8 + '0';
 	alg += output1 % 8 + 'a';
 	alg += 8 - output1 / 8 + '0';
+	if (move & (0b111 << 26)) //Promotions
+	{
+		u8 piece = (move >> 26) & 0b111;
+		if (piece == 1)
+			alg += 'q';
+		else if (piece == 2)
+			alg += 'b';
+		else if (piece == 3)
+			alg += 'r';
+		else if (piece == 4)
+			alg += 'n';
+	}
 	return alg;
 }
 
@@ -22,7 +34,19 @@ u32 IO::convertAlgToMove(string alg)
 {
 	int a = (alg[1] - '0' - 1) * 8 + (7-(alg[0] - 'a'));
 	int b = ((alg[3] - '0' - 1) * 8 + (7-(alg[2] - 'a'))) << 6;
-	return (a | b);
+	u32 move = a | b;
+	if (alg.length > 4) //Promotion
+	{
+		if (alg[4] == 'q')
+			move |= (1 << 26);
+		else if (alg[4] == 'b')
+			move |= (2 << 26);
+		else if (alg[4] == 'r')
+			move |= (3 << 26);
+		else if (alg[4] == 'n')
+			move |= (4 << 26);
+	}
+	return move;
 }
 
 //Convert boards to FEN

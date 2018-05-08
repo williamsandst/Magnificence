@@ -392,7 +392,7 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 		thrds[i] = thread(Engine::SearchThreaded, tsd);
 	}
 	u8 depthM = gameState->maxDepth;
-	SearchThreaded(tsd);
+	int score = SearchThreaded(tsd);
 	for (size_t i = 0; i < gameState->threadCount - 1; i++)
 	{
 		thrds[i].join();
@@ -411,7 +411,26 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 			break;
 		}
 		else if (i2 == 0)
-			cout << endl << "Score " << to_string(potEntry.score) << "  " << " Time taken " << to_string((clock() - start) *1.0/CLOCKS_PER_SEC) << "  ";
+		{
+			if (DEBUG_OUTPUT)
+			{
+				cout << endl << "Score: " << to_string(score) << " at depth " << "0 " << endl;
+				cout << to_string(0) << " nodes in " << to_string((((clock() - start) / double CLOCKS_PER_SEC))) << " s";/*[" <<
+					to_string(searcher / (((clock() - start) / double CLOCKS_PER_SEC) * 1000000)) << " Mpos/sec]" << endl;
+				cout << "Branching factor: " << pow(search.nodes[0], (float)1 / (float)gameState.maxDepth) << endl;
+
+				cout << "Branching factors: ";
+				for (size_t i = 0; i < gameState.maxDepth - 1; i++)
+				{
+					cout << endl << to_string(search.nodes[i]) << " / " << to_string(search.nodes[i + 1]) << " = ";
+					cout << to_string(gameState.maxDepth - i) << "/" << to_string(gameState.maxDepth - i - 1) << ": " << to_string((float)search.nodes[i] / (float)search.nodes[i + 1])
+						<< ", ";
+				}*/
+				cout << endl;
+			}
+			//cout << endl << "Score " << to_string(potEntry.score) << "  " << " Time taken " << to_string((clock() - start) *1.0 / CLOCKS_PER_SEC) << "  ";
+		}
+			
 		pV[i2] = potEntry.bestMove;
 		PV.push_back(pV[i2]);
 		bb.MakeMove(pV[i2]);
@@ -462,7 +481,11 @@ vector<u32> Engine::multiThreadedSearchDepth(GameState * gameState)
 			cout << "ERROR! Non-PV Node: " << endl;
 			break;
 		}
-		//else if (i2 == 0)
+		else if (i2 == 0)
+		{
+			cout << endl << "Score: " << to_string(score) << " at depth " << to_string(gameState->maxDepth) << endl;
+			cout << to_string(0) << " nodes in " << to_string((((clock() - start) / double CLOCKS_PER_SEC))) << " s";
+		}
 			//cout << endl << "Score " << to_string(potEntry.score) << "  " << " Time taken " << to_string(clock() - start) << "  ";
 		pV[i2] = potEntry.bestMove;
 		PV.push_back(pV[i2]);
