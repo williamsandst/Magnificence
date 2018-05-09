@@ -20,6 +20,8 @@
 #pragma once
 #include "TranspositionTable.h"
 
+const bool MULTITHREADING = true;
+
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
 "disp			Display the board\n"
@@ -313,7 +315,12 @@ void guiInterface()
 		{
 			CONSOLEDEBUG = false;
 			unknownCommand = false;
-			cout << "id name Magnificence" << endl;
+			cout << "id name Magnificence ";
+			if (MULTITHREADING)
+				cout << "MT";
+			else
+				cout << "ST";
+			cout << endl;
 			cout << "id author William" << endl;
 			cout << "uciok" << endl;
 		}
@@ -429,17 +436,21 @@ void runEngine(GameState* gameState, ABAI *engine)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			gameState->tt->resetTT();
+			//gameState->tt->resetTT();
 			//gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
 			if (gameState->maxDepth == 0)
 			{
-				//gameState->principalVariation = Engine::searchIDSimpleTime(*gameState);
-				gameState->principalVariation = Engine::multiThreadedSearch(gameState);
+				if (MULTITHREADING)
+					gameState->principalVariation = Engine::multiThreadedSearch(gameState);
+				else
+					gameState->principalVariation = Engine::searchIDSimpleTime(*gameState);
 			}
 			else
 			{
-				//gameState->principalVariation = Engine::searchID(*gameState);
-				gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
+				if (MULTITHREADING)
+					gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
+				else
+					gameState->principalVariation = Engine::searchID(*gameState);
 			}
 			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			//cout << "mgnf: ";

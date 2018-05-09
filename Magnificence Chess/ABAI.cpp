@@ -50,7 +50,7 @@ ABAI::ABAI(TranspositionTable * tt)
 
 ABAI::~ABAI()
 {
-	delete cont;
+	//delete cont;
 }
 
 //Does a qSearch
@@ -378,6 +378,20 @@ int ABAI::search(u8 depth, u8 generation, TranspositionTable *tt, BitBoard *bb, 
 
 	score = negamax(-8192, 8192, depth, depth, color, MoveStart, KillerMoves, moveSortValues);
 	return score;
+}
+
+void ABAI::divideHistory(int d)
+{
+	for (size_t i1 = 0; i1 < 1; i1++)
+	{
+		for (size_t i2 = 0; i2 < 13; i2++)
+		{
+			for (size_t i3 = 0; i3 < 64; i3++)
+			{
+				history[i1][i2][i3] = history[i1][i2][i3] / d;
+			}
+		}
+	}
 }
 
 
