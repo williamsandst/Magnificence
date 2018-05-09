@@ -10,6 +10,14 @@ bool timeCheck;
 const bool DEBUG_OUTPUT = true;
 const u32 THRD_CNT = 2;
 
+//Todo:
+//Finish 1.0 
+//	- Optimizations, fix PV output, fix debug output, fix timekeeping so no crash
+//Future features:
+//	Check extensions
+//	Move lazyEval into makeMove
+//	
+
 Engine::Engine()
 {
 }
