@@ -7,7 +7,7 @@ int Evaluation::lazyEval(BitBoard *bb)
 {
 	//nodes[0]++;
 	int phase = getPhase(bb);
-
+	//phase = 255;
 	short materialScore = 0;
 	short earlyPSTScore = 0;
 	short latePSTScore = 0;

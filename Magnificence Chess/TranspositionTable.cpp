@@ -93,8 +93,7 @@ UnpackedHashEntry::UnpackedHashEntry(PackedHashEntry in)
 
 TranspositionTable::TranspositionTable()
 {
-	this->ttAlwaysOverwrite = nullptr;
-	this->ttDepthFirst = nullptr;
+	this->tt;
 }
 
 TranspositionTable::TranspositionTable(u8 hashSizeBits)
@@ -106,10 +105,9 @@ TranspositionTable::TranspositionTable(u8 hashSizeBits)
 
 TranspositionTable::~TranspositionTable()
 {
-	if (ttAlwaysOverwrite != nullptr)
+	if (tt != nullptr)
 	{
-		delete[] ttAlwaysOverwrite;
-		delete[] ttDepthFirst;
+		delete[] tt;
 	}
 }
 
@@ -121,63 +119,67 @@ void TranspositionTable::setHashSizeBits(u8 bits)
 
 void TranspositionTable::resetTT()
 {
-	if (ttAlwaysOverwrite != nullptr)
+	if (tt != nullptr)
 	{
-		delete[] ttAlwaysOverwrite;
-		delete[] ttDepthFirst;
+		delete[] tt;
 	}
 	int size = hashSizeBits + 1; //bits
 	int i = 1;
 	while ((size -= 1) && (i *= 2));
-	//cout << i << endl;
-	ttAlwaysOverwrite = new PackedHashEntry[i];
-	ttDepthFirst = new PackedHashEntry[i];
+	tt = new PackedHashEntry[i];
 	for (size_t i = 0; i < i; i++)
 	{
-		ttAlwaysOverwrite[i] = PackedHashEntry();
-		ttDepthFirst[i] = PackedHashEntry();
+		tt[i] = PackedHashEntry();
 	}
+	i /= 4;
 	hashMask = i - 1;
 }
 
 //adds a board position to the transposition table
 int TranspositionTable::insertTT(PackedHashEntry newEntry)
 {
-	u32 index = (u32)(extractKey(newEntry) & hashMask);
-	//if both type 0 and generation different or depth lower or 
-	if ((extractNodeType(ttDepthFirst[index]) != 1 || extractNodeType(newEntry) == 1 || extractGeneration(newEntry) != extractGeneration(ttDepthFirst[index])) &&
-		(extractDepth(ttDepthFirst[index]) <= extractDepth(newEntry) || extractGeneration(ttDepthFirst[index]) != extractGeneration(newEntry)))
+	u32 index = 4 * (u32)(extractKey(newEntry) & hashMask);
+	PackedHashEntry *lowest = tt + index;
+	u8 g = extractGeneration(newEntry);
+	u8 lowDepth = 255;
+	u8 depth;
+	for (size_t i = 0; i < 4; i++)
 	{
-		ttDepthFirst[index] = newEntry;
-		if (extractKey(newEntry) == extractKey(ttAlwaysOverwrite[index]))
-			ttAlwaysOverwrite[index] = PackedHashEntry();
-	}
-	else
-	{
-		if (extractKey(ttDepthFirst[index]) != extractKey(ttAlwaysOverwrite[index]))
+		if (extractKey(tt[index + i]) == extractKey(newEntry) || extractGeneration(tt[index + i]) != g || tt->data == 0)
 		{
-			ttAlwaysOverwrite[index] = newEntry;
+			if (extractDepth(newEntry) > extractDepth(tt[index + i]) || extractGeneration(tt[index + i]) != g ||tt->data == 0)
+				tt[index + i] = newEntry;
+			return 0;
+		}
+		depth = extractDepth(tt[index + i]);
+		if (depth < lowDepth)
+		{
+			lowDepth = depth;
+			lowest = tt + index + i;
 		}
 	}
-	return extractDepth(newEntry);
+	*lowest = newEntry;
+	return 0;
 }
 
 //Checks if a board position is in the transposition table
 bool TranspositionTable::getFromTT(u64 key, UnpackedHashEntry *in)
 {
-	u32 index = (u32)(key & hashMask);
-	PackedHashEntry entry = ttDepthFirst[index];
-	if (extractKey(entry) == key)
+	u32 index = 4 * (u32)(key & hashMask);
+	PackedHashEntry entry;
+	for (size_t i = 0; i < 4; i++)
 	{
-		*in = UnpackedHashEntry(entry);
-		return true;
+		entry = tt[index + i];
+		if (extractKey(entry) == key)
+		{
+			*in = UnpackedHashEntry(entry);
+			if (extractGeneration(entry) != generation)
+			{
+				in->generation = generation;
+				tt[index + i] = PackedHashEntry(*in);
+			}
+			return 1;
+		}
 	}
-	entry = ttAlwaysOverwrite[index];
-	if (extractKey(entry) == key)
-	{
-		*in = UnpackedHashEntry(entry);
-		return true;
-	}
-	else
-		return false;
+	return 0;
 }

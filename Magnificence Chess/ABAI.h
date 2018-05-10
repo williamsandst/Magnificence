@@ -7,10 +7,42 @@
 
 class Evaluation;
 
+
+struct History
+{
+public:
+	u32 history[2][13][64];
+	History()
+	{
+		for (int i1 = 0; i1 < 2; i1++)
+		{
+			for (size_t i2 = 0; i2 < 13; i2++)
+			{
+				for (size_t i3 = 0; i3 < 64; i3++)
+				{
+					history[i1][i2][i3] = 0;
+				}
+			}
+		}
+	}
+	void divide(u32 d)
+	{
+		for (int i1 = 0; i1 < 2; i1++)
+		{
+			for (size_t i2 = 0; i2 < 13; i2++)
+			{
+				for (size_t i3 = 0; i3 < 64; i3++)
+				{
+					history[i1][i2][i3] = history[i1][i2][i3] / d;
+				}
+			}
+		}
+	}
+};
+
 class ABAI
 {
 private:
-	u32 history[2][13][64];
 	//Aspiration windows
 	int aspirationAlpha = -8192;
 	int aspirationBeta = 8192;
@@ -25,6 +57,7 @@ private:
 
 	
 public:
+	History * history;
 	bool *cont;
 	u64 nodes[100];
 	TranspositionTable *tt;

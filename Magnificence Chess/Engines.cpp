@@ -3,6 +3,9 @@
 
 using namespace std;
 
+vector<thread> threadPool;
+threadedSearchData *tsdM;
+
 mutex talk;
 clock_t times[120];
 u64 maxTime;
@@ -39,7 +42,7 @@ int Engine::SearchThreaded(threadedSearchData tsd)
 		{
 			say = true;
 			(*tsd.depth) = (*tsd.depth) + 1;
-			tsd.update[0] = tsd.depth[0] + 0;
+			tsd.update[0] =  min(max(tsd.depth[0] + 0, 1), 4);
 			if (*tsd.depth > tsd.maxDepth)
 				break;
 		}
@@ -47,7 +50,7 @@ int Engine::SearchThreaded(threadedSearchData tsd)
 		tsd.update[0]--;
 		tsd.beforeWork->unlock();
 		score = searcher.search(searchDepth, tsd.gameState->fetchGeneration(), tsd.gameState->tt, &bb, tsd.gameState->color);
-		if (say && (*tsd.cont))
+		if (say && (*tsd.cont) /*talk.try_lock()*/)
 		{
 			if (timeCheck)
 			{
@@ -61,7 +64,8 @@ int Engine::SearchThreaded(threadedSearchData tsd)
 			}
 			BitBoard bbs;
 			bbs.Copy(&bb);
-			cout << "info depth " << to_string(searchDepth) << " score cp " << to_string(score) << " pv ";
+			string str;
+			str += "info depth " + to_string(searchDepth) + " score cp " + to_string(score) + " pv ";
 			for (size_t i2 = 0; i2 < searchDepth; i2++)
 			{
 				UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -70,15 +74,23 @@ int Engine::SearchThreaded(threadedSearchData tsd)
 					cout << "ERROR! Non-PV Node: " << endl;
 					break;
 				}
-				cout << IO::convertMoveToAlg(potEntry.bestMove) << " ";
+				str += IO::convertMoveToAlg(potEntry.bestMove) + " ";
 				bbs.MakeMove(potEntry.bestMove);
 			}
-			cout << endl;
+			str += "\n";
+			cout << str;
+			//cout.flush();
+			//talk.unlock();
 		}
 	}
 	searcher.cont = new bool;
 	tsd.beforeWork->unlock();
 	return score;
+}
+
+void Engine::PoolSearch()
+{
+
 }
 
 void Engine::Killer(bool * killer, double time, atomic<bool> *change)
@@ -155,7 +167,6 @@ vector<u32> Engine::search(GameState &gameState)
 	}
 
 	//Memory cleanup
-
 	return PV;
 }
 
@@ -168,7 +179,6 @@ vector<u32> Engine::searchID(GameState &gameState)
 	vector<u32> PV;
 
 	ABAI search;
-	search.resetNodes();
 
 	//Variables used for debugging
 	clock_t start = clock();
@@ -186,10 +196,12 @@ vector<u32> Engine::searchID(GameState &gameState)
 		int highestFound = 0;
 		score = search.search(i, generation, gameState.tt, gameState.board, gameState.color);
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
+		BitBoard bb;
+		bb.Copy(gameState.board);
 		for (size_t i2 = 0; i2 < i; i2++)
 		{
 			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
-			if (!gameState.tt->getFromTT(gameState.board->zoobristKey, &potEntry))
+			if (!gameState.tt->getFromTT(bb.zoobristKey, &potEntry))
 			{
 				cout << "ERROR! Non-PV Node: " << endl;
 				break;
@@ -201,12 +213,7 @@ vector<u32> Engine::searchID(GameState &gameState)
 				PV.push_back(pV[i2]);
 			}
 			cout << IO::convertMoveToAlg(pV[i2]) << " ";
-			gameState.board->MakeMove(pV[i2]);
-		}
-		//Unmake pV
-		for (int i2 = highestFound; i2 >= 0; i2 -= 1)
-		{
-			gameState.board->UnMakeMove(pV[i2]);
+			bb.MakeMove(pV[i2]);
 		}
 		cout << endl;
 	}
@@ -229,7 +236,6 @@ vector<u32> Engine::searchID(GameState &gameState)
 	}
 
 	cout << endl;
-
 	return PV;
 }
 
@@ -470,7 +476,6 @@ vector<u32> Engine::multiThreadedSearchDepth(GameState * gameState)
 	}
 	u32 *pV = new u32[*depth];
 	vector<u32> PV;
-	cout << "info depth " << to_string(*depth) << " score cp " << to_string(score) << " pv ";
 	for (size_t i2 = 0; i2 < *depth; i2++)
 	{
 		BitBoard bb;
@@ -509,5 +514,9 @@ double Engine::calculateTimeForMove(GameState &gameState)
 	double timeLeft = gameState.color ? gameState.whiteTime : gameState.blackTime;
 	double avgMovesLeft = (59.3 + (72830 - 2330 * gameState.ply) / (2644 + gameState.ply*(10 + gameState.ply))) / 2;
 	double calculationTime = timeLeft / avgMovesLeft;
-	return (calculationTime / 1000);
+	if (calculationTime < 0)
+		calculationTime = -calculationTime;
+	else if (calculationTime == 0)
+		calculationTime = 1;
+	return ((calculationTime / 1000));
 }

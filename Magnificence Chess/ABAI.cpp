@@ -24,20 +24,9 @@ u8 extractTo(u32 move)
 
 ABAI::ABAI()
 {
-	for (size_t i1 = 0; i1 < 1; i1++)
-	{
-		for (size_t i2 = 0; i2 < 13; i2++)
-		{
-			for (size_t i3 = 0; i3 < 64; i3++)
-			{
-				history[i1][i2][i3] = 0;
-			}
-		}
-	}
-	generation = 0;
-
 	cont = new bool;
 	*cont = true;
+	history = new History();
 }
 
 ABAI::ABAI(TranspositionTable * tt)
@@ -45,12 +34,14 @@ ABAI::ABAI(TranspositionTable * tt)
 	this->tt = tt;
 	cont = new bool;
 	*cont = true;
+	history = new History();
 }
 
 
 ABAI::~ABAI()
 {
 	//delete cont;
+	delete history;
 }
 
 //Does a qSearch
@@ -267,7 +258,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 			}
 			if ((move >> 29) == 7)
 			{
-				history[color][bb->mailBox[extractFrom(move)]][extractTo(move)] += depth * depth;
+				history->history[color][bb->mailBox[extractFrom(move)]][extractTo(move)] += depth * depth;
 			}
 			tt->insertTT(UnpackedHashEntry(0, depth + 1, bestScore, bestMove, bb->zoobristKey, generation));
 			return beta;
@@ -366,6 +357,7 @@ int ABAI::search(u8 depth, u8 generation, TranspositionTable *tt, BitBoard *bb, 
 	this->tt = tt;
 	//Standard search
 	this->generation = generation;
+	tt->generation = generation;
 
 	//Create the static array used for storing legal moves
 	u32 *MoveStart = MoveArray;
@@ -382,16 +374,7 @@ int ABAI::search(u8 depth, u8 generation, TranspositionTable *tt, BitBoard *bb, 
 
 void ABAI::divideHistory(int d)
 {
-	for (size_t i1 = 0; i1 < 1; i1++)
-	{
-		for (size_t i2 = 0; i2 < 13; i2++)
-		{
-			for (size_t i3 = 0; i3 < 64; i3++)
-			{
-				history[i1][i2][i3] = history[i1][i2][i3] / d;
-			}
-		}
-	}
+	history->divide(d);
 }
 
 
@@ -435,11 +418,11 @@ void ABAI::sortMoves(u32 * start, u32 * end, u32 bestMove, u16 *killerMoves, i32
 									   //	//((*start) >> 29) != 7)
 		{
 			if (move == KM1)
-				*score = -1048576 + 10000 +history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+				*score = -1048576 + 10000 +history->history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
 			else if (move == KM2)
-				*score = -1048576 + 9999 +history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+				*score = -1048576 + 9999 +history->history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
 			else
-				*score = -1048576 + 10 +history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
+				*score = -1048576 + 10 +history->history[color][bb->mailBox[extractFrom(move)]][extractTo(move)];
 		}
 		else
 		{
