@@ -14,6 +14,7 @@ const bool DEBUG_OUTPUT = true;
 const int MAX_P_Depth = 2;
 const u32 THRD_CNT = 2;
 
+//
 //Todo:
 //Finish 1.0 
 //	- Optimizations, fix PV bucket, fix timekeeping so no crash
@@ -94,11 +95,8 @@ int Engine::SearchThreaded(threadedSearchData tsd)
 	searcher.cont = new bool;
 	if (unlock)
 	{
-		cout << "1";
 		tsd.beforeWork->unlock();
-		cout << "2" << endl;
 	}
-	cout << "broke";
 	return score;
 }
 
