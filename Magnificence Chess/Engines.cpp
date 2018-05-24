@@ -11,6 +11,7 @@ clock_t times[120];
 u64 maxTime;
 bool timeCheck;
 const bool DEBUG_OUTPUT = true;
+const int MAX_P_Depth = 2;
 const u32 THRD_CNT = 2;
 
 //Todo:
@@ -40,36 +41,33 @@ int Engine::SearchThreaded(threadedSearchData tsd)
 	searcher.cont = tsd.cont;
 	u8 searchDepth = 0;
 	bool say;
+	bool unlock = false;;
 	while (*tsd.cont)
 	{
 		say = false;
+		unlock = true;
 		tsd.beforeWork->lock();
 		if (*tsd.depth > tsd.maxDepth)
+		{
 			break;
+		}
 		if (((tsd.depth[0]) == searchDepth) || tsd.update[0] == 0)
 		{
 			say = true;
 			(*tsd.depth) = (*tsd.depth) + 1;
 			tsd.update[0] =  min(max(tsd.depth[0] + 0, 1), 4);
 			if (*tsd.depth > tsd.maxDepth)
+			{
 				break;
+			}
 		}
 		searchDepth = *tsd.depth;
 		tsd.update[0]--;
 		tsd.beforeWork->unlock();
+		unlock = false;
 		score = searcher.search(searchDepth, tsd.gameState->fetchGeneration(), tsd.gameState->tt, &bb, tsd.gameState->color);
 		if (say && (*tsd.cont) /*talk.try_lock()*/)
 		{
-			if (timeCheck)
-			{
-				times[searchDepth] = max((u64)(clock() - start), maxTime / 12);
-				if (searchDepth > 1 && (((times[searchDepth] * times[searchDepth]) / times[searchDepth - 1]) > maxTime * 1.1 && timeCheck && times[searchDepth] > maxTime / 4))
-				{
-					*tsd.cont = false;
-					this_thread::sleep_for(chrono::milliseconds(1));
-					*tsd.depth = searchDepth;
-				}
-			}
 			BitBoard bbs;
 			bbs.Copy(&bb);
 			string str;
@@ -90,9 +88,18 @@ int Engine::SearchThreaded(threadedSearchData tsd)
 			//cout.flush();
 			//talk.unlock();
 		}
+		if (!*searcher.cont)
+			cout << "done";
 	}
+	*tsd.cont = false;
 	searcher.cont = new bool;
-	tsd.beforeWork->unlock();
+	if (unlock)
+	{
+		cout << "1";
+		tsd.beforeWork->unlock();
+		cout << "2" << endl;
+	}
+	cout << "broke";
 	return score;
 }
 
@@ -261,8 +268,8 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	vector<u32> PV;
 
 	ABAI search;
-	//bool *killer = search.cont;
-	bool *killer = new bool;
+	bool *killer = search.cont;
+	//bool *killer = new bool;
 	*killer = true;
 
 	//Reset the debug node counter
@@ -270,6 +277,8 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 
 	//Variables used for debugging
 	clock_t start = clock();
+
+	thread thrd(Killer,killer, gameState.maxTime * 1.5, change);
 
 	int score;
 
@@ -339,7 +348,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	if (!*killer)
 		i--;
 	i--;
-	//thrd.join();
+	thrd.join();
 	highestDepth = 0;
 	for (size_t i2 = 0; i2 < i; i2++)
 	{
@@ -383,6 +392,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 {
 	gameState->maxTime = Engine::calculateTimeForMove(*gameState);
+	cout << "Time left " << to_string(gameState->maxTime) << "S " << "Threads " << to_string(gameState->threadCount) << " MaxTHRDS/depth " << to_string(MAX_P_Depth) << " Hash Reset " << to_string(RESET_HASH) << endl;
 	timeCheck = true;
 	maxTime = (u64)(gameState->maxTime * CLOCKS_PER_SEC);
 	for (size_t i = 0; i < 120; i++)
@@ -400,7 +410,7 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 	*cont = true;
 	mutex *m = new mutex;
 	threadedSearchData tsd(gameState, m, depth, update, cont, 255);
-	//thread killer(Engine::Killer, cont, gameState->maxTime, mock);
+	thread killer(Engine::Killer, cont, gameState->maxTime, mock);
 	for (size_t i = 0; i < gameState->threadCount - 1; i++)
 	{
 		thrds[i] = thread(Engine::SearchThreaded, tsd);
@@ -411,7 +421,7 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 	{
 		thrds[i].join();
 	}
-	//killer.join();
+	killer.join();
 	u32 *pV = new u32[*depth];
 	vector<u32> PV;
 	for (size_t i2 = 0; i2 < *depth; i2++)
@@ -520,11 +530,9 @@ double Engine::calculateTimeForMove(GameState &gameState)
 	//timeLeft / currentMove
 	//If only 10 moves remain, assume 10 moves always remain and divide up.
 	double timeLeft = gameState.color ? gameState.whiteTime : gameState.blackTime;
-	double avgMovesLeft = (59.3 + (72830 - 2330 * gameState.ply) / (2644 + gameState.ply*(10 + gameState.ply))) / 2;
+	double avgMovesLeft = ((59.3 + (72830 - 2330 * gameState.ply) / (2644 + gameState.ply*(10 + gameState.ply))) / 2);
 	double calculationTime = timeLeft / avgMovesLeft;
-	if (calculationTime < 0)
-		calculationTime = -calculationTime;
-	else if (calculationTime == 0)
-		calculationTime = 1;
+	if (calculationTime <= 1.1)
+		calculationTime = 1.1;
 	return ((calculationTime / 1000));
 }

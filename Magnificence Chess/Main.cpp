@@ -1,6 +1,6 @@
 // Magnificence Chess.cpp : Defines the entry point for the console application.
 //
-
+#pragma once
 #include "stdafx.h"
 #include <iostream>
 #include <thread>
@@ -17,7 +17,6 @@
 #include "IO.h"
 #include "Move.h"
 #include "Test.h"
-#pragma once
 #include "TranspositionTable.h"
 
 const bool MULTITHREADING = 1;
@@ -436,7 +435,7 @@ void runEngine(GameState* gameState, ABAI *engine)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			if (MULTITHREADING)
+			if (MULTITHREADING && RESET_HASH)
 				gameState->tt->resetTT();
 			//gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
 			if (gameState->maxDepth == 0)

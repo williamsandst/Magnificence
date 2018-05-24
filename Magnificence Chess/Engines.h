@@ -9,6 +9,8 @@
 #include <mutex>
 #include <string>
 
+const bool RESET_HASH = 1;
+
 struct threadedSearchData
 {
 	threadedSearchData(GameState *in, mutex *m, atomic<u8> *depth, atomic<u8> *update, bool*cont, u8 maxdepth)

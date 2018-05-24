@@ -52,7 +52,7 @@ PackedHashEntry::PackedHashEntry(UnpackedHashEntry start)
 	//generation is the point when the node was created. It is updated by generation = (generation + 1) & 0b111
 	//generation is 2 bits. 12 - 3 = 9;
 	//10 ^ 2 - 1 = 1023 which is more than sufficient for the depht.
-	data = ((u64)((u16)start.score)) | (((u64)start.bestMove) << 16) | (((u64)start.typeOfNode) << 48) | (((u64)start.generation) << 51) | (((u64)start.depth) << 54);
+	data = ((u64)((u16)start.score)) | (((u64)start.bestMove) << 16) | (((u64)start.typeOfNode & 0b11) << 48) | (((u64)start.generation & 0b111) << 51) | (((u64)start.depth) << 54);
 	key = start.key ^ data;
 }
 
@@ -117,6 +117,8 @@ void TranspositionTable::setHashSizeBits(u8 bits)
 	resetTT();
 }
 
+const u8 BUCKET_CNT = 8;
+
 void TranspositionTable::resetTT()
 {
 	if (tt != nullptr)
@@ -131,43 +133,49 @@ void TranspositionTable::resetTT()
 	{
 		tt[i] = PackedHashEntry();
 	}
-	i /= 4;
+	i /= BUCKET_CNT;
 	hashMask = i - 1;
 }
 
 //adds a board position to the transposition table
 int TranspositionTable::insertTT(PackedHashEntry newEntry)
 {
-	u32 index = 4 * (u32)(extractKey(newEntry) & hashMask);
-	PackedHashEntry *lowest = tt + index;
+	u32 index = BUCKET_CNT * (u32)(extractKey(newEntry) & hashMask);
+	PackedHashEntry *lowest = tt + index, *start = tt + index, entry, *end = tt + index + BUCKET_CNT - 1;
+	u64 key = extractKey(newEntry);
 	u8 g = extractGeneration(newEntry);
-	u8 lowDepth = 255;
+	end++;
+	lowest = start;
+	u8 lowDepth = 128;
 	u8 depth;
-	for (size_t i = 0; i < 4; i++)
+	while (start < end)
 	{
-		if (extractKey(tt[index + i]) == extractKey(newEntry) || extractGeneration(tt[index + i]) != g || tt->data == 0)
+		entry = *start;
+		if (extractGeneration(entry) != g)
 		{
-			if (extractDepth(newEntry) > extractDepth(tt[index + i]) || extractGeneration(tt[index + i]) != g ||tt->data == 0)
-				tt[index + i] = newEntry;
-			return 0;
+			lowest = start;
+			break;
 		}
-		depth = extractDepth(tt[index + i]);
+		depth = extractDepth(entry);
 		if (depth < lowDepth)
 		{
 			lowDepth = depth;
-			lowest = tt + index + i;
+			lowest = start;
 		}
+		start++;
 	}
-	*lowest = newEntry;
+	*lowest = *(tt + index);
+	*(tt + index) = newEntry;
 	return 0;
 }
 
 //Checks if a board position is in the transposition table
 bool TranspositionTable::getFromTT(u64 key, UnpackedHashEntry *in)
 {
-	u32 index = 4 * (u32)(key & hashMask);
+	u32 index = BUCKET_CNT * (u32)(key & hashMask);
+	u8 bestDepth = 0;
 	PackedHashEntry entry;
-	for (size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < BUCKET_CNT; i++)
 	{
 		entry = tt[index + i];
 		if (extractKey(entry) == key)
