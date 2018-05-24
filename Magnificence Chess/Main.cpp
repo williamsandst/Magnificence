@@ -1,6 +1,6 @@
 // Magnificence Chess.cpp : Defines the entry point for the console application.
 //
-
+#pragma once
 #include "stdafx.h"
 #include <iostream>
 #include <thread>
@@ -16,10 +16,8 @@
 #include "IO.h"
 #include "Move.h"
 #include "Test.h"
-#pragma once
 #include "TranspositionTable.h"
 #include "Settings.h"
-
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
@@ -55,7 +53,7 @@ void guiInterface()
 	bool CONSOLEDEBUG = true;
 	//Create engine thread object
 	TranspositionTable *tt = new TranspositionTable();
-	tt->setHashSizeBits(23);
+	tt->setHashSizeBits(24);
 	tt->resetTT();
 	GameState* gameState = new GameState();
 	gameState->tt = tt;
@@ -425,7 +423,8 @@ void runEngine(GameState* gameState, ABAI *engine)
 		{
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
-			//gameState->tt->resetTT();
+			if (MULTITHREADING && RESET_HASH)
+				gameState->tt->resetTT();
 			//gameState->principalVariation = Engine::multiThreadedSearchDepth(gameState);
 			if (gameState->maxDepth == 0)
 			{

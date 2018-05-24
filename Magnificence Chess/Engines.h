@@ -7,6 +7,9 @@
 #include <thread>
 #include "Test.h"
 #include <mutex>
+#include <string>
+
+const bool RESET_HASH = 1;
 
 struct threadedSearchData
 {
@@ -35,6 +38,7 @@ private:
 	static void Killer(bool *killer, double time, atomic<bool> *change);
 public:
 	static int SearchThreaded(threadedSearchData tsd);
+	static void PoolSearch();
 	static vector<u32> search(GameState &gameState);
 	static vector<u32> searchID(GameState &gameState);
 	static vector<u32> searchIDSimpleTime(GameState &gameState);

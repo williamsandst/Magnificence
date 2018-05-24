@@ -159,7 +159,7 @@ public:
 
 	//EP state of board, bitscan forward to find marked bit which is the EP line
 	u8 EP;
-
+	bool check;
 	//Rockad state of board
 	//Black queen side is lowest bit, mask = 0b1
 	//Black king side is second lowest bit, mask = 0b10

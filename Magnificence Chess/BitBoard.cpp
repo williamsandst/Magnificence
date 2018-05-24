@@ -1252,6 +1252,10 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		}
 		u64 kingMoves = KingSet[kingIndex] & (~ThreatenedSquaresO) & (~ownPieces);
 		MoveInsert = extractWhiteMoves(kingMoves, baseMove, kingIndex, MoveInsert);
+		if (checks)
+			check = true;
+		else
+			check = false;
 		if (checks > 1)
 		{
 			if (MoveInsert == Start)
@@ -2013,6 +2017,10 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		}
 		u64 kingMoves = KingSet[kingIndex] & (~ThreatenedSquaresO) & (~ownPieces);
 		MoveInsert = extractBlackMoves(kingMoves, baseMove, kingIndex, MoveInsert);
+		if (checks)
+			check = true;
+		else
+			check = false;
 		if (checks > 1)
 		{
 			if (MoveInsert == Start)

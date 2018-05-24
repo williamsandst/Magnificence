@@ -10,7 +10,6 @@ class Evaluation;
 class ABAI
 {
 private:
-	u32 history[2][13][64];
 	//Aspiration windows
 	int aspirationAlpha = -8192;
 	int aspirationBeta = 8192;
@@ -25,6 +24,7 @@ private:
 
 	
 public:
+	u32 history[2][13][64];
 	bool *cont;
 	u64 nodes[100];
 	TranspositionTable *tt;
@@ -40,7 +40,7 @@ public:
 	void sortQMoves(u32 *start, u32 *end, u16 *killerMoves, i32 *score);
 	void fetchBest(u32 *start, u32 *end, i32 *score);
 	int qSearch(int alpha, int beta, bool color, u16 *killerMoves, u32 *start, i32 *score);
-	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 * moveSortValues);
+	int negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 *start, u16 *killerMoves, i32 * moveSortValues, int realDepth);
 	int selfPlay(int depth, int moves, GameState *game);
 	void resetNodes();
 	void resetTT();

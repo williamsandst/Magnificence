@@ -19,9 +19,6 @@
     <Filter Include="Source Files\Engine">
       <UniqueIdentifier>{95d9f86f-f705-4a12-b6cf-c029b0aab91b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Interface">
-      <UniqueIdentifier>{f4aa35e3-3699-4745-83ae-c073abad9030}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Logic">
       <UniqueIdentifier>{d8cf7920-1799-4b8a-8ab7-0bc24e61264b}</UniqueIdentifier>
     </Filter>
@@ -37,11 +34,14 @@
     <Filter Include="Source Files\Testing">
       <UniqueIdentifier>{59015002-7832-4408-b01b-d1725efc7901}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Testing">
-      <UniqueIdentifier>{f2984164-7ca5-4040-bb09-9585052c4118}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Inteface">
       <UniqueIdentifier>{84a7b4ed-e664-46b0-b07f-a18f810f3867}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Logic\Testing">
+      <UniqueIdentifier>{f2984164-7ca5-4040-bb09-9585052c4118}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Interface">
+      <UniqueIdentifier>{f4aa35e3-3699-4745-83ae-c073abad9030}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -63,11 +63,8 @@
     <ClInclude Include="IO.h">
       <Filter>Header Files\Inteface</Filter>
     </ClInclude>
-    <ClInclude Include="Move.h">
-      <Filter>Header Files\Logic</Filter>
-    </ClInclude>
     <ClInclude Include="Test.h">
-      <Filter>Header Files\Testing</Filter>
+      <Filter>Header Files\Logic\Testing</Filter>
     </ClInclude>
     <ClInclude Include="ABAI.h">
       <Filter>Header Files\Engine</Filter>
@@ -84,8 +81,13 @@
     <ClInclude Include="Engines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="Settings.h">
       <Filter>Header Files</Filter>
+=======
+    <ClInclude Include="Move.h">
+      <Filter>Header Files\Logic\Testing</Filter>
+>>>>>>> 8a06bef140e46c55bda8a11fae39d5a50b3103f3
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

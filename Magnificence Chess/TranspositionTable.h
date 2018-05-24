@@ -24,11 +24,12 @@ struct PackedHashEntry
 class TranspositionTable
 {
 private:
-	PackedHashEntry * ttDepthFirst, *ttAlwaysOverwrite;
+	PackedHashEntry * tt;
 	u32 hashMask;
 	u8 hashSizeBits;
 
 public:
+	u8 generation;
 	short extractDepth(PackedHashEntry in);
 	short extractScore(PackedHashEntry in);
 	u8 extractNodeType(PackedHashEntry in);
