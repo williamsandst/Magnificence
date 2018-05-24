@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Evaluation.h"
+#include "Settings.h"
 
 
 //Returns an aproximate score based on material and pieceSquareTables

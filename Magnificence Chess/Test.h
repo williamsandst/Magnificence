@@ -50,7 +50,7 @@ public:
 	static string perftDivide(int depth, BitBoard *bb, bool color, u32 *start);
 
 	//Testsuites
-	static int LCT2(GameState *gameState, bool timeSearch);
+	static void LCT2(GameState *gameState, bool timeSearch);
 
 	//Debugging BitBoard
 	//static bool tester(int depth, BitBoard *bb, bool color, int startDepth);

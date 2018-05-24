@@ -5,11 +5,10 @@
 #include <cmath>
 #include "GameState.h"
 #include "Evaluation.h"
+#include "Settings.h"
 
 
-const bool DEBUG_OUTPUT = true;
 unsigned int maxQsearchDepth = 0, currentDepth = 0;
-const bool PVSEnabled = 1;
 
 using namespace std;
 
