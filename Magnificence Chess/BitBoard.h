@@ -75,6 +75,7 @@ public:
 	int earlyGamePSTScore;
 	int lateGamePSTScore;
 	int totalScore;
+	u8 phase;
 	//The const 64 bit 1 used to avoid unpredicatable behaviour when leftshifting 1
 	const u64 one = 1;
 

@@ -397,7 +397,8 @@ void guiInterface()
 		}
 		else if (splitCommand[0] == "phase")
 		{
-			cout << "Current phase: " << to_string(Evaluation::getPhase(&board)) << endl;
+			Evaluation::getPhase(&board);
+			cout << "Current phase: " << to_string(board.phase) << endl;
 		}
 		else if (unknownCommand)
 			cout << "Unknown command. Type 'help' for a list of commands." << endl;

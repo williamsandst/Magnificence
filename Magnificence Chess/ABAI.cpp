@@ -129,6 +129,12 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 	else
 		end = bb->BlackLegalMoves(start);
 
+	Evaluation::getPhase(bb);
+	if (bb->phase > 200 && realDepth > 0 && _mm_popcnt_u64(bb->Pieces[6]) < 3
+		&& _mm_popcnt_u64(bb->Pieces[13]) < 3
+		&& !(bb->Pieces[1] ||  bb->Pieces[8] || bb->Pieces[3] || bb->Pieces[10] || bb->Pieces[5] || bb->Pieces[12]))
+		return 0;
+
 	//Check whether there is a transposition that can be used for this position
 	if (depth <= 0)
 	{

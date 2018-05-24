@@ -7,7 +7,7 @@
 int Evaluation::lazyEval(BitBoard *bb)
 {
 	//nodes[0]++;
-	int phase = getPhase(bb);
+	getPhase(bb);
 	//phase = 255;
 	short materialScore = 0;
 	short earlyPSTScore = 0;
@@ -55,12 +55,12 @@ int Evaluation::lazyEval(BitBoard *bb)
 	//0 = earlyPSTScore
 	//256 = latePSTScore
 	//0 - 256
-	int phaseScore = ((256 - phase)*earlyPSTScore + phase * latePSTScore) / 256;
+	int phaseScore = ((256 - bb->phase)*earlyPSTScore + bb->phase * latePSTScore) / 256;
 	if (bb->color) materialScore += 20;
 	return materialScore + phaseScore;
 }
 
-int Evaluation::getPhase(BitBoard *bb)
+void Evaluation::getPhase(BitBoard *bb)
 {
 	const int pawnPhase = 0;
 	const int knightPhase = 1;
@@ -86,7 +86,7 @@ int Evaluation::getPhase(BitBoard *bb)
 	phase -= bb->pc(bb->Pieces[8]) * queenPhase;
 
 	phase = (phase * 256 + (totalPhase / 2)) / totalPhase;
-	return phase;
+	bb->phase = phase;
 }
 
 //Used in eval to extract values from the piece square tables for positional awareness 
