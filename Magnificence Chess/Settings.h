@@ -1,7 +1,7 @@
 #pragma once
 
 //Engine settings
-const bool MULTITHREADING = true;
+const bool MULTITHREADING = 0;
 const int THREAD_COUNT = 4;
 const bool PVSEnabled = 1;
 

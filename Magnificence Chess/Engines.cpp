@@ -255,9 +255,9 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 {
 	//Standard search
 	//gameState.tt->resetTT();
-	
+	cout << "did";
 	gameState.maxTime = calculateTimeForMove(gameState);
-	if (maxTime <= 0.1)
+	if (gameState.maxTime <= 0.1)
 		return vector<u32>();
 	gameState.UpdateGeneration();
 	u8 generation = gameState.fetchGeneration();
@@ -390,8 +390,9 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 
 vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 {
+	cout << "did";
 	gameState->maxTime = Engine::calculateTimeForMove(*gameState);
-	if (maxTime <= 0.1)
+	if (gameState->maxTime <= 0.1)
 		return vector<u32>();
 	cout << "Time left " << to_string(gameState->maxTime) << "S " << "Threads " << to_string(gameState->threadCount) << " MaxTHRDS/depth " << to_string(MAX_P_Depth) << " Hash Reset " << to_string(RESET_HASH) << endl;
 	timeCheck = true;
