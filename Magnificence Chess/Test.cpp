@@ -5,13 +5,13 @@
 #include <ctime>
 #include "stdafx.h"
 #include <algorithm>
+//#include <boost/filesystem.hpp>
 #pragma once
 #include <random>
 #include <string>
 #include <fstream>
 #include "ABAI.h"
 #include <mutex>
-
 //Static class used for testing purposes
 mt19937 rng(10452340898239045478);
 mutex beforeRandom;
@@ -215,10 +215,10 @@ string Test::perftDivide(int depth, BitBoard *bb, bool color, u32 *start)
 	return result;
 }
 
-int Test::LCT2(GameState *gameState, bool timeSearch)
+void Test::LCT2(GameState *gameState, bool timeSearch)
 {
 	//Load the test file
-	ifstream file("C:/Users/wilsan/Documents/Programming/Chess/Magnificence/x64/Release/lct2.txt");
+	ifstream file("C:/Users/wilsan/Documents/Programming/Chess/Magnificence Dev/Magnificence/x64/Release/lct2.txt");
 	string line;
 	int i = 0;
 	cout << "Running test suite LCT2... This may take a few hours" << endl;
@@ -255,7 +255,6 @@ int Test::LCT2(GameState *gameState, bool timeSearch)
 		cout << endl;
 		engine.resetTT();
 	}
-	return 0;
 }
 
 char Test::pieceToChar(int piece)

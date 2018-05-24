@@ -17,10 +17,9 @@ const u32 THRD_CNT = 2;
 //
 //Todo:
 //Finish 1.0 
-//	- Optimizations, fix PV output, fix debug output, fix timekeeping so no crash
-//Future features:
-//	Check extensions
-//	Move lazyEval into makeMove
+//	- Optimizations, fix PV bucket, fix timekeeping so no crash
+//	- Check extensions
+//	- Move lazyEval into makeMove
 //	
 
 Engine::Engine()
@@ -258,6 +257,8 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	//gameState.tt->resetTT();
 	
 	gameState.maxTime = calculateTimeForMove(gameState);
+	if (maxTime <= 0.1)
+		return vector<u32>();
 	gameState.UpdateGeneration();
 	u8 generation = gameState.fetchGeneration();
 	atomic<bool> *change = new atomic<bool>;
@@ -390,6 +391,8 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 {
 	gameState->maxTime = Engine::calculateTimeForMove(*gameState);
+	if (maxTime <= 0.1)
+		return vector<u32>();
 	cout << "Time left " << to_string(gameState->maxTime) << "S " << "Threads " << to_string(gameState->threadCount) << " MaxTHRDS/depth " << to_string(MAX_P_Depth) << " Hash Reset " << to_string(RESET_HASH) << endl;
 	timeCheck = true;
 	maxTime = (u64)(gameState->maxTime * CLOCKS_PER_SEC);
@@ -469,7 +472,6 @@ vector<u32> Engine::multiThreadedSearch(GameState * gameState)
 
 vector<u32> Engine::multiThreadedSearchDepth(GameState * gameState)
 {
-	gameState->maxTime = calculateTimeForMove(*gameState);
 	timeCheck = false;
 	clock_t start = clock();
 	atomic<u8> *depth = new atomic<u8>, *update = new atomic<u8>;

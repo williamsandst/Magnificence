@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include <iostream>
 #include <thread>
-#include <windows.h>
 #include "Engines.h"
 #include <sstream>
 #include <chrono>
@@ -18,8 +17,7 @@
 #include "Move.h"
 #include "Test.h"
 #include "TranspositionTable.h"
-
-const bool MULTITHREADING = 1;
+#include "Settings.h"
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
@@ -39,22 +37,12 @@ string commandList =
 
 using namespace std;
 
-static const int threadCount = 4;
-
-void DebugWrite(wchar_t* msg);
 void runEngine(GameState* gameState, ABAI* engine);
 void guiInterface();
 
-//TranspositionTable *ttM;
-
-void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
-//Sample for Debug: DebugWrite(L"Hello World!")
-
 int main()
 {
-	DebugWrite(L"Program started");
 	guiInterface();
-	DebugWrite(L"Program terminated");
     return 0;
 }
 
@@ -140,28 +128,28 @@ void guiInterface()
 			}
 			else if (splitCommand[0] == "mperft" && splitCommand.size() >= 2)
 			{
-				u32 **starts = new u32*[threadCount];
-				for (int i = 0; i < threadCount; i++)
+				u32 **starts = new u32*[THREAD_COUNT];
+				for (int i = 0; i < THREAD_COUNT; i++)
 				{
 					starts[i] = new u32[218 * (stoi(splitCommand[1]) + 1)];
 				}
 				u32 tableSize = 16777215;//8388607;
 				HashEntryPerft *Hash = new HashEntryPerft[2 * tableSize + 2];
 				timer = clock();
-				BitBoard threadBoard[threadCount];
-				for (size_t i = 0; i < threadCount; i++)
+				BitBoard threadBoard[THREAD_COUNT];
+				for (size_t i = 0; i < THREAD_COUNT; i++)
 				{
 					threadBoard[i].Copy(&board);
 				}
-				thread perftThreads[threadCount-1];
+				thread perftThreads[THREAD_COUNT -1];
 				bool done = true;
-				for (size_t i = 0; i < threadCount-1; i++)
+				for (size_t i = 0; i < THREAD_COUNT -1; i++)
 				{
 					perftThreads[i] = thread(Test::perftHash, stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[i], color, starts[i], Hash, tableSize, &done);
 					this_thread::sleep_for(0.001s);
 				}
-				Test::perftHash(stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[threadCount-1], color, starts[threadCount-1], Hash, tableSize, &done);
-				for (size_t i = 0; i < threadCount - 1; i++)
+				Test::perftHash(stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[THREAD_COUNT-1], color, starts[THREAD_COUNT -1], Hash, tableSize, &done);
+				for (size_t i = 0; i < THREAD_COUNT - 1; i++)
 				{
 					perftThreads[i].join();
 				}
@@ -170,7 +158,7 @@ void guiInterface()
 				duration = (clock() - timer) / (double)CLOCKS_PER_SEC;
 				cout << perftNumber << " [" << to_string(duration) << " s] " << "[" << to_string((perftNumber / 1000000.0F) / duration) << " MN/S]" << endl;
 				delete[] Hash;
-				for (int i = 0; i < threadCount; i++)
+				for (int i = 0; i < THREAD_COUNT; i++)
 				{
 					delete[] starts[i];
 				}
@@ -320,7 +308,7 @@ void guiInterface()
 			else
 				cout << "ST";
 			cout << endl;
-			cout << "id author William" << endl;
+			cout << "id author William&Harald" << endl;
 			cout << "uciok" << endl;
 		}
 		else if (recievedCommand == "quit")
@@ -452,7 +440,8 @@ void runEngine(GameState* gameState, ABAI *engine)
 				else
 					gameState->principalVariation = Engine::searchID(*gameState);
 			}
-			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
+			if (gameState->principalVariation.size() > 0)
+				cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
 			//cout << "mgnf: ";
 			gameState->idle = true;
 		}

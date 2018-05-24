@@ -81,8 +81,13 @@
     <ClInclude Include="Engines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< HEAD
+    <ClInclude Include="Settings.h">
+      <Filter>Header Files</Filter>
+=======
     <ClInclude Include="Move.h">
       <Filter>Header Files\Logic\Testing</Filter>
+>>>>>>> 8a06bef140e46c55bda8a11fae39d5a50b3103f3
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -122,5 +127,8 @@
     <ClCompile Include="Engines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
