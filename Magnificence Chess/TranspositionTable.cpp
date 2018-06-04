@@ -117,7 +117,7 @@ void TranspositionTable::setHashSizeBits(u8 bits)
 	resetTT();
 }
 
-const u8 BUCKET_CNT = 8;
+const u8 BUCKET_CNT = 4;
 
 void TranspositionTable::resetTT()
 {
@@ -156,7 +156,12 @@ int TranspositionTable::insertTT(PackedHashEntry newEntry)
 			lowest = start;
 			break;
 		}
-		depth = extractDepth(entry);
+		else if (extractKey(entry) == key && extractNodeType(newEntry) == 1)
+		{
+			lowest = start;
+			break;
+		}
+		depth = extractDepth(entry) + (extractNodeType(newEntry) == 1);
 		if (depth < lowDepth)
 		{
 			lowDepth = depth;

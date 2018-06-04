@@ -293,7 +293,7 @@ vector<u32> Engine::searchIDSimpleTime(GameState &gameState)
 	int i = 1;
 	int highestDepth;
 	clock_t oldSearch = (gameState.maxTime * CLOCKS_PER_SEC) / 16;
-	while (runSearch && *killer)
+	while (runSearch && *killer && i < 128)
 	{
 		//Do search
 		//search.resetNodes();

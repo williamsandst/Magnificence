@@ -224,12 +224,7 @@ int ABAI::negamax(int alpha, int beta, int depth, int maxDepth, bool color, u32 
 				repetitions++;
 				if (thisSearch > -1 || repetitions == 3)
 				{
-					if (0 < alpha)
-						returned = alpha;
-					else if (0 > beta)
-						returned = beta;
-					else
-						returned = 0;
+					returned = 0;
 					search = false;
 					break;
 				}
