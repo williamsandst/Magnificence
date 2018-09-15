@@ -24,16 +24,16 @@ string commandList =
 "disp			Display the board\n"
 "move	<MOVE>		Perform a move\n"
 "perft	<DEPTH>		Calculate the perft score for current position\n"
-"hperft	<DEPTH>		Perft score with hasing\n"
+"hperft	<DEPTH>		Perft score with hashing\n"
 "mperft	<DEPTH>		Multithreaded perft using Lazy SMP\n"
 "divide	<DEPTH>		Divide the perft on first depth for debugging\n"
 "moves	<COLOR>		Display legal moves at current position\n"
-"sortmov <COLOR>	Sorts the possible moves with movesorting\n"
+"sortmov <COLOR>		Sorts the possible moves with movesorting\n"
 "ttreset			Resets the transposition table\n"
 "setboard <FEN>		Set the board to FEN position\n"
 "fen			Output a fen string for current position\n"
 "uci			Enables uci-mode and gives control to a GUI\n"
-"testsuite <testsuite> Run a testsuite\n";
+"testsuite <testsuite>	Run a testsuite\n";
 
 using namespace std;
 
