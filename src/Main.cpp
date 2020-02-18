@@ -20,19 +20,18 @@
 
 string commandList =
 "\nCommand list for Magnificence Chess Engine Development Build \n"
-"disp			Display the board\n"
-"move	<MOVE>		Perform a move\n"
-"perft	<DEPTH>		Calculate the perft score for current position\n"
-"hperft	<DEPTH>		Perft score with hasing\n"
-"mperft	<DEPTH>		Multithreaded perft using Lazy SMP\n"
-"divide	<DEPTH>		Divide the perft on first depth for debugging\n"
-"moves	<COLOR>		Display legal moves at current position\n"
-"sortmov <COLOR>	Sorts the possible moves with movesorting\n"
-"ttreset			Resets the transposition table\n"
-"setboard <FEN>		Set the board to FEN position\n"
-"fen			Output a fen string for current position\n"
-"uci			Enables uci-mode and gives control to a GUI\n"
-"testsuite <testsuite> Run a testsuite\n";
+"disp				Display the board\n"
+"go					Engine searches for a move\n"
+"move <move>			Perform a move\n"
+"perft <depth>			Calculate perft for current position\n"
+"hperft <depth>			Perft with hashing\n"
+"mperft <depth>			Multithreaded perft using Lazy SMP\n"
+"divide <depth>			Divide the perft on first depth for debugging\n"
+"moves <color>			Display legal moves at current position\n"
+"ttreset				Resets the transposition table\n"
+"setboard <fen>			Set the board to FEN position\n"
+"fen				Output a fen string for current position\n"
+"uci				Enables uci-mode and gives control to a GUI\n";
 
 using namespace std;
 
@@ -370,7 +369,6 @@ void guiInterface()
 	}
 	gameState->run = false;
 	engineThread.detach();
-	return;
 }
 
 //The chess engine will run here. Everything that needs to be passed to the GUI is stored in GameState
