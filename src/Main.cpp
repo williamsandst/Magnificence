@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include <iostream>
 #include <thread>
-#include <windows.h>
 #include <sstream>
 #include <chrono>
 #include "ABAI.h"
@@ -37,18 +36,12 @@ using namespace std;
 
 static const int threadCount = 2;
 
-void DebugWrite(wchar_t* msg);
 void runEngine(GameState* gameState, ABAI* engine);
 void guiInterface();
 
-void DebugWrite(wchar_t* msg) { OutputDebugStringW(msg); }
-//Sample for Debug: DebugWrite(L"Hello World!")
-
 int main()
 {
-	DebugWrite(L"Program started");
 	guiInterface();
-	DebugWrite(L"Program terminated");
     return 0;
 }
 

@@ -282,7 +282,7 @@ private:
 public:
 	BitBoard *bb;
 	const u16 ToFromMask = 0b111111111111;
-	PackedHashEntry *ttDepthFirst, *ttAlwaysOverwrite;
+	PackedHashEntry *ttDepthFirst=nullptr, *ttAlwaysOverwrite=nullptr;
 	u8 generation;
 	u64 hashMask;
 	ABAI();
