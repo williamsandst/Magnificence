@@ -3,8 +3,9 @@
 
 #if defined(_WIN32)
 #include <intrin.h>
-#endif
+#elif defined(__gnu_linux__) || defined(__linux__) || defined(__CYGWIN__)
 #include "x86intrin.h"
+#endif
 
 #include <cstdlib>
 #include <stdint.h>
