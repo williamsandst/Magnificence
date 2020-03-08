@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "IO.h"
 
 //Static class, used for input/output to interface, converts between different internal
@@ -9,8 +8,8 @@
 string IO::convertMoveToAlg(u32 move)
 {
 	string alg;
-	__int16 output2 = 63 - (move & 63);
-	__int16 output1 = 63 - ((move >> 6) & 63);
+	i16 output2 = 63 - (move & 63);
+	i16 output1 = 63 - ((move >> 6) & 63);
 	alg += output2 % 8 + 'a';
 	alg += 8 - output2 / 8 + '0';
 	alg += output1 % 8 + 'a';

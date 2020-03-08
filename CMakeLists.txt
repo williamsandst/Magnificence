@@ -13,6 +13,9 @@ project(magnificence-chess
     DESCRIPTION "UCI C++ Chess Engine"
 )
 
+# Flags to support the compiler intrinsics needed for MoveGen
+set(CMAKE_CXX_FLAGS "-mbmi2 -pthread -g")
+
 ### Add source files
 # Add source files recursively from /src
 file(GLOB_RECURSE SOURCE_FILES 

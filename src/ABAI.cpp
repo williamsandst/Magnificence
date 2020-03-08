@@ -1,9 +1,4 @@
-#include "stdafx.h"
 #include "ABAI.h"
-#pragma once
-#include "IO.h"
-#include <cmath>
-#include "GameState.h"
 
 
 const bool DEBUG_OUTPUT = true;
@@ -381,7 +376,7 @@ int ABAI::pieceSquareValues(const short * pieceSquareTable, u64 pieceSet)
 	short sum = 0;
 	while (pieceSet)
 	{
-		_BitScanForward64(&index, pieceSet);
+		index = bitScanForward(pieceSet);
 		pieceSet &= pieceSet - 1;
 		sum += pieceSquareTable[index];
 	}
@@ -898,7 +893,7 @@ vector<u32> ABAI::searchIDComplexTime(GameState &gameState)
 	else
 		endM = bb->WhiteLegalMoves(startM);
 	u16 *mockKillerMoves = new u16[2]{ 0, 0 };
-	u8 or = 0;
+	u8 orx = 0;
 	int nrNodes = 0;
 	while (clock() - start < gameState.maxDepth)
 	{

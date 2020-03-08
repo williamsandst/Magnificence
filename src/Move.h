@@ -1,5 +1,4 @@
 #pragma once
-#include "stdafx.h"
 
 typedef unsigned long long int u64;
 typedef unsigned long int u32;

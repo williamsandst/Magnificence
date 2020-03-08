@@ -1,7 +1,4 @@
-#include "stdafx.h"
-#include "Board.h"
 #include "ArrayBoard.h"
-#include "IO.h"
 
 //Data values for board array
 //White:
@@ -19,9 +16,9 @@
 //15 = queen
 //16 = king
 
-void ArrayBoard::makeMove(__int16 move)
+void ArrayBoard::makeMove(u16 move)
 {
-	__int8 fromPos = (move >> 10) & 63;
+	i8 fromPos = (move >> 10) & 63;
 	//Castling and king moves
 	if (board[fromPos] == 6) //Trying to move king
 	{
@@ -150,7 +147,7 @@ void ArrayBoard::makeMove(__int16 move)
 	return;
 }
 
-void ArrayBoard::undoMove(__int16 move)
+void ArrayBoard::undoMove(u16 move)
 {
 
 }

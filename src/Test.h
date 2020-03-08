@@ -1,6 +1,13 @@
 #pragma once
 #include <string>
+#include <ctime>
+#include <algorithm>
+#include <random>
+#include <string>
+
 #include "BitBoard.h"
+#include "Move.h"
+#include "IO.h"
 
 struct HashEntryPerft
 {

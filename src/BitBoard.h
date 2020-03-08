@@ -1,11 +1,18 @@
 #pragma once
+#define INTRINSICS_H_INCLUDED
 
-#include "Board.h"
-#include <cstdlib>
+#if defined(_WIN32)
 #include <intrin.h>
+#endif
+#include "x86intrin.h"
+
+#include <cstdlib>
+#include <stdint.h>
 #include <iostream>
 #include <string>
 #include <random>
+
+#include "Board.h"
 
 typedef unsigned long long int u64;
 typedef unsigned long int u32;
@@ -318,8 +325,28 @@ public:
 	//a wrapper for population count
 	u8 pc(u64 valeu)
 	{
+		#if defined(_WIN32)
 		u8 returnValue = (u8)__popcnt64(valeu);
+		#elif defined(__gnu_linux__) || defined(__linux__) || defined(__CYGWIN__)
+		u8 returnValue = (u8)__builtin_popcount(valeu);
+		#endif
 		return returnValue;
+	}
+
+	inline u32 bitScanForward(u64 piece)
+	{
+		#if defined(_WIN32)
+		u32 index;
+		_BitScanForward64(&index, piece);
+		return index;
+		#elif defined(__gnu_linux__) || defined(__linux__) || defined(__CYGWIN__)
+		return __builtin_ctz(piece);
+		#endif
+	}
+
+	u64 pext(u64 occupancy, u64 mask)
+	{
+		return _pext_u64(occupancy, mask);
 	}
 
 	//copies the state of inserted bitboard to this bitboard

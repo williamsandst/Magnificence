@@ -1,6 +1,10 @@
 #pragma once
-#include "BitBoard.h"
 #include <vector>
+#include <iostream>
+#include <ctime>
+#include "BitBoard.h"
+#include "Move.h"
+#include "Test.h"
 
 class Engine
 {

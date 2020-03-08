@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "MonteCarloAI.h"
 
 
@@ -96,7 +95,7 @@ int MonteCarloAI::Search(BitBoard bb, Node *start, u32 *moves, bool color)
 		Node *current = start->firstChild;
 		while (current != start->lastChild)
 		{
-			current->score = (current->win / ((float)current->total * 5)) + 1.41f * std::sqrtf(std::logf(start->total) / current->total);
+			current->score = (current->win / ((float)current->total * 5)) + 1.41f * std::sqrt(std::log(start->total) / current->total);
 			current++;
 		}
 		return res;

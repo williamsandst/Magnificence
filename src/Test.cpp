@@ -1,13 +1,4 @@
-#include "stdafx.h"
 #include "Test.h"
-#include "Move.h"
-#include "IO.h"
-#include <ctime>
-#include "stdafx.h"
-#include <algorithm>
-#pragma once
-#include <random>
-#include <string>
 
 //Static class used for testing purposes
 mt19937 rng;

@@ -1,14 +1,14 @@
 // Magnificence Chess.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
 #include <iostream>
 #include <thread>
 #include <sstream>
 #include <chrono>
-#include "ABAI.h"
 #include <atomic>
 #include <ctime>
+
+#include "ABAI.h"
 #include "Board.h"
 #include "GameState.h"
 #include "BitBoard.h"
@@ -86,6 +86,7 @@ void guiInterface()
 	while (getline(cin, recievedCommand))
 	{
 		vector<string> splitCommand = split(recievedCommand, ' ');
+		
 		if (CONSOLEDEBUG) //Debug commands, not used for interface!
 		{
 			if (splitCommand[0] == "help" || splitCommand[0] == "commands")

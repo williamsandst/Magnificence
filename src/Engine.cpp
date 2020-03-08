@@ -1,11 +1,4 @@
-#include "stdafx.h"
 #include "Engine.h"
-#include "Move.h"
-#include <iostream>
-#include "IO.h"
-#include <ctime>
-#pragma once
-#include "Test.h"
 
 int nodes[100];
 int transpositions = 0;

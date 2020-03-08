@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "BitBoard.h"
 #include "Board.h"
 #include <iostream>
@@ -78,9 +77,8 @@ inline void BitBoard::AddPiece(u8 pos, u8 piece)
 //Occupancy: the occupancy mask used
 inline u64 BitBoard::MagicRook(u64 piece, u64 occupancy)
 {
-	u32 Index;
-	_BitScanForward64(&Index, piece);
-	return MRook[Index].table[_pext_u64(occupancy, MRook[Index].mask)];
+	u32 index = bitScanForward(piece);
+	return MRook[index].table[_pext_u64(occupancy, MRook[index].mask)];
 }
 
 //Acces the magics for bishops
@@ -88,8 +86,7 @@ inline u64 BitBoard::MagicRook(u64 piece, u64 occupancy)
 //Occupancy: the occupancy mask used
 inline u64 BitBoard::MagicBishop(u64 piece, u64 occupancy)
 {
-	u32 index;
-	_BitScanForward64(&index, piece);
+	u32 index = bitScanForward(piece);
 	return MBishop[index].table[_pext_u64(occupancy, MBishop[index].mask)];
 }
 
@@ -103,7 +100,7 @@ inline u32* BitBoard::extractWhiteMoves(u64 moves, u32 baseMove, u32 start, u32 
 	u32 move, BaseMove = baseMove | start, index;
 	while (moves)
 	{
-		_BitScanForward64(&index, moves);
+		index = bitScanForward(moves);
 		move = BaseMove | (index << 6) | (((mailBox[index]) - 7) << 29);
 		*movesOut = move;
 		movesOut++;
@@ -122,7 +119,7 @@ inline u32* BitBoard::extractBlackMoves(u64 moves, u32 baseMove, u32 start, u32 
 	u32 move, BaseMove = baseMove | start , index;
 	while (moves)
 	{
-		_BitScanForward64(&index, moves);
+		index = bitScanForward(moves);
 		if (mailBox[index] < 14)
 		{
 			move = BaseMove| (index << 6) | (((mailBox[index])) << 29);
@@ -148,7 +145,7 @@ inline u32* BitBoard::extractBlackPawnMoves(u64 moves, u32 baseMove, u32 start, 
 	u32 move, BaseMove = baseMove | start, index;
 	while (moves)
 	{
-		_BitScanForward64(&index, moves);
+		index = bitScanForward(moves);
 		move = BaseMove | (index << 6);
 		if (mailBox[index] < 14)
 		{
@@ -238,7 +235,7 @@ u32 BitBoard::LowestValuedAttacker(u64 square, u64 baseMove, bool side)
 	// TTTUUURRRRssssSSSSSSttttttffffff
 
 	u32 index; //The index of the square being attacked
-	_BitScanForward64(&index, square);
+	index = bitScanForward(square);
 	u8 adding; //Added to indexing of pieces to allow use of the same function for black and white. = 0 for white and = 7 for black
 	u8 taken = mailBox[index]; //Used for adding to moves to properly build move
 	if (taken > 6)
@@ -299,8 +296,8 @@ u32 BitBoard::LowestValuedAttacker(u64 square, u64 baseMove, bool side)
 	else mem = 0;
 	if (mem)
 	{
-		u32 from = 0; //used to store where a piece was moved from
-		_BitScanForward64(&from, mem);
+		//used to store where a piece was moved from
+		u32 from = bitScanForward(mem);
 		return ((u32)taken) << 29 | index << 6 | from | baseMove;
 	}
 	//no taken piece
@@ -400,7 +397,7 @@ inline u32* BitBoard::extractWhitePawnMoves(u64 moves, u32 baseMove, u32 start, 
 	u32 move, BaseMove = baseMove | start, index;
 	while (moves)
 	{
-		_BitScanForward64(&index, moves);
+		index = bitScanForward(moves);
 		move = BaseMove | (index << 6) | ((mailBox[index] - 7) << 29);
 		if (index < 8 || index > 55)
 		{
@@ -745,13 +742,13 @@ void BitBoard::CalculateZoobrist()
 	u32 index;
 	if (EP)
 	{
-		_BitScanForward64(&index, EP);
+		index = bitScanForward(EP);
 		zoobristKey ^= ElementArray[64 * 6 + index];
 	}
 	u8 rockadStor = rockad;
 	while (rockadStor)
 	{
-		_BitScanForward64(&index, rockadStor);
+		index = bitScanForward(rockadStor);
 		zoobristKey ^= ElementArray[64 * 6 + index + 8];
 		rockadStor &= rockadStor - 1;
 	}
@@ -850,7 +847,7 @@ void BitBoard::SetUp()
 			while (memory)
 			{
 				count++;
-				_BitScanForward64(&index, memory);
+				index = bitScanForward(memory);
 				memory = memory & (memory - 1);
 				indexes.push_back(index);
 			}
@@ -973,7 +970,7 @@ void BitBoard::SetUp()
 			while (memory)
 			{
 				count++;
-				_BitScanForward64(&index, memory);
+				index = bitScanForward(memory);
 				memory = memory & (memory - 1);
 				indexes.push_back(index);
 			}
@@ -1141,7 +1138,7 @@ u32 BitBoard::getBaseMove()
 		u32 index;
 		if (EP)
 		{
-			_BitScanForward(&index, EP);
+			index = bitScanForward(EP);
 		}
 		else
 		{
@@ -1162,7 +1159,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		u32 index;
 		if (EP)
 		{
-			_BitScanForward(&index, EP);
+			index = bitScanForward(EP);
 		}
 		else
 		{
@@ -1195,7 +1192,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		//Knights
 		while (EPiece)
 		{
-			_BitScanForward64(&index, EPiece);
+			index = bitScanForward(EPiece);
 			EPiece &= EPiece - 1;
 			ThreatenedSquaresO |= KnightSet[index];
 			if (KnightSet[index] & king)
@@ -1205,18 +1202,18 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 			}
 		}
 		//king
-		_BitScanForward64(&index, Pieces[7]);
+		index = bitScanForward(Pieces[7]);
 		ThreatenedSquaresO |= KingSet[index];
 		//rooks + queens
 		EPiece = Pieces[8] | Pieces[10];
-		_BitScanForward64(&kingIndex, king);
+		kingIndex = bitScanForward(king);
 		u64 kingAttacks = MagicRook(king, occupancy);
 		u64 NKOccupancy = occupancy ^ king;
 		u64 memory = EPiece & kingAttacks;
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicRook(memory, NKOccupancy), normal = MagicRook(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -1248,7 +1245,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicBishop(memory, NKOccupancy), normal = MagicBishop(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -1304,7 +1301,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		while (pawns)
 		{
 			u64 res;
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (ULDR[index] & king)
 			{
@@ -1332,7 +1329,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		pawns = ((Pieces[5] & ~(PinnedPieces)) << 9) & nColumns[0] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
@@ -1352,7 +1349,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		pawns = ((Pieces[5] & ~(PinnedPieces)) << 7) & nColumns[7] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
@@ -1374,7 +1371,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		pawns &= legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
@@ -1394,7 +1391,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		pawns = mem;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			*MoveInsert = baseMove | index << 6 | (index - 16) | 7 << 29;
 			MoveInsert++;
@@ -1413,7 +1410,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index - 9)) | (one << (index - 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[8] | Pieces[10])) || 
@@ -1436,7 +1433,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index - 7)) | (one << (index - 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[8] | Pieces[10])) ||
@@ -1455,7 +1452,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		while (qb)
 		{
 			u64 res;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			if ((ULDR[index]) & king)
 			{
 				res = MagicBishop(qb, occupancy) & (ULDR[index]) & legalTargets;
@@ -1476,7 +1473,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		while (qb)
 		{
 			u64 res = MagicBishop(qb, occupancy) & legalTargets;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			qb &= qb - 1;
 			MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 		}
@@ -1488,7 +1485,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		while (qr)
 		{
 			u64 res;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			if ((UD[index]) & king)
 			{
 				res = MagicRook(qr, occupancy) & (UD[index]) & legalTargets;
@@ -1509,7 +1506,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		while (qr)
 		{
 			u64 res = MagicRook(qr, occupancy) & legalTargets;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			qr &= qr - 1;
 			MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 		}
@@ -1520,7 +1517,7 @@ u32* BitBoard::WhiteLegalMoves(u32 *Start)
 		u32 index;
 		while (knights)
 		{
-			_BitScanForward64(&index, knights);
+			index = bitScanForward(knights);
 			knights &= (knights - 1);
 			MoveInsert = extractWhiteMoves(KnightSet[index] & legalTargets, baseMove, index, MoveInsert);
 		}
@@ -1550,7 +1547,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		u32 index;
 		if (EP)
 		{
-			_BitScanForward(&index, EP);
+			index = bitScanForward(EP);
 		}
 		else
 		{
@@ -1583,7 +1580,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		//Knights
 		while (EPiece)
 		{
-			_BitScanForward64(&index, EPiece);
+			index = bitScanForward(EPiece);
 			EPiece &= EPiece - 1;
 			ThreatenedSquaresO |= KnightSet[index];
 			if (KnightSet[index] & king)
@@ -1593,18 +1590,18 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 			}
 		}
 		//king
-		_BitScanForward64(&index, Pieces[7]);
+		index = bitScanForward(Pieces[7]);
 		ThreatenedSquaresO |= KingSet[index];
 		//rooks + queens
 		EPiece = Pieces[8] | Pieces[10];
-		_BitScanForward64(&kingIndex, king);
+		kingIndex = bitScanForward(king);
 		u64 kingAttacks = MagicRook(king, occupancy);
 		u64 NKOccupancy = occupancy ^ king;
 		u64 memory = EPiece & kingAttacks;
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicRook(memory, NKOccupancy), normal = MagicRook(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -1636,7 +1633,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicBishop(memory, NKOccupancy), normal = MagicBishop(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -1681,7 +1678,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		while (pawns)
 		{
 			u64 res;
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (ULDR[index] & king)
 			{
@@ -1709,7 +1706,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		pawns = ((Pieces[5] & ~(PinnedPieces)) << 9) & nColumns[0] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
@@ -1729,7 +1726,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		pawns = ((Pieces[5] & ~(PinnedPieces)) << 7) & nColumns[7] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
@@ -1751,7 +1748,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		pawns &= legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index < 56)
 			{
@@ -1771,7 +1768,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		pawns = mem;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			*MoveInsert = baseMove | index << 6 | (index - 16) | 7 << 29;
 			MoveInsert++;
@@ -1790,7 +1787,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index - 9)) | (one << (index - 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[8] | Pieces[10])) ||
@@ -1813,7 +1810,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index - 7)) | (one << (index - 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[8] | Pieces[10])) ||
@@ -1832,7 +1829,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		while (qb)
 		{
 			u64 res;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			if ((ULDR[index]) & king)
 			{
 				res = MagicBishop(qb, occupancy) & (ULDR[index]) & legalTargets;
@@ -1853,7 +1850,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		while (qb)
 		{
 			u64 res = MagicBishop(qb, occupancy) & legalTargets;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			qb &= qb - 1;
 			MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 		}
@@ -1865,7 +1862,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		while (qr)
 		{
 			u64 res;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			if ((UD[index]) & king)
 			{
 				res = MagicRook(qr, occupancy) & (UD[index]) & legalTargets;
@@ -1886,7 +1883,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		while (qr)
 		{
 			u64 res = MagicRook(qr, occupancy) & legalTargets;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			qr &= qr - 1;
 			MoveInsert = extractWhiteMoves(res, baseMove, index, MoveInsert);
 		}
@@ -1897,7 +1894,7 @@ u32 * BitBoard::WhiteQSearchMoves(u32 * Start)
 		u32 index;
 		while (knights)
 		{
-			_BitScanForward64(&index, knights);
+			index = bitScanForward(knights);
 			knights &= (knights - 1);
 			MoveInsert = extractWhiteMoves(KnightSet[index] & legalTargets, baseMove, index, MoveInsert);
 		}
@@ -1927,7 +1924,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		u32 index;
 		if (EP)
 		{
-			_BitScanForward(&index, EP);
+			index = bitScanForward(EP);
 		}
 		else
 		{
@@ -1960,7 +1957,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		//Knights
 		while (EPiece)
 		{
-			_BitScanForward64(&index, EPiece);
+			index = bitScanForward(EPiece);
 			EPiece &= EPiece - 1;
 			ThreatenedSquaresO |= KnightSet[index];
 			if (KnightSet[index] & king)
@@ -1970,18 +1967,18 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 			}
 		}
 		//king
-		_BitScanForward64(&index, Pieces[0]);
+		index = bitScanForward(Pieces[0]); //Why not var king here?
 		ThreatenedSquaresO |= KingSet[index];
 		//queen + rooks
 		EPiece = Pieces[1] | Pieces[3];
-		_BitScanForward64(&kingIndex, king);
+		kingIndex = bitScanForward(king);
 		u64 kingAttacks = MagicRook(king, occupancy);
 		u64 NKOccupancy = occupancy ^ king;
 		u64 memory = EPiece & kingAttacks;
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicRook(memory, NKOccupancy), normal = MagicRook(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -2009,7 +2006,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicBishop(memory, NKOccupancy), normal = MagicBishop(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -2065,7 +2062,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		while (pawns)
 		{
 			u64 res;
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			if ((ULDR[index]) & king)
 			{
 				res = (((one << (index - 9)) & nColumns[7]) & EPieces);
@@ -2093,7 +2090,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		pawns = ((Pieces[12] & ~(PinnedPieces)) >> 9) & nColumns[7] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
@@ -2113,7 +2110,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		pawns = ((Pieces[12] & ~(PinnedPieces)) >> 7) & nColumns[0] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
@@ -2135,7 +2132,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		pawns &= legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
@@ -2155,7 +2152,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		pawns = mem;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			*MoveInsert = baseMove | index << 6 | (index + 16) | 7 << 29;
 			MoveInsert++;
@@ -2174,7 +2171,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index + 9)) | (one << (index + 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
@@ -2197,7 +2194,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index + 7)) | (one << (index + 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
@@ -2216,7 +2213,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		while (qb)
 		{
 			u64 res;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			if ((ULDR[index]) & king)
 			{
 				res = MagicBishop(qb, occupancy) & ULDR[index] & legalTargets;
@@ -2236,7 +2233,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		while (qb)
 		{
 			u64 res = MagicBishop(qb, occupancy) & legalTargets;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			qb &= qb - 1;
 			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
@@ -2248,7 +2245,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		while (qr)
 		{
 			u64 res;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			if ((UD[index]) & king)
 			{
 				res = MagicRook(qr, occupancy) & (UD[index]) & legalTargets;
@@ -2268,7 +2265,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		while (qr)
 		{
 			u64 res = MagicRook(qr, occupancy) & legalTargets;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			qr &= qr - 1;
 			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
@@ -2279,7 +2276,7 @@ u32* BitBoard::BlackLegalMoves(u32 *Start)
 		u32 index;
 		while (knights)
 		{
-			_BitScanForward64(&index, knights);
+			index = bitScanForward(knights);
 			knights &= (knights - 1);
 			MoveInsert = extractBlackMoves(KnightSet[index] & legalTargets, baseMove, index, MoveInsert);
 		}
@@ -2310,7 +2307,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		u32 index;
 		if (EP)
 		{
-			_BitScanForward(&index, EP);
+			index = bitScanForward(EP);
 		}
 		else
 		{
@@ -2343,7 +2340,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		//Knights
 		while (EPiece)
 		{
-			_BitScanForward64(&index, EPiece);
+			index = bitScanForward(EPiece);
 			EPiece &= EPiece - 1;
 			ThreatenedSquaresO |= KnightSet[index];
 			if (KnightSet[index] & king)
@@ -2353,18 +2350,18 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 			}
 		}
 		//king
-		_BitScanForward64(&index, Pieces[0]);
+		index = bitScanForward(Pieces[0]);
 		ThreatenedSquaresO |= KingSet[index];
 		//queen + rooks
 		EPiece = Pieces[1] | Pieces[3];
-		_BitScanForward64(&kingIndex, king);
+		kingIndex = bitScanForward(king);
 		u64 kingAttacks = MagicRook(king, occupancy);
 		u64 NKOccupancy = occupancy ^ king;
 		u64 memory = EPiece & kingAttacks;
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicRook(memory, NKOccupancy), normal = MagicRook(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -2392,7 +2389,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		EPiece &= ~(kingAttacks);
 		while (memory)
 		{
-			_BitScanForward64(&index, memory);
+			index = bitScanForward(memory);
 			u64 ret = MagicBishop(memory, NKOccupancy), normal = MagicBishop(memory, occupancy);
 			ThreatenedSquaresO |= ret;
 			legalTargets |= (kingAttacks & normal) | (one << index);
@@ -2437,7 +2434,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		while (pawns)
 		{
 			u64 res;
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			if ((ULDR[index]) & king)
 			{
 				res = (((one << (index - 9)) & nColumns[7]) & EPieces);
@@ -2465,7 +2462,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		pawns = ((Pieces[12] & ~(PinnedPieces)) >> 9) & nColumns[7] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
@@ -2485,7 +2482,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		pawns = ((Pieces[12] & ~(PinnedPieces)) >> 7) & nColumns[0] & EPieces & legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
@@ -2507,7 +2504,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		pawns &= legalTargets;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			if (index > 7)
 			{
@@ -2527,7 +2524,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		pawns = mem;
 		while (pawns)
 		{
-			_BitScanForward64(&index, pawns);
+			index = bitScanForward(pawns);
 			pawns &= pawns - 1;
 			*MoveInsert = baseMove | index << 6 | (index + 16) | 7 << 29;
 			MoveInsert++;
@@ -2546,7 +2543,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index + 9)) | (one << (index + 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
@@ -2569,7 +2566,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 			}
 			if (pawns)
 			{
-				_BitScanForward64(&index, pawns);
+				index = bitScanForward(pawns);
 				u64 mockOccupancy = (~((one << (index + 7)) | (one << (index + 8)))) & occupancy;
 				mockOccupancy |= one << index;
 				if (!((MagicRook(king, mockOccupancy) & (Pieces[1] | Pieces[3])) ||
@@ -2588,7 +2585,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		while (qb)
 		{
 			u64 res;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			if ((ULDR[index]) & king)
 			{
 				res = MagicBishop(qb, occupancy) & ULDR[index] & legalTargets;
@@ -2608,7 +2605,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		while (qb)
 		{
 			u64 res = MagicBishop(qb, occupancy) & legalTargets;
-			_BitScanForward64(&index, qb);
+			index = bitScanForward(qb);
 			qb &= qb - 1;
 			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
@@ -2620,7 +2617,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		while (qr)
 		{
 			u64 res;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			if ((UD[index]) & king)
 			{
 				res = MagicRook(qr, occupancy) & (UD[index]) & legalTargets;
@@ -2640,7 +2637,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		while (qr)
 		{
 			u64 res = MagicRook(qr, occupancy) & legalTargets;
-			_BitScanForward64(&index, qr);
+			index = bitScanForward(qr);
 			qr &= qr - 1;
 			MoveInsert = extractBlackMoves(res, baseMove, index, MoveInsert);
 		}
@@ -2651,7 +2648,7 @@ u32 * BitBoard::BlackQSearchMoves(u32 * Start)
 		u32 index;
 		while (knights)
 		{
-			_BitScanForward64(&index, knights);
+			index = bitScanForward(knights);
 			knights &= (knights - 1);
 			MoveInsert = extractBlackMoves(KnightSet[index] & legalTargets, baseMove, index, MoveInsert);
 		}
@@ -2693,7 +2690,7 @@ bool BitBoard::MakeMove(u32 move)
 	if (oldEP)
 	{
 		u32 index;
-		_BitScanForward(&index, oldEP);
+		index = bitScanForward(oldEP);
 		zoobristKey ^= ElementArray[64 * 6 + index];
 	}
 	RemovePiece(from);
@@ -2762,7 +2759,7 @@ bool BitBoard::MakeMove(u32 move)
 		while (mem)
 		{
 			u32 index;
-			_BitScanForward(&index, mem);
+			index = bitScanForward(mem);
 			zoobristKey ^= ElementArray[64 * 6 + 8 + index];
 			mem &= mem - 1;
 		}
@@ -2789,7 +2786,7 @@ bool BitBoard::MakeMove(u32 move)
 		while (mem)
 		{
 			u32 index;
-			_BitScanForward(&index, mem);
+			index = bitScanForward(mem);
 			zoobristKey ^= ElementArray[64 * 6 + 8 + index];
 			mem &= mem - 1;
 		}
@@ -2829,13 +2826,13 @@ void BitBoard::UnMakeMove(u32 move)
 	u32 index;
 	if (EP)
 	{
-		_BitScanForward(&index, EP);
+		index = bitScanForward(EP);
 		zoobristKey ^= ElementArray[64 * 6 + index];
 	}
 	EP = (u8)one << (0b1111 & (move >> 18));
 	if (EP)
 	{
-		_BitScanForward(&index, EP);
+		index = bitScanForward(EP);
 		zoobristKey ^= ElementArray[64 * 6 + index];
 	}
 	u8 oldRockad = rockad;
@@ -2843,7 +2840,7 @@ void BitBoard::UnMakeMove(u32 move)
 	oldRockad = rockad ^ oldRockad;
 	while (oldRockad)
 	{
-		_BitScanForward(&index, oldRockad);
+		index = bitScanForward(oldRockad);
 		zoobristKey ^= ElementArray[64 * 6 + 8 + index];
 		oldRockad &= oldRockad - 1;
 	}

@@ -1,22 +1,30 @@
 #pragma once
 #include "Board.h"
+#include "IO.h"
 
 using namespace std;
+
+typedef unsigned long long int u64;
+typedef unsigned long int u32;
+typedef unsigned short int u16;
+typedef signed short int i16;
+typedef signed short int i8;
+typedef unsigned char u8;
 
 class ArrayBoard : public Board
 {
 public:
-	__int8 board[64] = { };
+	i8 board[64] = { };
 	bool castlingWhiteQueenSide = true;
 	bool castlingWhiteKingSide = true;
 	bool castlingBlackQueenSide = true;
 	bool castlingBlackKingSide = true;
-	unsigned __int8 totalPly = 1;
-	unsigned __int8 drawCounter = 0;
-	__int8 enPassantSquare = -1;
+	u8 totalPly = 1;
+	u8 drawCounter = 0;
+	i8 enPassantSquare = -1;
 	ArrayBoard(string fenString);
-	void makeMove(__int16 move);
-	void undoMove(__int16 move);
+	void makeMove(u16 move);
+	void undoMove(u16 move);
 	//Enpassant
 	ArrayBoard();
 	~ArrayBoard();
