@@ -153,7 +153,9 @@ u64 Test::perft(int depth, BitBoard *bb, bool color, u32 *start)
 			{
 				bb->MakeMove(move);
 				res += perft(depth, bb, color, nextStart);
-				bb->UnMakeMove(move);
+				std::cout << IO::convertBoardToFEN(*bb, true) << "\n";
+				std::cout << IO::convertMoveToAlg(move) << "\n";
+				bb->UnMakeMove(move); //Segmentation fault here
 			}
 		}
 		return res;

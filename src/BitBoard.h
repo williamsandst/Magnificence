@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <random>
+#include <bitset>
 
 #include "Board.h"
 
@@ -25,9 +26,8 @@ using namespace std;
 
 struct RHEntry
 {
-private:
-	u64 key;
 public:
+	u64 key;
 	RHEntry()
 	{
 		key = 0;
@@ -83,9 +83,8 @@ public:
 
 struct RHEntryBucket
 {
-private:
-	RHEntry Entry1, Entry2;
 public:
+	RHEntry Entry1, Entry2;
 	RHEntryBucket()
 	{
 		Entry1 = RHEntry();
@@ -129,6 +128,8 @@ public:
 	}
 	bool removeEntry(RHEntry a)
 	{
+		//This causes segmentation fault, Entry2 doesn't exist because the pos is outside the array
+		std::cout << Entry2.key << "\n";
 		if (Entry1 == a)
 		{
 			--Entry1;
@@ -327,14 +328,13 @@ public:
 	u8 pc(u64 valeu)
 	{
 		#if defined(_WIN32)
-		u8 returnValue = (u8)__popcnt64(valeu);
+		return (u8)__popcnt64(valeu);
 		#elif defined(__gnu_linux__) || defined(__linux__) || defined(__CYGWIN__)
-		u8 returnValue = (u8)__builtin_popcount(valeu);
+		return (u8)__builtin_popcount(valeu);
 		#endif
-		return returnValue;
 	}
 
-	inline u32 bitScanForward(u64 piece)
+	inline u32 bitScanForward(const u64 piece)
 	{
 		#if defined(_WIN32)
 		u32 index;
