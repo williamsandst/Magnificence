@@ -297,11 +297,11 @@ private:
 	inline u32 bitScanForward(u64 piece)
 	{
 		#if defined(_WIN32)
-		u32 index;
+		unsigned long int index;
 		_BitScanForward64(&index, piece);
 		return index;
 		#elif defined(__gnu_linux__) || defined(__linux__) || defined(__CYGWIN__)
-		return __builtin_ctz(piece);
+		return __builtin_ctzll(piece);
 		#endif
 	}
 

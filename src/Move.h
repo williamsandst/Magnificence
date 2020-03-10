@@ -2,7 +2,7 @@
 
 #include <inttypes.h>
 
-typedef uint_fast64_t u64;
+typedef uint_fast64_t  u64;
 typedef uint_least32_t u32;
 typedef uint_fast16_t u16;
 typedef int_fast16_t i16;
