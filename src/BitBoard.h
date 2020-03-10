@@ -8,7 +8,7 @@
 #endif
 
 #include <cstdlib>
-#include <stdint.h>
+#include <inttypes.h>
 #include <iostream>
 #include <string>
 #include <random>
@@ -16,11 +16,11 @@
 
 #include "Board.h"
 
-typedef unsigned long long int u64;
-typedef char32_t u32;
-typedef unsigned short int u16;
-typedef signed short int i16;
-typedef unsigned char u8;
+typedef uint_fast64_t u64;
+typedef uint_least32_t u32;
+typedef uint_fast16_t u16;
+typedef int_fast16_t i16;
+typedef uint_fast8_t u8;
 
 using namespace std;
 
