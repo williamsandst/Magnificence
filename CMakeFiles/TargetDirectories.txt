@@ -1,3 +1,0 @@
-/home/harald/source/repos/magnificence-chess/CMakeFiles/rebuild_cache.dir
-/home/harald/source/repos/magnificence-chess/CMakeFiles/magnificence-chess.dir
-/home/harald/source/repos/magnificence-chess/CMakeFiles/edit_cache.dir
