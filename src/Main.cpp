@@ -73,7 +73,6 @@ void guiInterface()
 	cout << "Magnificence Development Build" << endl;
 	cout << "------------------------------" << endl << endl;
 
-
 	cout << "Generating magic tables..." << endl;
 	BitBoard board = BitBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	

@@ -778,15 +778,12 @@ bool BitBoard::addRH(u64 key)
 //if there is no equal entry in hash it will crash
 void BitBoard::removeRH(u64 key)
 {
-	std::cout << "Zoobrist Key Input: " << key << "\n";
 	RHEntry r(key, 0);
-	std::cout << "Trying to remove RHEntryKey: " << r.key << "\n";
 	RHEntryBucket* pos = RepetitionHash + (key & 0xff);
 	//RemoveEntry is never true and thus the pos pointer goes outside the RepetitionHash array
 	while (!pos->removeEntry(r))
 	{
 		pos++;
-		std::cout << "Iterating " << pos << std::endl;
 	}
 }
 
@@ -2823,8 +2820,7 @@ bool BitBoard::MakeMove(u32 move)
 //unmkes specified move
 void BitBoard::UnMakeMove(u32 move)
 {
-	std::cout << "Zoobrist:" << zoobristKey << "\n";
-	removeRH(zoobristKey); //This causes segmentation fault
+	removeRH(zoobristKey);
 	zoobristKey ^= ElementArray[64 * 6 + 12];
 	color = !color;
 	silent = 0b111111 & (move >> 12);

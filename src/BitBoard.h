@@ -17,7 +17,7 @@
 #include "Board.h"
 
 typedef unsigned long long int u64;
-typedef unsigned long int u32;
+typedef char32_t u32;
 typedef unsigned short int u16;
 typedef signed short int i16;
 typedef unsigned char u8;
@@ -129,7 +129,6 @@ public:
 	bool removeEntry(RHEntry a)
 	{
 		//This causes segmentation fault, Entry2 doesn't exist because the pos is outside the array
-		std::cout << Entry2.key << "\n";
 		if (Entry1 == a)
 		{
 			--Entry1;
@@ -330,7 +329,7 @@ public:
 		#if defined(_WIN32)
 		return (u8)__popcnt64(valeu);
 		#elif defined(__gnu_linux__) || defined(__linux__) || defined(__CYGWIN__)
-		return (u8)__builtin_popcount(valeu);
+		return (u8)__builtin_popcountll(valeu);
 		#endif
 	}
 
@@ -341,7 +340,7 @@ public:
 		_BitScanForward64(&index, piece);
 		return index;
 		#elif defined(__gnu_linux__) || defined(__linux__) || defined(__CYGWIN__)
-		return __builtin_ctz(piece);
+		return __builtin_ctzll(piece);
 		#endif
 	}
 
