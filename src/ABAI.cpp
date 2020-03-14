@@ -42,7 +42,7 @@ int ABAI::insertTT(PackedHashEntry newEntry)
 //Checks if a board position is in the transposition table
 bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 {
-	u32 index = (u32)(key & hashMask);
+	u64 index = (u64)(key & hashMask);
 	PackedHashEntry entry = ttDepthFirst[index];
 	if (extractKey(entry) == key)
 	{
@@ -55,8 +55,7 @@ bool ABAI::getFromTT(u64 key, UnpackedHashEntry *in)
 		*in = UnpackedHashEntry(entry);
 		return true;
 	}
-	else
-		return false;
+	return false;
 }
 
 //Does a qSearch
@@ -393,6 +392,13 @@ void ABAI::resetTT()
 	//cout << i << endl;
 	ttAlwaysOverwrite = new PackedHashEntry[i];
 	ttDepthFirst = new PackedHashEntry[i];
+	for (size_t j = 0; j < i; j++)
+	{
+		(ttAlwaysOverwrite + j)->data = 0;
+		(ttAlwaysOverwrite + j)->key = 0; 
+		(ttDepthFirst + j)->data = 0;
+		(ttDepthFirst + j)->key = 0; 
+	}
 	hashMask = i - 1;
 }
 
@@ -715,6 +721,7 @@ vector<u32> ABAI::searchID(GameState &gameState)
 		//Do search
 		score = negamax(-8192, 8192, i, i, gameState.color, MoveStart, KillerMoves, moveSortValues);
 		cout << "info depth " << to_string(i) << " score cp " << to_string(score) << " pv ";
+		size_t lastPV = 0;
 		for (size_t i2 = 0; i2 < i; i2++)
 		{
 			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
@@ -724,11 +731,12 @@ vector<u32> ABAI::searchID(GameState &gameState)
 			PV.push_back(pV[i2]);
 			cout << IO::convertMoveToAlg(pV[i2]) << " ";
 			bb->MakeMove(pV[i2]);
+			lastPV++;
 		}
 		//Unmake pV
-		for (size_t i2 = 1; i2 < i + 1; i2++)
+		for (size_t i2 = 1; i2 < lastPV + 1; i2++)
 		{
-			bb->UnMakeMove(pV[i - i2]);
+			bb->UnMakeMove(pV[lastPV - i2]);
 		}
 		cout << endl;
 	}

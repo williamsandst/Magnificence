@@ -34,7 +34,7 @@ string commandList =
 
 using namespace std;
 
-static const int threadCount = 2;
+static const int threadCount = 1;
 
 void runEngine(GameState* gameState, ABAI* engine);
 void guiInterface();
