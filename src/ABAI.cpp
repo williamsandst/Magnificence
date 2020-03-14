@@ -715,7 +715,7 @@ vector<u32> ABAI::searchID(GameState &gameState)
 	u32 pV[100];
 
 	cout << endl;
-
+	size_t lengthPV = 0;
 	for (int i = 1; i < gameState.maxDepth + 1; i++)
 	{
 		//Do search
@@ -726,9 +726,11 @@ vector<u32> ABAI::searchID(GameState &gameState)
 		{
 			UnpackedHashEntry potEntry(0, 0, 0, 0, 0, 0);
 			if (!getFromTT(bb->zoobristKey, &potEntry))
+			{
 				cout << "ERROR! Non-PV Node: " << endl;
+				break;
+			}
 			pV[i2] = potEntry.bestMove;
-			PV.push_back(pV[i2]);
 			cout << IO::convertMoveToAlg(pV[i2]) << " ";
 			bb->MakeMove(pV[i2]);
 			lastPV++;
@@ -738,8 +740,14 @@ vector<u32> ABAI::searchID(GameState &gameState)
 		{
 			bb->UnMakeMove(pV[lastPV - i2]);
 		}
+		lengthPV = lastPV;
 		cout << endl;
 	}
+	for (size_t i = 0; i < lengthPV; i++)
+	{
+		PV.push_back(pV[i]);
+	}
+	
 	clock_t end = clock();
 
 	if (DEBUG_OUTPUT)
