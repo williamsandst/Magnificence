@@ -135,9 +135,9 @@ void guiInterface()
 				{
 					threadBoard[i].Copy(&board);
 				}
-				thread perftThreads[threadCount-1];
+				vector<thread> perftThreads(threadCount - 1);
 				bool done = true;
-				for (size_t i = 0; i < threadCount-1; i++)
+				for (size_t i = 0; i < threadCount - 1; i++)
 				{
 					perftThreads[i] = thread(Test::perftHash, stoi(splitCommand[1]), stoi(splitCommand[1]), &threadBoard[i], color, starts[i], Hash, tableSize, &done);
 					this_thread::sleep_for(0.001s);
