@@ -5,7 +5,7 @@
 
 
 //Converting between inherent move object and long algebraic form used by interpeter
-string IO::convertMoveToAlg(u32 move)
+string IO::convertMoveToAlg(u32 move, bool color)
 {
 	string alg;
 	i16 output2 = 63 - (move & 63);
@@ -14,13 +14,22 @@ string IO::convertMoveToAlg(u32 move)
 	alg += 8 - output2 / 8 + '0';
 	alg += output1 % 8 + 'a';
 	alg += 8 - output1 / 8 + '0';
+	//Promotion part needed?
+	u32 promotion = (move >> 26) & 0b111;
+	if (promotion > 0)
+		alg += convertPromotionPieceToChar(promotion, color);
 	return alg;
 }
 
 u32 IO::convertAlgToMove(string alg)
 {
-	int a = (alg[1] - '0' - 1) * 8 + (7-(alg[0] - 'a'));
-	int b = ((alg[3] - '0' - 1) * 8 + (7-(alg[2] - 'a'))) << 6;
+	u32 a = (alg[1] - '0' - 1) * 8 + (7-(alg[0] - 'a'));
+	u32 b = ((alg[3] - '0' - 1) * 8 + (7-(alg[2] - 'a'))) << 6;
+	if (alg.size() == 5)
+	{
+		u32 promotion = convertCharToPromotionPiece(alg[4]) << 26;
+		return a | b | promotion;
+	}
 	return (a | b);
 }
 
@@ -226,54 +235,82 @@ string IO::displayBoard(BitBoard board)
 	{
 		for (size_t x = 0; x < 8; x++)
 		{
-			switch (board.mailBox[y * 8 + x])
-			{
-			case 1: //White pieces
-				boardString += 'P';
-				break;
-			case 2:
-				boardString += 'R';
-				break;
-			case 3:
-				boardString += 'N';
-				break;
-			case 4:
-				boardString += 'B';
-				break;
-			case 5:
-				boardString += 'Q';
-				break;
-			case 6:
-				boardString += 'K';
-				break;
-			case 11: //Black pieces
-				boardString += 'p';
-				break;
-			case 12:
-				boardString += 'r';
-				break;
-			case 13:
-				boardString += 'n';
-				break;
-			case 14:
-				boardString += 'b';
-				break;
-			case 15:
-				boardString += 'q';
-				break;
-			case 16:
-				boardString += 'k';
-				break;
-			case 0: //Space
-				boardString += ".";
-				break;
-			}
+			boardString += convertPieceToChar(board.mailBox[y * 8 + x]);
 		}
 		boardString += "\n";
 	}
 	boardString += "\n";
 	return boardString;
 
+}
+
+//Promotions only
+int IO::convertCharToPromotionPiece(char c)
+{
+	switch (c)
+	{
+	case 'Q': //White pieces
+	case 'q':
+		return 1;
+	case 'B':
+	case 'b':
+		return 2;
+	case 'R':
+	case 'r':
+		return 3;
+	case 'N':
+	case 'n':
+		return 4;
+	}
+}
+
+
+char IO::convertPromotionPieceToChar(int piece, bool color)
+{
+	switch (piece)
+	{
+	case 1:
+		return color ? 'Q' : 'q';
+	case 2:
+		return color ? 'B' : 'b';
+	case 3:
+		return color ? 'R' : 'r';
+	case 4:
+		return color ? 'N' : 'n';
+	}
+}
+
+char IO::convertPieceToChar(int piece)
+{
+	switch (piece)
+	{
+	case 0: //Space
+		return '.';
+	case 1: //White pieces
+		return 'P';
+	case 2:
+		return 'R';
+	case 3:
+		return 'N';
+	case 4:
+		return 'B';
+	case 5:
+		return 'Q';
+	case 6:
+		return 'K';
+	case 11: //Black pieces
+		return 'p';
+	case 12:
+		return 'r';
+	case 13:
+		return 'n';
+	case 14:
+		return 'b';
+	case 15:
+		return 'q';
+	case 16:
+		return 'k';
+	}
 }
 
 //Static class, declaration is NEVER used

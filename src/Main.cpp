@@ -34,7 +34,7 @@ string commandList =
 
 using namespace std;
 
-static const int threadCount = 1;
+static const int threadCount = 2;
 
 void runEngine(GameState* gameState, ABAI* engine);
 void guiInterface();
@@ -216,7 +216,7 @@ void guiInterface()
 			}
 			else if (splitCommand[0] == "fen")
 				cout << IO::convertBoardToFEN(board, color) << endl;
-			else if (splitCommand[0] == "display" || splitCommand[0] == "disp")
+			else if (splitCommand[0] == "display" || splitCommand[0] == "disp" || splitCommand[0] == "d")
 				cout << Test::displayBoard(board);
 			else if (splitCommand[0] == "divide" && splitCommand.size() == 2)
 			{
@@ -241,7 +241,7 @@ void guiInterface()
 					cout << "Move count: " << to_string((u32)(end - start)) << endl;
 					for (size_t i = 0; i < (u32)(end - start); i++)
 					{
-						cout << IO::convertMoveToAlg(start[i]) << " [" <<
+						cout << IO::convertMoveToAlg(start[i], true) << " [" <<
 							Test::pieceToString(board.mailBox[Move::getTo(start[i])]) << " to " <<
 							Test::pieceToString(board.mailBox[Move::getFrom(start[i])]) << "]" << endl;
 					}
@@ -254,7 +254,7 @@ void guiInterface()
 					cout << "Move count: " << to_string((u32)(end - moves)) << endl;
 					for (size_t i = 0; i < (u32)(end - moves); i++)
 					{
-						cout << IO::convertMoveToAlg(moves[i]) << " [" <<
+						cout << IO::convertMoveToAlg(moves[i], false) << " [" <<
 							Test::pieceToString(board.mailBox[Move::getTo(moves[i])]) << " to " <<
 							Test::pieceToString(board.mailBox[Move::getFrom(moves[i])]) << "]" << endl;
 					}
@@ -377,7 +377,7 @@ void runEngine(GameState* gameState, ABAI *engine)
 			BitBoard localBB;
 			localBB.Copy(gameState->board);
 			gameState->principalVariation = engine->searchID(*gameState);
-			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0]) << endl;
+			cout << "bestmove " << IO::convertMoveToAlg(gameState->principalVariation[0], gameState->color) << endl;
 			//cout << "mgnf: ";
 			gameState->idle = true;
 		}

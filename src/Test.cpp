@@ -3,6 +3,15 @@
 //Static class used for testing purposes
 mt19937 rng;
 
+/// @brief function used as comparison operator to sort a move list alfabatically based on long algebraic form
+bool moveCompAlfabetical(u32& lhs, u32& rhs)
+{
+    std::string lhs_string = IO::convertMoveToAlg(lhs);
+    std::string rhs_string = IO::convertMoveToAlg(rhs);
+    return (lhs_string.compare(rhs_string) == -1);
+}
+
+
 string Test::displayBoard(BitBoard board)
 {
 	string boardString = "\n";
@@ -119,8 +128,8 @@ u64 Test::perftHash(int depth, int startDepth, BitBoard *bb, bool color, u32 *st
 
 u64 Test::perft(int depth, BitBoard *bb, bool color, u32 *start)
 {
-	//if (depth == 0)
-		//return 1;
+	if (depth == 0)
+		return 1;
 	u32 *end;
 	if (color)
 		end = bb->WhiteLegalMoves(start);
@@ -183,6 +192,8 @@ string Test::perftDivide(int depth, BitBoard *bb, bool color, u32 *start)
 	u32* nextStart = start + 218;
 	depth--;
 	color = !color;
+	//Sort the moves by alfabetical order, useful for move gen debugging comparisons between different engines
+	std::sort(start, end, moveCompAlfabetical);
 	while (start != end)
 	{
 		u32 move = *start;
@@ -192,7 +203,7 @@ string Test::perftDivide(int depth, BitBoard *bb, bool color, u32 *start)
 			bb->MakeMove(move);
 			res = perft(depth, bb, color, nextStart);
 			total += res;
-			result += IO::convertMoveToAlg(move) + "    " + to_string(res) + "\n";
+			result += IO::convertMoveToAlg(move, !color) + "	" + to_string(res) + "\n";
 			bb->UnMakeMove(move);
 		}
 	}

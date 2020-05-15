@@ -11,7 +11,7 @@ using namespace std;
 class IO
 {
 public:
-	static string convertMoveToAlg(u32 move);
+	static string convertMoveToAlg(u32 move, bool color = true);
 	static u32 convertAlgToMove(string alg);
 
 	static string convertBoardToFEN(BitBoard board, bool color);
@@ -20,6 +20,9 @@ public:
 
 	static string displayBoard(BitBoard board);
 private:
+	static char convertPieceToChar(int piece);
+	static int convertCharToPromotionPiece(char c);
+	static char convertPromotionPieceToChar(int piece, bool color);
 	IO();
 	~IO();
 };
